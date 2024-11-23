@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { HydratedDocument } from 'mongoose';
-//import { users } from '../../modules/users.schema.ts';
-//import { courses } from '../../modules/course.schema.ts';
+//import { users } from '../../users/user.schema.ts';
+//import { courses } from '../../courses/course.schema.ts';
 
 @Schema()
 export class progress {
