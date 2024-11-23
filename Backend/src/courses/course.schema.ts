@@ -3,31 +3,31 @@ import mongoose, { HydratedDocument } from 'mongoose';
 
 
 @Schema()  
-export class Courses {
+export class courses {
 
   @Prop({required: true, unique: true})
-  Course_ID: string;
+  course_id: string;
 
   @Prop({required: true})
-  Course_Title: string;
+  course_title: string;
 
   @Prop({required: true})
-  Course_Description: string;
+  course_description: string;
 
   @Prop({required: true})
-  Course_Category: string;
+  course_category: string;
 
   @Prop({required: true, enum: ['Beginner', 'Intermediate', 'Advanced']})
-  Course_Difficulty: string;
+  course_difficulty: string;
 
   @Prop({required: true})
-  Course_CreatedBy: string;
+  course_createdBy: string;
 
   @Prop({ type: Date, default: () => new Date() })   
   Module_CreatedAt: Date;
 }
 
-export const CoursesSchema = SchemaFactory.createForClass(Courses);
+export const CoursesSchema = SchemaFactory.createForClass(courses);
 
 
 
