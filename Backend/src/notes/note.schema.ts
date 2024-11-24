@@ -3,27 +3,25 @@ import mongoose, { HydratedDocument } from 'mongoose';
 //import { courses } from '../../courses/course.schema.ts';
 //import { users } from '../users/user.schema.ts';
 
+export type NoteDocument = HydratedDocument<notes>;
+
 @Schema({ timestamps: true })
-export class Note {
+export class notes {
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId, required: true, unique: true })
-  noteId: mongoose.Schema.Types.ObjectId;
-
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true, unique: true })
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true})
   user_id: mongoose.Schema.Types.ObjectId;
 
-
-  @Prop({type: mongoose.Schema.Types.ObjectId, ref: 'courses', required: true , unique: true})
-  courseId: mongoose.Schema.Types.ObjectId;;
+  @Prop({type: mongoose.Schema.Types.ObjectId, ref: 'courses', required: true})
+  course_id: mongoose.Schema.Types.ObjectId;;
 
   @Prop({ required: true })
-  content: string;
+  content: String;
 
   @Prop({type: Date, default: () => new Date()})
-  createdAt: Date;
+  created_at: Date;
 
   @Prop({type: Date, default: () => new Date()})
-  lastUpdated: Date;
+  last_updated: Date;
 }
 
-export const NoteSchema = SchemaFactory.createForClass(Note);
+export const NoteSchema = SchemaFactory.createForClass(notes);
