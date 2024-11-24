@@ -3,16 +3,15 @@ import mongoose, { HydratedDocument } from 'mongoose';
 //import { users } from '../../users/user.schema.ts';
 //import { courses } from '../../courses/course.schema.ts';
 
+export type ProgressDocument = HydratedDocument<progress>;
+
 @Schema()
 export class progress {
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId, required: true, unique: true })
-  progress_id: mongoose.Schema.Types.ObjectId; 
-
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true, unique: true })
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true})
   user_id: mongoose.Schema.Types.ObjectId; 
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'courses', required: true, unique: true })
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'courses', required: true})
   course_id: mongoose.Schema.Types.ObjectId; 
 
   @Prop({ type: Number, min: 0, max: 100, required: true })
