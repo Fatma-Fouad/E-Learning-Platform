@@ -1,33 +1,31 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { HydratedDocument } from 'mongoose';
 
+export type CourseDocument = HydratedDocument<courses>;
 
 @Schema()  
 export class courses {
 
-  @Prop({required: true, unique: true})
-  course_id: string;
+  @Prop({required: true})
+  title: string;
 
   @Prop({required: true})
-  course_title: string;
+  description: string;
 
   @Prop({required: true})
-  course_description: string;
-
-  @Prop({required: true})
-  course_category: string;
+  category: string;
 
   @Prop({required: true, enum: ['Beginner', 'Intermediate', 'Advanced']})
-  course_difficulty: string;
+  difficulty_level: string;
 
   @Prop({required: true})
-  course_createdBy: string;
+  created_by: string;
 
   @Prop({ type: Date, default: () => new Date() })   
-  Module_CreatedAt: Date;
+  created_at: Date;
 }
 
-export const CoursesSchema = SchemaFactory.createForClass(courses);
+export const CourseSchema = SchemaFactory.createForClass(courses);
 
 
 
