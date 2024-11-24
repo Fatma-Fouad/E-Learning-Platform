@@ -1,15 +1,14 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { HydratedDocument } from 'mongoose';
-//import { courses } from '../../courses/courses.schema.ts';
+//import { courses } from '../../courses/course.schema.ts';
+
+export type ModuleDocument = HydratedDocument<modules>;
 
 @Schema()  
 export class modules {
 
-  @Prop({type: mongoose.Schema.Types.ObjectId, required: true, unique: true})
-  module_id: mongoose.Schema.Types.ObjectId;
-
-  @Prop({type: mongoose.Schema.Types.ObjectId, ref:'courses',required: true,unique: true})
-  course_id: mongoose.Schema.Types.ObjectId ;
+  @Prop({type: mongoose.Schema.Types.ObjectId, ref:'courses',required: true})
+  course_id: mongoose.Schema.Types.ObjectId;
 
   @Prop({required: true})
   title: string;
@@ -21,4 +20,4 @@ export class modules {
   created_at: Date;
 }
 
-export const ModulesSchema = SchemaFactory.createForClass(modules);
+export const ModuleSchema = SchemaFactory.createForClass(modules);
