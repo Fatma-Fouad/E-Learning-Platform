@@ -9,6 +9,9 @@ export class QuizController {
   @Post() 
   async createQuiz(@Body() quizData: CreateQuizDto) {
     const newQuiz = await this.quizService.create(quizData);
-    return newQuiz; 
+    return {
+        message: 'Quiz created successfully',
+        newQuiz,
+      }; 
   }
 }
