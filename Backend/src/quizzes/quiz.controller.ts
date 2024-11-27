@@ -1,17 +1,25 @@
-import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
+import { Controller, Post, Body, NotFoundException } from '@nestjs/common';
 import { QuizService } from './quiz.service';
-import { CreateQuizDto } from './createquiz.dto';
 
-@Controller('quizzes') 
+@Controller('quizzes')
 export class QuizController {
-  constructor(private quizService: QuizService) {} 
+  constructor(private readonly quizService: QuizService) {}
 
-  @Post() 
-  async createQuiz(@Body() quizData: CreateQuizDto) {
-    const newQuiz = await this.quizService.create(quizData);
+  @Post()
+  async generateQuiz(
+    @Body('module_id') moduleId: string,
+    @Body('question_count') questionCount: number,
+    @Body('type') type: string, 
+  ) {
+    const quiz = await this.quizService.generateQuiz(moduleId, questionCount, type);
+
+    if (!quiz) {
+      throw new NotFoundException(`No sufficient questions available for module ID ${moduleId}`);
+    }
+
     return {
-        message: 'Quiz created successfully',
-        newQuiz,
-      }; 
+      message: 'Quiz generated successfully',
+      quiz,
+    };
   }
 }

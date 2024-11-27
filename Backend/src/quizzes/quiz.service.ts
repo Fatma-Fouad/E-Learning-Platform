@@ -1,44 +1,55 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { QuizDocument } from './quiz.schema';
-import { ModuleDocument } from '../modules/module.schema';
-import { CreateQuizDto } from './createquiz.dto';
+import { QuestionBankDocument } from '../questionbank/questionbank.schema';
 
 @Injectable()
 export class QuizService {
   constructor(
     @InjectModel('quizzes') private quizModel: Model<QuizDocument>,
-    @InjectModel('modules') private moduleModel: Model<ModuleDocument>,
+    @InjectModel('questionbank') private questionBankModel: Model<QuestionBankDocument>,
   ) {}
 
-  async create(quizData: CreateQuizDto): Promise<any> {
-    
-    const moduleExists = await this.moduleModel.findById(quizData.module_id);
-    if (!moduleExists) {
-      throw new NotFoundException(`Module with ID ${quizData.module_id} not found.`);
+  async generateQuiz(
+    moduleId: string,
+    questionCount: number,
+    type: string, 
+  ): Promise<QuizDocument> {
+
+    const questionBank = await this.questionBankModel.findOne({ module_id: moduleId });
+    if (!questionBank) {
+      throw new NotFoundException(`Question bank for module ID ${moduleId} not found.`);
     }
 
-    
-    const requiredFields = ['module_id', 'questions'];
-    for (const field of requiredFields) {
-      if (!quizData[field]) {
-        throw new BadRequestException(`Missing required field: ${field}`);
-      }
+    let filteredQuestions = questionBank.questions;
+    if (type !== 'both') {
+      filteredQuestions = filteredQuestions.filter((q) => q.type === type);
     }
 
-    
+    if (filteredQuestions.length < questionCount) {
+      throw new BadRequestException('Not enough questions available to generate the quiz.');
+    }
+
+    //random select
+    const selectedQuestions = filteredQuestions
+      .sort(() => Math.random() - 0.5)
+      .slice(0, questionCount)
+      .map((question) => ({
+        question_id: question.question_id, //get the og question id in the question bank
+        question_text: question.question_text,
+        options: question.options,
+        correct_answer: question.correct_answer,
+        difficulty: question.difficulty,
+        type: question.type,
+      }));
+
     const newQuiz = new this.quizModel({
-      ...quizData,
+      module_id: moduleId,
+      questions: selectedQuestions,
       created_at: new Date(),
     });
 
-    const savedQuiz = await newQuiz.save();
-
-    //i dont want the __v in my database
-    const quizObject = savedQuiz.toObject();
-    delete quizObject.__v;
-
-    return quizObject;
+    return await newQuiz.save();
   }
 }
