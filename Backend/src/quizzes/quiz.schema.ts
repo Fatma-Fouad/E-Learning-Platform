@@ -1,11 +1,15 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { HydratedDocument } from 'mongoose';
 import { modules } from '../modules/module.schema';
+import { users } from '../users/user.schema';
 
 export type QuizDocument = HydratedDocument<quizzes>;
 
 @Schema()
 export class quizzes {
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true })
+  user_id: mongoose.Schema.Types.ObjectId; //to track who put the quiz
+
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'modules', required: true })
   module_id: mongoose.Schema.Types.ObjectId;
 
