@@ -19,6 +19,15 @@ export class progress {
 
   @Prop({ type: Date, default: () => new Date(), required: true })
   last_accessed: Date;
+
+  @Prop({ type: Number, default: 0, required: true })
+  quizzes_taken: number;
+
+  @Prop({ type: Number, min: 0, max: 100, default: 0, required: true })
+  avg_score: number;
+
+  @Prop({ type: Number, min: 0, max: 100, default: null })
+  last_quiz_score: number | null;
 }
 
 export const ProgressSchema = SchemaFactory.createForClass(progress);
