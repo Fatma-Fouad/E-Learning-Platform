@@ -1,3 +1,4 @@
+import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import mongoose from 'mongoose';
@@ -20,7 +21,7 @@ async function bootstrap() {
     logger.warn('MongoDB connection disconnected');
   });
 
-  
+  app.useGlobalPipes(new ValidationPipe());
   await app.listen(process.env.PORT ?? 3000);
   logger.log(`Application is running on: http://localhost:${process.env.PORT ?? 3000}`);
 }
