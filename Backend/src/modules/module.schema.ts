@@ -18,6 +18,12 @@ export class modules {
 
   @Prop({ type: Date, default: () => new Date() })   
   created_at: Date;
+
+  @Prop({ type: Number, default: 0, min: 0, max: 5, required:true })
+   module_rating: number; // Overall course rating (1-5 stars)
+
+   @Prop({ default: 0 })
+  module_ratingCount: number; // Number of ratings submitted
 }
 
 export const ModuleSchema = SchemaFactory.createForClass(modules);
