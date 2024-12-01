@@ -36,6 +36,12 @@ export class quizzes {
     type: string;
   }[];
 
+  @Prop({ type: Number, required: true })
+  question_count: number;
+
+  @Prop({ type: String, enum: ['mcq', 'tf', 'both'], required: true })
+  type: string;
+
   @Prop({ type: Date, default: () => new Date() })
   created_at: Date;
 }

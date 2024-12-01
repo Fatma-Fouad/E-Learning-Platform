@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Query, NotFoundException, Req } from '@nestjs/common';
+import { Controller, Post, Body, Get, NotFoundException, BadRequestException} from '@nestjs/common';
 import { QuizService } from './quiz.service';
 
 @Controller('quizzes')
@@ -10,19 +10,22 @@ export class QuizController {
     @Body('user_id') userId: string,
     @Body('module_id') moduleId: string,
     @Body('question_count') questionCount: number,
-    @Body('type') type: string, 
+    @Body('type') type: string,
   ) {
-    const quiz = await this.quizService.generateQuiz(userId,moduleId, questionCount, type);
-
-    if (!quiz) {
-      throw new NotFoundException(`No sufficient questions available for module ID ${moduleId}`);
+    if (!userId || !moduleId || !questionCount || !type) {
+      throw new BadRequestException(
+        'user_id, module_id, question_count, and type are required.',
+      );
     }
 
+    const result = await this.quizService.generateQuiz(userId, moduleId, questionCount, type);
+
     return {
-      message: 'Quiz generated successfully',
-      quiz,
+      message: result.message,
+      quiz: result.quiz,
     };
   }
+
   @Get('student')
   async getStudentQuiz(
     @Body('user_id') userId: string,

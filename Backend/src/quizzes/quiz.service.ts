@@ -19,53 +19,47 @@ export class QuizService {
     userId: string,
     moduleId: string,
     questionCount: number,
-    type: string, 
-  ): Promise<QuizDocument> {
-
+    type: string,
+  ): Promise<{ message: string; quiz: QuizDocument }> {
+    //if exists
     const user = await this.userModel.findById(userId);
     if (!user) {
       throw new NotFoundException(`User with ID ${userId} not found.`);
     }
-    
+
+    //if this module has a questionbank
     const questionBank = await this.questionBankModel.findOne({ module_id: moduleId });
     if (!questionBank) {
       throw new NotFoundException(`Question bank for module ID ${moduleId} not found.`);
     }
 
-    let filteredQuestions = questionBank.questions;
-    if (type !== 'both') {
-      filteredQuestions = filteredQuestions.filter((q) => q.type === type);
+    //check if quiz for this module exists
+    const existingQuiz = await this.quizModel.findOne({ module_id: moduleId, user_id: userId });
+    if (existingQuiz) {
+      await this.quizModel.deleteOne({ module_id: moduleId, user_id: userId });
     }
-
-    if (filteredQuestions.length < questionCount) {
-      throw new BadRequestException('Not enough questions available to generate the quiz.');
-    }
-
-    //random select
-    const selectedQuestions = filteredQuestions
-      .sort(() => Math.random() - 0.5)
-      .slice(0, questionCount)
-      .map((question) => ({
-        question_id: question.question_id, //get the og question id in the question bank
-        question_text: question.question_text,
-        options: question.options,
-        correct_answer: question.correct_answer,
-        difficulty: question.difficulty,
-        type: question.type,
-      }));
 
     const newQuiz = new this.quizModel({
       user_id: userId,
       module_id: moduleId,
-      questions: selectedQuestions,
+      questions: [],
+      question_count: questionCount,
+      type,
       created_at: new Date(),
     });
 
-    return await newQuiz.save();
+    await newQuiz.save();
+
+    return {
+      message: existingQuiz
+        ? 'Old quiz deleted. New quiz generated successfully.'
+        : 'Quiz generated successfully.',
+      quiz: newQuiz,
+    };
   }
 
   async getQuizForStudent(userId: string,courseId: string, moduleId: string): Promise<QuizDocument> {
-    //makking sure student has a progress documented
+    //making sure student has a progress documented
     const progress = await this.progressModel.findOne({ user_id: userId, course_id: courseId  });
     if (!progress) {
       throw new NotFoundException(`No progress found for user ID ${userId} and course ID ${courseId}`);
@@ -83,7 +77,7 @@ export class QuizService {
     }
 
     //fetch the quiz that was done by the instructor for this module
-    const instructorQuizzes = await this.quizModel.find({
+    const instructorQuiz = await this.quizModel.findOne({
       module_id: moduleId,
     })
       .populate({
@@ -92,16 +86,26 @@ export class QuizService {
       })
       .exec();
   
-    if (instructorQuizzes.length === 0) {
+    if (!instructorQuiz) {
       throw new NotFoundException(`No instructor quizzes available for module ID ${moduleId}`);
     }
 
-    //filter questions by diffculty
-    const allQuestions = instructorQuizzes.flatMap((quiz) => quiz.questions);
-    const filteredQuestions = allQuestions.filter((q) => difficultyLevels.includes(q.difficulty));
+    const questionCount = instructorQuiz.question_count;
+    const type = instructorQuiz.type;
 
-    //assumed 3 questions per quiz
-    const questionCount = 3;
+    //get the questions from the question bank for this module
+    const questionBank = await this.questionBankModel.findOne({ module_id: moduleId });
+    if (!questionBank) {
+      throw new NotFoundException(`Question bank for module ID ${moduleId} not found.`);
+    }
+
+    //filter questions by type and difficulty
+    let filteredQuestions = questionBank.questions.filter((q) => difficultyLevels.includes(q.difficulty));
+    if (type !== 'both') {
+      filteredQuestions = filteredQuestions.filter((q) => q.type === type);
+    }
+
+    //ensure there are enough questions available
     if (filteredQuestions.length < questionCount) {
       throw new NotFoundException('Not enough questions available to generate a quiz.');
     }
@@ -111,11 +115,12 @@ export class QuizService {
       .sort(() => Math.random() - 0.5)
       .slice(0, questionCount);
 
-    //save the generated quiz of the student
     const studentQuiz = new this.quizModel({
       user_id: userId,
       module_id: moduleId,
       questions: selectedQuestions,
+      question_count: questionCount,
+      type: type,
       created_at: new Date(),
     });
 
