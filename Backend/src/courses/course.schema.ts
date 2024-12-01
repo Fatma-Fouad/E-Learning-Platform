@@ -50,8 +50,4 @@ previousVersions: Record<string, any>[]; // Array of previous version details
 
 }
 
-export const CourseSchema = SchemaFactory.createForClass(courses);
-
-
-
-
+export const CourseSchema = SchemaFactory.createForClass(courses)

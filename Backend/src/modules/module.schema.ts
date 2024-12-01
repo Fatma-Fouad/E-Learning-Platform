@@ -24,6 +24,20 @@ export class modules {
 
    @Prop({ default: 0 })
   module_ratingCount: number; // Number of ratings submitted
+
+  @Prop({ default: false })
+  isModuleOutdated: boolean; // Flag for version control
+
+  @Prop({ default: 1 })
+  module_version: number; // Version of the course
+
+  
+  @Prop({ type: [Object], default: [] })
+modules_previousVersions: Record<string, any>[]; // Array of previous version details
+
+
+  @Prop({ type: String, enum: ['Easy', 'Medium', 'Hard'] }) // New field
+  module_difficultyLevel: string;
 }
 
 export const ModuleSchema = SchemaFactory.createForClass(modules);
