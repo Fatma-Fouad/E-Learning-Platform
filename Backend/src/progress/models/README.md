@@ -1,11 +1,28 @@
-APIs:
+# Progress Management API
 
-getStudentsEngagementReport:
-generates a report on the engagement levels of students enrolled in a specific course. It retrieves student progress data and calculates metrics such as the total number of students, the number of students who have completed the course, the average course completion percentage, and the average score of the last taken quiz. Additionally, it categorizes students' performance into four groups: below average, average, above average, and excellent. These insights provide an overview of how students are interacting with the course and their level of success.
+This project is a **NestJS** application designed to manage and generate reports for students' progress in various courses. The API provides insights into student engagement, course content effectiveness, quiz performance, and more.
 
-getContentEffectivenessReport:
-evaluates the effectiveness of a course's content by analyzing ratings for the course and its modules. It retrieves data on the course's overall rating and instructor rating, along with detailed ratings for individual modules. If no ratings are available, it returns a "No rating yet" message. This report helps measure how well the course content and the instructor are being received by students, offering valuable feedback for improvement
+---
 
-getQuizResultsReport:
-provides a detailed breakdown of students' quiz performance in a specific course. It retrieves progress data and generates a report that includes each student's total quizzes taken, their score on the most recent quiz, and their average score across all quizzes. This information highlights individual and group performance trends, enabling instructors to assess the effectiveness of their assessments and how well each student is performing quizzes wise.
+## What is Progress?
 
+The term "progress" refers to the status of a student's journey in completing a course. It tracks several key metrics, including:
+
+- **Completion Percentage**: The percentage of the course completed by the student.
+- **Quizzes Taken**: The number of quizzes attempted.
+- **Last Quiz Score**: The score achieved in the most recent quiz.
+- **Average Score**: The student's average score across all quizzes.
+- **Course ID**: The unique identifier of the course the student is enrolled in.
+
+Progress is stored in the database with the following schema:
+```json
+{
+  "progress_id": "ObjectId",
+  "user_id": "ObjectId",
+  "course_id": "ObjectId",
+  "completed_modules": 5,
+  "completion_percentage": 75,
+  "quizzes_taken": 3,
+  "last_quiz_score": 85,
+  "avg_score": 80
+}
