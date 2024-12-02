@@ -1,30 +1,33 @@
+/* eslint-disable prettier/prettier */
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import mongoose, { HydratedDocument } from 'mongoose';
-//import { users } from '../users/user.schema';
-//import { courses } from '../courses/course.schema';
+import mongoose, { Document } from 'mongoose';
+import { users } from '../../users/user.schema';
+import { courses } from '../../courses/course.schema';
 
-
-
-// Define the Reply Schema
-class Reply {
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true })
-    userId: mongoose.Schema.Types.ObjectId; // References the User collection
-
+@Schema()
+export class Reply {
     @Prop({ type: mongoose.Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() })
-    replyId: mongoose.Schema.Types.ObjectId; // Unique Reply ID
+    replyId: mongoose.Schema.Types.ObjectId; // Use replyId instead of _id
+
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true })
+    userId: mongoose.Schema.Types.ObjectId; // Reference to the user who replied
 
     @Prop({ type: String, required: true })
-    message: string; // Message content
+    message: string; // Reply content
 
-    @Prop({ type: Date, default: () => new Date() })
+    @Prop({ type: Date, default: Date.now })
     timestamp: Date; // Time of the reply
 }
 
+export type ReplyDocument = Document & Reply;
+export const ReplySchema = SchemaFactory.createForClass(Reply);
 
-// Define the Thread Schema
-class Thread {
-    @Prop({ type: mongoose.Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId(), unique: true })
-    threadId: mongoose.Schema.Types.ObjectId; // Unique Thread ID
+
+
+@Schema()
+export class Thread {
+    @Prop({ type: mongoose.Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() })
+    threadId: mongoose.Schema.Types.ObjectId; // Unique thread ID
 
     @Prop({ type: String, required: true })
     title: string; // Thread title
@@ -32,28 +35,36 @@ class Thread {
     @Prop({ type: String, required: true })
     description: string; // Thread description
 
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true })
     createdBy: mongoose.Schema.Types.ObjectId; // User who created the thread
 
-    @Prop({ type: Date, default: () => new Date() })
-    createdAt: Date; // Time the thread was created
+    @Prop({ type: Date, default: Date.now })
+    createdAt: Date; // Time of thread creation
 
-    @Prop({ type: [Reply], default: [] })
+    @Prop({ type: [ReplySchema], _id: false, default: [] }) // Disable _id generation for replies
     replies: Reply[]; // Array of replies
 }
 
 
+export type ThreadDocument = Document & Thread;
+export const ThreadSchema = SchemaFactory.createForClass(Thread);
+
+@Schema()
 export class Forum {
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true })
-    courseId: mongoose.Schema.Types.ObjectId; // References the Course collection
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'courses', required: true })
+    courseId: mongoose.Schema.Types.ObjectId; // Reference to Course
 
     @Prop({ type: String, required: true })
     courseName: string; // Course name
 
-    @Prop({ type: [Thread], default: [] })
-    threads: Thread[]; // Array of threads
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true })
+    createdBy: mongoose.Schema.Types.ObjectId; // User who created the thread
+
+    @Prop({ type: [ThreadSchema], _id: false, default: [] }) // Disable _id for threads
+    threads: Thread[];
+
+
 }
 
-// Export the Forum Schema and Document type
-export type ForumDocument = HydratedDocument<Forum>;
+export type ForumDocument = Document & Forum;
 export const ForumSchema = SchemaFactory.createForClass(Forum);
