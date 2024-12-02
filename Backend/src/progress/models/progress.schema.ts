@@ -8,19 +8,19 @@ export type ProgressDocument = HydratedDocument<progress>;
 @Schema()
 export class progress {
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'users', default: null})
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true})
   user_id: mongoose.Schema.Types.ObjectId; 
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'courses', default: null})
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'courses', required: true})
   course_id: mongoose.Schema.Types.ObjectId; 
 
-  @Prop({ type: Number, default: null})
+  @Prop({ type: Number, default: 0, required: true})
   completed_modules: number;
 
-  @Prop({ type: Number, min: 0, max: 100, default: null})
+  @Prop({ type: Number, min: 0, max: 100, default: 0,required: true} )
   completion_percentage: number;
 
-  @Prop({ type: Number, default: null})
+  @Prop({ type: Number, default: 0, required: true})
   quizzes_taken: number;
 
   @Prop({ type: Number, min: 0, max: 100, default: null })
@@ -28,9 +28,6 @@ export class progress {
 
   @Prop({ type: Number, min: 0, max: 100, default: null})
   avg_score: number;
-
-  @Prop({required: true})
-  description: string;
 }
 
 export const ProgressSchema = SchemaFactory.createForClass(progress);
