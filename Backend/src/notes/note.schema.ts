@@ -3,7 +3,6 @@ import mongoose, { HydratedDocument } from 'mongoose';
 import { courses } from '../courses/course.schema';
 import { users } from '../users/user.schema';
 
-
 export type NoteDocument = HydratedDocument<notes>;
 
 @Schema({ timestamps: true })

@@ -1,23 +1,16 @@
-/* eslint-disable prettier/prettier */
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { QuizModule } from './quizzes/quiz.module';
-import { ForumModule } from './communication/forums/forums.module';
-import { ChatModule } from './communication/chats/chats.module';
-import { NotificationModule } from './communication/notifications/notification.module';
-
+import { QuestionBankModule } from './questionbank/questionbank.module';
+import { CourseModule } from './courses/course.module';
+import { ModulesModule } from './modules/module.module';
 
 @Module({
-  imports: [
-    QuizModule,
-    ForumModule, // Add ForumsModule here
-    ChatModule,
-    NotificationModule,
-    MongooseModule.forRoot('mongodb+srv://softwareproject:sp123@clustersp.wvdbq.mongodb.net/EduLink'), // MongoDB connection
-  ],
+  imports: [ QuizModule, QuestionBankModule,ModulesModule,CourseModule,ModulesModule,
+    MongooseModule.forRoot('mongodb+srv://softwareproject:sp123@clustersp.wvdbq.mongodb.net/EduLink') ],
   controllers: [AppController],
   providers: [AppService],
-})
-export class AppModule { }
+}) 
+export class AppModule {}

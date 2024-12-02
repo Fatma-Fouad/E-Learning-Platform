@@ -8,8 +8,7 @@ export type ResponseDocument = HydratedDocument<responses>;
 export class responses {
   
   @Prop({ type: mongoose.Schema.Types.ObjectId, required: true })
-user_id: mongoose.Schema.Types.ObjectId;
-
+  user_id: mongoose.Schema.Types.ObjectId;
 
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'quizzes', required: true })
   quiz_id: mongoose.Schema.Types.ObjectId;
