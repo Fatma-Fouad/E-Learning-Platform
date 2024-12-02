@@ -61,10 +61,24 @@ async findNoteByTitle(noteTitle: string): Promise<NoteDocument> {
 
   return note;
 }
+
+
 // Method to update a note by its title
 async updateNoteByTitle(noteTitle: string, updateData: Partial<notes>): Promise<NoteDocument> {
-  updateData.last_updated = new Date(); // Update the last_updated field
-
+  // Ensure content is not empty if provided
+  if (updateData.content !== undefined && !updateData.content.trim()) {
+    throw new Error('Content cannot be empty.');
+  }
+  // Check if the provided course title exists, if being updated
+  if (updateData.coursetitle) {
+    const courseExists = await this.courseModel.findOne({ title: updateData.coursetitle }).exec();
+    if (!courseExists) {
+      throw new NotFoundException(`Course with title "${updateData.coursetitle}" does not exist.`);
+    }
+  }
+  // Update the last_updated timestamp
+  updateData.last_updated = new Date();
+  // Perform the update
   const updatedNote = await this.noteModel
     .findOneAndUpdate(
       { noteTitle: { $regex: new RegExp(`^${noteTitle}$`, 'i') } }, // Case-insensitive match
@@ -72,13 +86,12 @@ async updateNoteByTitle(noteTitle: string, updateData: Partial<notes>): Promise<
       { new: true }
     )
     .exec();
-
   if (!updatedNote) {
-    throw new NotFoundException(`Note with title "${noteTitle}" not found`);
+    throw new NotFoundException(`Note with title "${noteTitle}" not found.`);
   }
-
   return updatedNote;
 }
+
 
 
 // Method to delete a note by its title

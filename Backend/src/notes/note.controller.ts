@@ -31,14 +31,15 @@ async getNoteByTitle(@Param('noteTitle') noteTitle: string): Promise<NoteDocumen
   return this.noteService.findNoteByTitle(noteTitle);
 }
 
-  // Endpoint to update a note by its ID
+  // Endpoint to update a note by its title
   @Put('title/:noteTitle')
-  async updateNoteByTitle(
-    @Param('noteTitle') noteTitle: string,
-    @Body() updateData: UpdateNoteDto,
-  ): Promise<NoteDocument> {
-    return this.noteService.updateNoteByTitle(noteTitle, updateData);
-  }
+async updateNoteByTitle(
+  @Param('noteTitle') noteTitle: string,
+  @Body() updateData: UpdateNoteDto,
+): Promise<NoteDocument> {
+  return this.noteService.updateNoteByTitle(noteTitle, updateData);
+}
+
   
   
   @Delete('title/:noteTitle') // Delete by note title
