@@ -8,20 +8,28 @@ export class users {
   @Prop({ required: true })
   name: string;
 
-  @Prop({ required: true, unique: true })
+  @Prop({ required: true })
   email: string;
 
-  @Prop({ required: true })
-  password_hash: string;
+  @Prop({ type: [String], default: [] }) // Ensure `enrolledCourses` is an array of strings
+  enrolledCourses: string[];
 
-  @Prop({ required: true, enum: ['student', 'instructor', 'admin'] })
-  role: string;
+  @Prop({ type: [String], default: [] })
+  completedCourses: string[];
 
-  @Prop({ required: false })
-  profile_picture_url?: string;
+  @Prop({ type: [String], default: [] })
+  role: string[];
 
-  @Prop({ type: Date, default: Date.now })
-  created_at: Date;
+@Prop({ type: [Date], default: [] })
+  created_at: Date[];
+
+  @Prop({ type: [String], default: [] })
+  password_hash: string[];
+
+  @Prop({ type: [String], default: [] })
+  profile_picture_url: string[];
+
+
 }
 
-export const UserSchema = SchemaFactory.createForClass(users);
+export const UserSchema = SchemaFactory.createForClass(User);
