@@ -27,27 +27,63 @@ export class ModulesController {
   /**
    * Retrieve all modules for students
    */
-  @Get('students')
-  async findAllModulesForStudents() {
-    try {
-      return await this.modulesService.findAllModulesForStudents();
-    } catch (error) {
-      throw new BadRequestException(
-        error.message || 'Failed to retrieve modules for students.',
-      );
-    }
+  @Get()
+   async findAllModulesForStudents() {
+     try {
+       return await this.modulesService.findAllModulesForStudents();
+     } catch (error) {
+       throw new BadRequestException(
+         error.message || 'Failed to retrieve modules for students.',
+       );
+     }
   }
 
+    //old jana implementatiom
+//   @Get('student')
+//   async getAllModulesStudent(@Body('course_id') courseId: string) {
+//   if (!courseId) {
+//     throw new BadRequestException('course_id is required.');
+//   }
+
+//   const modules = await this.modulesService.getAllModulesStudent(courseId);
+
+//   return {
+//     message: 'Modules retrieved successfully',
+//     modules,
+//   };
+// }
+
+    //old id replaced by diffculty 
+  // @Get(':id')
+  // async findById(@Param('id') id: string) {
+  //   if (!this.isValidObjectId(id)) {
+  //     throw new BadRequestException('Invalid module ID format.');
+  //   }
+  //   const module = await this.modulesService.findById(id);
+  //   if (!module) {
+  //     throw new NotFoundException("Module with ID ${id} not found.");
+  //   }
+  //   return module;
+  // }
+
   @Get(':id')
-  async findById(@Param('id') id: string) {
-    if (!this.isValidObjectId(id)) {
-      throw new BadRequestException('Invalid module ID format.');
+  async getModuleByIdStudent(
+    @Param('id') moduleId: string,
+    @Body('user_id') userId: string,
+  ) {
+    if (!userId) {
+      throw new BadRequestException('user_id is required.');
     }
-    const module = await this.modulesService.findById(id);
+
+    const module = await this.modulesService.getModuleByIdStudent(userId, moduleId);
     if (!module) {
-      throw new NotFoundException("Module with ID ${id} not found.");
+      throw new NotFoundException(`Module with ID ${moduleId} not found or access denied.`);
     }
-    return module;
+
+    return {
+      message: 'Module retrieved successfully',
+      module,
+    };
   }
 
   @Post()
