@@ -23,6 +23,9 @@ export class courses {
 
   @Prop({ type: Date, default: () => new Date() })   
   created_at: Date;
+
+  @Prop({ type: Number, default: 0, required:true})
+  completed_students: number;
 }
 
 export const CourseSchema = SchemaFactory.createForClass(courses);
