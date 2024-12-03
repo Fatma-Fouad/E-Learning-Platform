@@ -12,24 +12,22 @@ export class User {
   email: string;
 
   @Prop({ type: [String], default: [] }) // Ensure `enrolledCourses` is an array of strings
-  enrolledCourses: string[];
+  enrolled_courses: string[];
 
   @Prop({ type: [String], default: [] })
-  completedCourses: string[];
+  completed_courses: string[];
 
-  @Prop({ type: [String], default: [] })
-  role: string[];
+  @Prop({ required: true  })
+  role: string;
 
-@Prop({ type: [Date], default: [] })
-  created_at: Date[];
+@Prop({ default: () => new Date()})
+  created_at: Date;
 
-  @Prop({ type: [String], default: [] })
-  password_hash: string[];
+  @Prop({  required: true })
+  password_hash: string;
 
-  @Prop({ type: [String], default: [] })
-  profile_picture_url: string[];
-
-
+  @Prop({  required: false })
+  profile_picture_url: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

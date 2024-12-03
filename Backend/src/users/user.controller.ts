@@ -4,7 +4,6 @@ import { ForbiddenException , NotFoundException } from '@nestjs/common';
 
 
 
-
 @Controller('user')
 
 export class UserController {
@@ -59,10 +58,11 @@ async updateUserProfile(@Param('id') userId: string, @Body() updateData: any) {
   }
 
   // Optional: Validate if only allowed fields (other than email and role) are passed
-  const { email, role, ...filteredUpdateData } = updateData;
-  if (email || role) {
-    throw new BadRequestException('Email and role cannot be updated');
+  const { email, role,created_at,completed_courses,enroll_course,...filteredUpdateData } = updateData;
+  if (email || role || created_at || completed_courses||enroll_course ) {
+    throw new BadRequestException('cannot be updated ');
   }
+  
 
   try {
     const updatedUser = await this.userService.updateUserProfile(userId, filteredUpdateData);
