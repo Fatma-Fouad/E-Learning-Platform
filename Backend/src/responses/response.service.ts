@@ -64,16 +64,6 @@ export class ResponseService {
       await this.responseModel.deleteOne({ user_id: userId, quiz_id: quizId });
     }
 
-    // Save response
-    const newResponse = new this.responseModel({
-      user_id: userId,
-      quiz_id: quizId,
-      answers,
-      score: percentageScore,
-      submitted_at: new Date(),
-    });
-    await newResponse.save();
-
     const module = await this.moduleModel.findById(quiz.module_id);
     if (!module) {
     throw new NotFoundException(`Module with ID ${quiz.module_id} not found.`);
@@ -83,9 +73,9 @@ export class ResponseService {
 
     if (progress) {
       //handling retakes by removing the previous score if it exists
-      const previousScore = Number(existingResponse?.score); 
-      const quizzesTaken = progress.quizzes_taken; 
-      const avgScore = progress.avg_score;
+      const previousScore = Number(existingResponse?.score) || 0; 
+      const quizzesTaken = progress.quizzes_taken || 0; 
+      const avgScore = progress.avg_score || 0;
     
       if (existingResponse) { //adjust the average score by removing the previous score
         const totalScoreBeforeRetake = avgScore * quizzesTaken;
@@ -111,6 +101,16 @@ export class ResponseService {
         //increment quizzes_taken if not a retake
         progress.quizzes_taken += 1;
       }
+
+      // Save response
+      const newResponse = new this.responseModel({
+        user_id: userId,
+        quiz_id: quizId,
+        answers,
+        score: percentageScore,
+        submitted_at: new Date(),
+      });
+      await newResponse.save();
     
       await progress.save();
     }
