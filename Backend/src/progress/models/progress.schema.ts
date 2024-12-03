@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { HydratedDocument } from 'mongoose';
-import { users } from '../users/user.schema';
-import { courses } from '../courses/course.schema';
+import { User } from '../../users/user.schema';
+import { courses } from '../../courses/course.schema';
 
 export type ProgressDocument = HydratedDocument<progress>;
 
@@ -16,6 +16,9 @@ export class progress {
 
   @Prop({ type: Number, min: 0, max: 100, required: true })
   completion_percentage: number;
+
+  @Prop({ type: Number, default: 0, required: true})
+  completed_modules: number;
 
   @Prop({ type: Date, default: () => new Date(), required: true })
   last_accessed: Date;
