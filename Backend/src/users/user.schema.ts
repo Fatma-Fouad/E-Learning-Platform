@@ -17,8 +17,9 @@ export class users {
   @Prop({ type: [String], default: [] })
   completedCourses: string[];
 
-  @Prop({ type: [String], default: [] })
-  role: string[];
+  @Prop({ required: true, enum: ['student', 'instructor', 'admin'] })
+  role: string;
+
 
 @Prop({ type: [Date], default: [] })
   created_at: Date[];
@@ -32,4 +33,4 @@ export class users {
 
 }
 
-export const UserSchema = SchemaFactory.createForClass(User);
+export const UserSchema = SchemaFactory.createForClass(users);
