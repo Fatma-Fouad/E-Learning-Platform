@@ -1,10 +1,12 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 import { ResponseDocument } from './response.schema';
 import { QuizDocument } from '../quizzes/quiz.schema';
 import { ProgressDocument } from '../progress/progress.schema';
 import { ModuleDocument } from 'src/modules/module.schema';
+import { UserDocument } from 'src/users/user.schema';
+import { CourseDocument, courses } from 'src/courses/course.schema';
 
 @Injectable()
 export class ResponseService {
@@ -13,6 +15,8 @@ export class ResponseService {
     @InjectModel('quizzes') private quizModel: Model<QuizDocument>,
     @InjectModel('progress') private progressModel: Model<ProgressDocument>,
     @InjectModel('modules') private moduleModel: Model<ModuleDocument>,
+    @InjectModel('courses') private courseModel: Model<CourseDocument>,
+    @InjectModel('users') private userModel: Model<UserDocument>,
   ) {}
 
   async submitResponse(
@@ -101,7 +105,32 @@ export class ResponseService {
         //increment quizzes_taken if not a retake
         progress.quizzes_taken += 1;
       }
+      
+      if (percentageScore >= 50) {
+        const course = await this.courseModel.findById(module.course_id);
+        if (!course) {
+          throw new NotFoundException(`Course with ID ${module.course_id} not found.`);
+        }
 
+        const numOfModules = course.nom_of_modules || 1;
+        if (progress.completed_modules < numOfModules) {
+          progress.completed_modules = (progress.completed_modules || 0) + 1;
+          progress.completion_percentage = (progress.completed_modules / numOfModules) * 100;
+
+          // Handle course completion
+          if (progress.completion_percentage === 100) {
+            const user = await this.userModel.findById(userId);
+            if (user && !user.completed_courses.includes(module.course_id.toString())) {
+              user.completed_courses.push(module.course_id.toString());
+              await user.save();
+
+              course.completed_students = (course.completed_students || 0) + 1;
+              await course.save();
+            }
+          }
+        }
+      }
+      
       // Save response
       const newResponse = new this.responseModel({
         user_id: userId,

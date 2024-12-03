@@ -14,6 +14,9 @@ export class progress {
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'courses', required: true})
   course_id: mongoose.Schema.Types.ObjectId; 
 
+  @Prop({ type: Number, default: 0, required: true})
+  completed_modules: number;
+
   @Prop({ type: Number, min: 0, max: 100, required: true })
   completion_percentage: number;
 

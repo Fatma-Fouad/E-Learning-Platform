@@ -26,6 +26,9 @@ export class courses {
 
   @Prop({ type: Number, default: 0, required:true})
   completed_students: number;
+
+  @Prop({ type: Number, default: 0, required:true })
+  nom_of_modules: number;
 }
 
 export const CourseSchema = SchemaFactory.createForClass(courses);
