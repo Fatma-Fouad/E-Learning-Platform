@@ -120,10 +120,11 @@ export class ResponseService {
           // Handle course completion
           if (progress.completion_percentage === 100) {
             const user = await this.userModel.findById(userId);
-            if (user && !user.completed_courses.includes(module.course_id.toString())) {
+            if (!user.completed_courses.includes(module.course_id.toString())) {
               user.completed_courses.push(module.course_id.toString());
               await user.save();
 
+              const course = await this.courseModel.findById(module.course_id);
               course.completed_students = (course.completed_students || 0) + 1;
               await course.save();
             }
