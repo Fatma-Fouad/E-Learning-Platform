@@ -31,6 +31,7 @@ export class progress {
 
   @Prop({ type: Number, min: 0, max: 100, default: null })
   last_quiz_score: number | null;
+
 }
 
 export const ProgressSchema = SchemaFactory.createForClass(progress);
