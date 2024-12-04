@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Error } from 'mongoose';
-import { User, UserDocument } from './user.schema';
+import { users, UserDocument } from './user.schema';
 import { ResponseDocument, ResponseSchema } from '../responses/response.schema';
 import { Types } from 'mongoose';
 import { courses, CourseDocument } from '../courses/course.schema';
@@ -11,13 +11,13 @@ import mongoose from 'mongoose';
 @Injectable()
 export class UserService {
     constructor(
-        @InjectModel(User.name) private userModel: Model<UserDocument>,
+        @InjectModel(users.name) private userModel: Model<UserDocument>,
         @InjectModel('responses') private responseModel: Model<ResponseDocument>, // Inject the responses model
         @InjectModel(courses.name) private courseModel: Model<CourseDocument>, // Inject the courses model
       
     ) {}
     //admin
-  async getAllUsers(): Promise<User[]> {
+  async getAllUsers(): Promise<users[]> {
     try {
       const users = await this.userModel.find().exec();
       return users;
@@ -27,7 +27,7 @@ export class UserService {
   }
 
   // Fetch user profile
-  async getUserProfile(userId: string): Promise<User> {
+  async getUserProfile(userId: string): Promise<users> {
     if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
       throw new BadRequestException('Invalid user ID format');
     }
@@ -40,7 +40,7 @@ export class UserService {
   }
 
   // Update user profile
-async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User> {
+async updateUserProfile(userId: string, updateData: Partial<users>): Promise<users> {
   // Validate userId format
   if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
     throw new BadRequestException('Invalid user ID format');
@@ -93,7 +93,7 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
     return user.completedCourses;
   }
 
-  async addCourseToEnrolled(userId: string, courseId: string): Promise<User> {
+  async addCourseToEnrolled(userId: string, courseId: string): Promise<users> {
     // Validate userId and courseId
     if (!userId.match(/^[0-9a-fA-F]{24}$/) || !courseId.match(/^[0-9a-fA-F]{24}$/)) {
       throw new BadRequestException('Invalid user ID or course ID format');
@@ -130,7 +130,7 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
  
 
   // Delete from enrolled courses
-async removeEnrolledCourse(userId: string, courseId: string): Promise<User> {
+async removeEnrolledCourse(userId: string, courseId: string): Promise<users> {
   // Validate userId and courseId format
   if (!userId.match(/^[0-9a-fA-F]{24}$/) || !courseId.match(/^[0-9a-fA-F]{24}$/)) {
     throw new BadRequestException('Invalid user ID or course ID format');
@@ -171,7 +171,7 @@ async removeEnrolledCourse(userId: string, courseId: string): Promise<User> {
 }
 
   //admin
-  async createUser(createUserDto: Partial<User>): Promise<User> {
+  async createUser(createUserDto: Partial<users>): Promise<users> {
     try {
       const newUser = new this.userModel(createUserDto);
       return await newUser.save(); // Save the new user
@@ -180,7 +180,7 @@ async removeEnrolledCourse(userId: string, courseId: string): Promise<User> {
     }
   }
 //admin
-  async updateUser(userId: string, updateData: Partial<User>): Promise<User> {
+  async updateUser(userId: string, updateData: Partial<users>): Promise<users> {
     const user = await this.userModel.findByIdAndUpdate(userId, updateData, { new: true }).exec();
     if (!user) {
       throw new NotFoundException('User not found.');

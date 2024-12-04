@@ -15,10 +15,18 @@ import { ChatModule } from './communication/chats/chats.module';
 import { NotificationModule } from './communication/notifications/notification.module';
 
 @Module({
-  imports: [QuizModule, QuestionBankModule, ModulesModule, CourseModule, ModulesModule, ForumModule, // Add ForumsModule here
+  imports: [
+    QuizModule,
+    QuestionBankModule,
+    ModulesModule,
+    CourseModule,
+    ModulesModule,
+    ProgressModule,
+    UserModule,
+    ForumModule, // Add ForumsModule here
     ChatModule,
     NotificationModule,
-    MongooseModule.forRoot('mongodb+srv://softwareproject:sp123@clustersp.wvdbq.mongodb.net/')],
+    MongooseModule.forRoot('mongodb+srv://softwareproject:sp123@clustersp.wvdbq.mongodb.net/EduLink')],
   
   controllers: [AppController],
   providers: [AppService],
