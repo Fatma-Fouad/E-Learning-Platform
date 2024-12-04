@@ -18,6 +18,9 @@ export class modules {
 
   @Prop({ type: Date, default: () => new Date() })   
   created_at: Date;
+
+  @Prop({ type: Number, required: true, unique: true, min: 1 })
+  module_order: number;
 }
 
 export const ModuleSchema = SchemaFactory.createForClass(modules);
