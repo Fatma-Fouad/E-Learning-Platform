@@ -9,6 +9,8 @@ import { UserSchema } from '../users/user.schema';
 import { ModulesModule } from '../modules/module.module';
 import { ModuleSchema } from '../modules/module.schema'; 
 import { modules } from '../modules/module.schema';
+import { users } from '../users/user.schema';
+//import { NotificationModule } from '../communication/notifications/notification.module'; // Import NotificationModule
 
 
 @Module({
@@ -24,6 +26,7 @@ import { modules } from '../modules/module.schema';
     MulterModule.register({
       dest: './uploads', // Directory for file uploads
     }),
+    //NotificationModule, // Import NotificationModule to resolve NotificationService
   ],
   controllers: [CoursesController],
   providers: [CoursesService],

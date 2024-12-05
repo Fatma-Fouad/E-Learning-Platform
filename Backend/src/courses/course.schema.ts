@@ -1,10 +1,14 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { HydratedDocument } from 'mongoose';
+import { users } from '../users/user.schema';
 
 export type CourseDocument = HydratedDocument<courses>;
 
 @Schema()  
 export class courses {
+
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true})
+  instructor_id: mongoose.Schema.Types.ObjectId; 
 
   @Prop({required: true})
   title: string;
@@ -31,22 +35,28 @@ export class courses {
   version: number; // Version of the course
 
   @Prop({ type: Number, default: 0, min: 0, max: 5, required:true })
-   course_rating: number; // Overall course rating (1-5 stars)
+  course_rating: number; // Overall course rating (1-5 stars)
 
   @Prop({ default: 0 })
   ratingCount: number; // Number of ratings submitted
 
-  @Prop({ type: [String], default: [] })
-  multimedia: string[]; // Array to store file paths or URLs
-
   @Prop({ type: Number, default: 0, required:true})
   enrolled_students: number; 
+  
+  @Prop({ type: [mongoose.Schema.Types.ObjectId], ref: 'users', default: [] })
+  enrolled_student_ids: mongoose.Schema.Types.ObjectId[]; // Array of student IDs
 
   @Prop({ type: Number, default: 0, required:true })
   nom_of_modules: number;
 
-  @Prop({ type: [Object], default: [] })
-previousVersions: Record<string, any>[]; // Array of previous version details
+  @Prop({ type: Number, default: 0, required: true })
+  instructor_rating: number;
+
+  @Prop({ type: Number, default: 0, required: true })
+  instructor_ratingCount: number; 
+
+  @Prop({ type: Number, default: 0, required:true})
+  completed_students: number; 
 
 }
 

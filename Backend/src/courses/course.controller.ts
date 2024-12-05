@@ -1,10 +1,13 @@
 import {Controller,Get,Post,Patch,Delete,Param,Body,UploadedFile,UseInterceptors,UseGuards,BadRequestException} from '@nestjs/common';
   import { CoursesService } from './course.service';
-  import { FileInterceptor } from '@nestjs/platform-express';
   import { CreateCourseDto } from './CreateCourseDto';
   import { RateCourseDto } from './RateCourseDto';
   import { UpdateCourseDto } from './UpdateCourseDto';
   import { Express } from 'express';
+  import { RateInstructorDto } from './RateInstructorDto';
+  
+
+
   //import { InstructorGuard } from './InstructorGuard'; 
   
   @Controller('courses')
@@ -66,8 +69,7 @@ import {Controller,Get,Post,Patch,Delete,Param,Body,UploadedFile,UseInterceptors
     /**
      * Update a course with version control (instructors only)
      */
-    @Patch(':id/version-control')
-//@UseGuards(InstructorGuard) // Restrict access to instructors
+@Patch(':id/version-control')
 async updateWithVersionControl(
   @Param('id') id: string,
   @Body() updateCourseDto: UpdateCourseDto,
@@ -86,7 +88,7 @@ async updateWithVersionControl(
     );
   }
 }
-  
+
     /**
      * Delete a course (instructors only)
      */
@@ -141,21 +143,29 @@ async getModuleCount(@Param('id') courseId: string) {
     throw new BadRequestException(error.message || 'Failed to retrieve module count.');
   }
 }
-   /**
-     * enroll students in course
-     */
 
-  // @Post(':id/enroll/:studentId')
-//async enrollStudent(
- // @Param('id') courseId: string,
-  //@Param('studentId') studentId: string,
-//) {
-  //try {
-  //  const message = await this.coursesService.enrollStudent(courseId, studentId);
-  //  return { message };
-  //} catch (error) {
-    //throw new BadRequestException(error.message || 'Failed to enroll the student.');
-  //}
-//}
+/**
+   * Rate the instructor
+   */
 
+@Patch(':courseId/rate-instructor')
+async rateInstructor(
+  @Param('courseId') courseId: string,
+  @Body() body: { rating: number },
+) {
+  try {
+    // Validate the rating input
+    const { rating } = body;
+    if (rating < 1 || rating > 5) {
+      throw new BadRequestException('Rating must be between 1 and 5.');
+    }
+
+    // Call the service method to update the instructor rating
+    return await this.coursesService.rateInstructor(courseId, rating);
+  } catch (error) {
+    console.error('Error:', error);
+    throw new BadRequestException(error.message || 'Failed to rate the instructor.');
   }
+}
+
+ }

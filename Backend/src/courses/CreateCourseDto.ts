@@ -6,7 +6,6 @@ export class CreateCourseDto {
     created_by: string;
     isOutdated: boolean; 
     version: number; 
-    previousVersion: string; 
     course_rating: number;
     ratingCount: number;
     multimedia: string [];
