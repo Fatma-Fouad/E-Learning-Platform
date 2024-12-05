@@ -3,3 +3,4 @@ export class UpdateModuleDto {
   content: string;
   module_difficultyLevel?: string;
 }
+

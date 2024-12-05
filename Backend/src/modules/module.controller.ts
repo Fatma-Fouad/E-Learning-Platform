@@ -20,6 +20,8 @@ export class ModulesController {
 
 
   // Retrieve all modules for instructor
+
+  // Retrieve all modules for instructor
   @Get()
   async findAll() {
     try {
@@ -32,27 +34,63 @@ export class ModulesController {
   /**
    * Retrieve all modules for students
    */
-  @Get('students')
-  async findAllModulesForStudents() {
-    try {
-      return await this.modulesService.findAllModulesForStudents();
-    } catch (error) {
-      throw new BadRequestException(
-        error.message || 'Failed to retrieve modules for students.',
-      );
-    }
+  @Get()
+   async findAllModulesForStudents() {
+     try {
+       return await this.modulesService.findAllModulesForStudents();
+     } catch (error) {
+       throw new BadRequestException(
+         error.message || 'Failed to retrieve modules for students.',
+       );
+     }
   }
 
+    //old jana implementatiom
+//   @Get('student')
+//   async getAllModulesStudent(@Body('course_id') courseId: string) {
+//   if (!courseId) {
+//     throw new BadRequestException('course_id is required.');
+//   }
+
+//   const modules = await this.modulesService.getAllModulesStudent(courseId);
+
+//   return {
+//     message: 'Modules retrieved successfully',
+//     modules,
+//   };
+// }
+
+    //old id replaced by diffculty 
+  // @Get(':id')
+  // async findById(@Param('id') id: string) {
+  //   if (!this.isValidObjectId(id)) {
+  //     throw new BadRequestException('Invalid module ID format.');
+  //   }
+  //   const module = await this.modulesService.findById(id);
+  //   if (!module) {
+  //     throw new NotFoundException("Module with ID ${id} not found.");
+  //   }
+  //   return module;
+  // }
+
   @Get(':id')
-  async findById(@Param('id') id: string) {
-    if (!this.isValidObjectId(id)) {
-      throw new BadRequestException('Invalid module ID format.');
+  async getModuleByIdStudent(
+    @Param('id') moduleId: string,
+    @Body('user_id') userId: string,
+  ) {
+    if (!userId) {
+      throw new BadRequestException('user_id is required.');
     }
-    const module = await this.modulesService.findById(id);
+
+    const module = await this.modulesService.getModuleByIdStudent(userId, moduleId);
     if (!module) {
-      throw new NotFoundException("Module with ID ${id} not found.");
+      throw new NotFoundException(`Module with ID ${id} not found.`);
     }
-    return module;
+
+    return {
+      message: 'Module retrieved successfully',
+      module,
+    };
   }
 
   @Post()
@@ -63,6 +101,7 @@ export class ModulesController {
       throw new BadRequestException('Failed to create module.');
     }
   }
+
 
   /**
    * Update a module with version control
@@ -157,55 +196,4 @@ async getModulesByCourseAndDifficulty(@Param('courseId') courseId: string) {
     );
   }
 } 
-//
-// *upload media
-//
-@Patch(':moduleId/upload')
-@UseInterceptors(FileInterceptor('file'))
-async uploadFileToModule(
-  @Param('moduleId') moduleId: string,
-  @UploadedFile(
-    new ParseFilePipe({
-      validators: [
-        new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }), // Max size: 10 MB
-        new FileTypeValidator({ fileType: 'application/pdf|video/mp4' }), // Allow PDFs and MP4s
-      ],
-    }),
-  )
-  file: Express.Multer.File
-) {
-  return await this.modulesService.saveFileToModule(moduleId, file);
-}
-
-//
-// *download media
-//
-
-@Get(':moduleId/download/:filename')
-  async downloadFile(
-    @Param('moduleId') moduleId: string,
-    @Param('filename') filename: string,
-    @Res() res: Response,
-  ) {
-    try {
-      // Get the file path from the module
-      const filePath = await this.modulesService.getFilePathFromModule(moduleId, filename);
-
-      // Check if the file exists
-      if (!fs.existsSync(filePath)) {
-        throw new NotFoundException('File not found.');
-      }
-
-      // Set headers and send the file for download
-      res.download(filePath, filename, (err) => {
-        if (err) {
-          console.error('Error sending file:', err);
-          res.status(500).send({ message: 'Failed to download the file.' });
-        }
-      });
-    } catch (error) {
-      console.error('Error during file download:', error);
-      throw new NotFoundException('Failed to download the file.');
-    }
-  }
 }

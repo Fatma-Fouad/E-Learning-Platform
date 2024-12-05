@@ -12,11 +12,13 @@ import { CourseSchema } from 'src/courses/course.schema';
 import { courses } from 'src/courses/course.schema';
 import * as fs from 'fs';
 import * as path from 'path';
+import { ProgressDocument } from '../progress/progress.schema';
 
 @Injectable()
 export class ModulesService {
   private readonly uploadDir: string;
   constructor(@InjectModel('modules') private moduleModel: Model<modules>,
+  @InjectModel('progress') private progressModel: Model<ProgressDocument>,
 ) {
   this.uploadDir = './uploads'; // Define the directory here
 }
@@ -29,31 +31,80 @@ export class ModulesService {
   /**
  * Retrieve all modules for students
  */
-async findAllModulesForStudents(): Promise<modules[]> {
-  try {
-    // Fetch all modules where isOutdated is false, excluding previousVersions field
-    return await this.moduleModel
-      .find({ isModuleOutdated: false }, { modules_previousVersions: 0 }) // Exclude previousVersions field
-      .exec();
-  } catch (error) {
-    throw new BadRequestException('Failed to retrieve modules.');
-  }
-}
+ async findAllModulesForStudents(): Promise<modules[]> {
+   try {
+     // Fetch all modules where isOutdated is false, excluding previousVersions field
+     return await this.moduleModel
+       .find({ isModuleOutdated: false }, { modules_previousVersions: 0 }) // Exclude previousVersions field
+       .exec();
+   } catch (error) {
+     throw new BadRequestException('Failed to retrieve modules.');
+   }
+ }
+
+// async getAllModulesStudent(courseId: string): Promise<ModuleDocument[]> {
+//   const modules = await this.moduleModel.find({ course_id: courseId });
+
+//   if (!modules || modules.length === 0) {
+//     throw new NotFoundException(`No modules found for course ID ${courseId}`);
+//   }
+
+//   return modules;
+// }
 
 
-  // Retrieve a module by ID
-  async findById(id: string): Promise<modules> {
-    try {
-      const module = await this.moduleModel.findById(id).exec();
-      if (!module) {
+  // // Retrieve a module by ID
+  // async findById(id: string): Promise<modules> {
+  //   try {
+  //     const module = await this.moduleModel.findById(id).exec();
+  //     if (!module) {
 
-        throw new NotFoundException("Module with ID ${id} not found");
-      }
-      return module;
-    } catch (error) {
-      throw new BadRequestException("Invalid ID format or module not found: ${id}");
+  //       throw new NotFoundException("Module with ID ${id} not found");
+  //     }
+  //     return module;
+  //   } catch (error) {
+  //     throw new BadRequestException("Invalid ID format or module not found: ${id}");
+  //   }
+  // }    //DONE
+
+  async getModuleByIdStudent(userId: string, moduleId: string): Promise<{ module: ModuleDocument | null; message?: string }> {
+    // Fetch student progress
+
+    const module = await this.moduleModel.findById(moduleId);
+    if (!module) {
+    throw new NotFoundException(`Module with ID ${moduleId} not found.`);
     }
-  }    //DONE
+
+    const progress = await this.progressModel.findOne({ user_id: userId , course_id: module.course_id});
+    if (!progress) {
+      throw new NotFoundException(`Progress for user ID ${userId} not found.`);
+    }
+  
+    // Determine accessible difficulty levels based on avg_score
+    const avgScore = progress.avg_score || 0;
+    let accessibleLevels: string[] = [];
+  
+    if (avgScore <= 50) {
+      accessibleLevels = ['Easy'];
+    } else if (avgScore <= 75) {
+      accessibleLevels = ['Easy', 'Medium'];
+    } else {
+      accessibleLevels = ['Easy', 'Medium', 'Hard'];
+    }
+
+    if (!module) {
+      return { module: null };
+    }
+  
+    // Check if the module's difficulty is accessible
+    if (!accessibleLevels.includes(module.module_difficultyLevel)) {
+      const message = `You cannot access the ${module.module_difficultyLevel} module yet because your average score (${avgScore}) is not sufficient. Retake quizzes to improve your score.`;
+      return { module: null, message };
+    }
+  
+    return { module };
+  }
+  
 
 
   // Create a new module

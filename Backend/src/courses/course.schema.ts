@@ -60,8 +60,4 @@ export class courses {
 
 }
 
-export const CourseSchema = SchemaFactory.createForClass(courses);
-
-
-
-
+export const CourseSchema = SchemaFactory.createForClass(courses)
