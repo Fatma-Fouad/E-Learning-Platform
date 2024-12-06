@@ -30,7 +30,7 @@ import { users } from '../users/user.schema';
   ],
   controllers: [CoursesController],
   providers: [CoursesService],
-  exports: [CoursesService], // Exporting the service if other modules need it
+  exports: [CoursesService],   // Exporting the service if other modules need it
 })
 export class CourseModule {}
 

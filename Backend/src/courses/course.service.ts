@@ -10,9 +10,9 @@ import { UpdateCourseDto } from './UpdateCourseDto';
 import { ModulesModule } from '../modules/module.module';
 import { ModuleSchema } from '../modules/module.schema'; 
 import { modules } from '../modules/module.schema';
+import { title } from 'process';
+
 //import { NotificationGateway } from '../communication/notifications/notificationGateway';
-
-
 
 
 @Injectable()
@@ -28,24 +28,9 @@ export class CoursesService {
     
   }
 
-  /**
-   * Retrieve all courses for students
-   */
-  async findAllForStudents(): Promise<courses[]> {
-    try {
-      // Fetch all courses where isOutdated is false
-      return await this.courseModel
-        .find({ isOutdated: false }) // Only fetch non-outdated courses
-        .exec();
-    } catch (error) {
-      console.error('Error retrieving courses:', error);
-      throw new BadRequestException('Failed to retrieve courses.');
-    }
-  }
-
 
   /**
-   * Retrieve all courses for instructors with version control
+   * Retrieve all courses for all
    */
   async findAllForInstructors(): Promise<courses[]> {
     try {
@@ -56,7 +41,7 @@ export class CoursesService {
   }  
 
   /**
-   * Retrieve a course by its ID
+   * Retrieve a course by its ID  for all
    */
   async findCourseById(id: string): Promise<courses> {
     try {
@@ -68,10 +53,10 @@ export class CoursesService {
     } catch (error) {
       throw new BadRequestException('Invalid course ID.');
     }
-  }    
+  }   
 
   /**
-   * Create a new course
+   * Create a new course instructor only not admin
    */
   async create(createCourseDto: CreateCourseDto): Promise<courses> {
     try {
@@ -82,43 +67,23 @@ export class CoursesService {
     }
   }   
 
-  /**
- * Update a course with version control
- */
-async updateWithVersionControl(
-  id: string,
-  updateCourseDto: UpdateCourseDto,
-): Promise<courses> {
-  try {
-    // Find the existing course by ID
-    const existingCourse = await this.courseModel.findById(id).exec();
-    if (!existingCourse) {
-      throw new NotFoundException('Course not found.');
-    }
+/**
+   * update course 
+   */
 
-    // Update the current course to mark it as outdated
-    existingCourse.isOutdated = true;
-    await existingCourse.save();
+async updateCourse(id: string, updateCourseDto: UpdateCourseDto): Promise<courses> {
+  const updatedCourse = await this.courseModel.findByIdAndUpdate(
+    id,
+    updateCourseDto,
+    { new: true }, // Return the updated document
+  ).exec();
 
-    // Prepare new course data
-    const newCourseData = {
-      ...existingCourse.toObject(),
-      ...updateCourseDto,
-      version: existingCourse.version + 1,
-      isOutdated: false, // New course is not outdated
-    };
-
-    delete newCourseData._id; // Ensure MongoDB generates a new ID
-
-    // Create and save the new course
-    const newCourse = new this.courseModel(newCourseData);
-    return await newCourse.save();
-  } catch (error) {
-    console.error('Error:', error);
-    throw new BadRequestException('Failed to update course with version control.');
+  if (!updatedCourse) {
+    throw new NotFoundException('Course not found.');
   }
-}
 
+  return updatedCourse;
+}
 
 
   /**
@@ -134,6 +99,11 @@ async updateWithVersionControl(
       throw new BadRequestException('Failed to delete course. Ensure the ID is valid.');
     }
   }   
+
+  
+  /**
+   * get number of enrolled students in a course
+   */
 
   async getEnrolledStudents(courseId: string): Promise<number> {
     try {
@@ -154,14 +124,16 @@ async updateWithVersionControl(
    */
   async calculateCourseRating(courseId: string): Promise<{ courseId: string; courseRating: number }> {
     try {
-      // Find all modules associated with the course
-      const modules = await this.moduleModel.find({ course_id: courseId }).exec();
+      // Find all modules associated with the course where isModuleOutdated is false
+      const modules = await this.moduleModel
+        .find({ course_id: courseId, isModuleOutdated: false }) 
+        .exec();
   
       if (!modules || modules.length === 0) {
-        throw new NotFoundException('No modules found for this course.');
+        throw new NotFoundException('No valid modules found for this course.');
       }
   
-      // Calculate the average rating of the modules
+      // Calculate the average rating of the non-outdated modules
       const totalRatings = modules.reduce((sum, module) => sum + (module.module_rating || 0), 0);
       const averageRating = totalRatings / modules.length;
   
@@ -174,10 +146,10 @@ async updateWithVersionControl(
         'Failed to calculate course rating. Ensure the course ID is valid.',
       );
     }
-  } 
-
+  }
+  
   /**
-   * Modules per course
+   * Numbers of Modules per course
    */
 
       async getModuleCountForCourse(courseId: string): Promise<number> {
@@ -234,6 +206,97 @@ async updateWithVersionControl(
           );
         }
       }
+
+
+      /**
+   * Find Course deatils by Module title
+   */
+
+      async findCourseByModuleTitle(title: string): Promise<any> {
+        try {
+          const module = await this.moduleModel.findOne({ title }).exec();
+      
+          if (!module) {
+            throw new NotFoundException('Module with the specified title not found.');
+          }
+          let course = null;
+
+          // Populate or fallback to a direct query
+          if (module.course_id) {
+            course = await this.courseModel.findById(module.course_id).exec();
+          }
+      
+          if (!course) {
+            throw new NotFoundException('Course related to the module not found.');
+          }
+          return {
+            course_details: course,
+            course_id: module.course_id.toString(),
+            // Convert ObjectId to string
+          };
+        } catch (error) {
+          throw new BadRequestException(
+            error.message || 'Failed to retrieve course by module title.',
+          );
+        }
+      }
+
+
+       /**
+   * Find Course details By the created_by//instructor
+   */
+
+      // async findCourseByModulecreated_by(created_by: string): Promise<any> {
+      //   try {
+      //     const create_by = await this.courseModel.findOne({created_by}).exec();
+      
+      //     if (!create_by) {
+      //       throw new NotFoundException('course with the specified created_by not found.');
+      //     }
+      //     let course = null;
+    
+      //     // Populate or fallback to a direct query
+      //     if (create_by.course_id) {
+      //       course = await this.courseModel.findById(create_by.course_id).exec();
+      //     }
+      
+      //     if (!course) {
+      //       throw new NotFoundException('Course with this instructor not found.');
+      //     }
+      //     return {
+      //       course_details: course,
+      //       course_id: course.course_id.toString(),
+      //       // Convert ObjectId to string
+      //     };
+      //   } catch (error) {
+      //     throw new BadRequestException(
+      //       error.message || 'Failed to retrieve course by created_by.',
+      //     );
+      //   }
+      // }
+
+
+      async findCourseByModuleCreatedBy(created_by: string): Promise<any> {
+        try {
+          // Find the course based on the `created_by` field
+          const course = await this.courseModel.findOne({ created_by }).exec();
+      
+          if (!course) {
+            throw new NotFoundException('Course with the specified created_by not found.');
+          }
+      
+          return {
+            course_details: course,
+            course_id: course._id.toString(), // Convert the ObjectId to a string
+          };
+        } catch (error) {
+          throw new BadRequestException(
+            error.message || 'Failed to retrieve course by created_by.',
+          );
+        }
+      }
+      
+    
   }
       
 

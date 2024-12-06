@@ -7,7 +7,8 @@ export type CourseDocument = HydratedDocument<courses>;
 @Schema()  
 export class courses {
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true})
+  // MongoDB automatically adds `_id`, so no need to explicitly declare it.
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true })
   instructor_id: mongoose.Schema.Types.ObjectId; 
 
   @Prop({required: true})
@@ -27,12 +28,6 @@ export class courses {
 
   @Prop({ type: Date, default: () => new Date() })   
   created_at: Date;
-
-  @Prop({ default: false })
-  isOutdated: boolean; // Flag for version control
-
-  @Prop({ default: 1 })
-  version: number; // Version of the course
 
   @Prop({ type: Number, default: 0, min: 0, max: 5, required:true })
   course_rating: number; // Overall course rating (1-5 stars)

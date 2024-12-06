@@ -12,14 +12,18 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 import * as path from 'path';
 import * as fs from 'fs';
+import { CoursesService } from 'src/courses/course.service';
+import { QuestionBankDocument } from '../questionbank/questionbank.schema';
+import { QuizDocument } from '../quizzes/quiz.schema';
+
+
 
 
 @Controller('modules')
 export class ModulesController {
-  constructor(private readonly modulesService: ModulesService) {}
+  constructor(private readonly modulesService: ModulesService, private readonly courseService: CoursesService  ) {}
 
 
-  // Retrieve all modules for instructor
 
   // Retrieve all modules for instructor
   @Get()
@@ -73,7 +77,7 @@ export class ModulesController {
   //   return module;
   // }
 
-  @Get(':id')
+  @Get(':id/student')
   async getModuleByIdStudent(
     @Param('id') moduleId: string,
     @Body('user_id') userId: string,
@@ -84,7 +88,7 @@ export class ModulesController {
 
     const module = await this.modulesService.getModuleByIdStudent(userId, moduleId);
     if (!module) {
-      throw new NotFoundException(`Module with ID ${id} not found.`);
+      throw new NotFoundException("Module with ID ${id} not found.");
     }
 
     return {
@@ -103,32 +107,32 @@ export class ModulesController {
   }
 
 
-  /**
-   * Update a module with version control
-   */
-  @Patch(':id/version-control')
-  async updateModuleWithVersionControl(
-    @Param('id') id: string,
-    @Body() updateModuleDto: UpdateModuleDto,
-  ) {
-    try {
-      return await this.modulesService.updateModuleWithVersionControl(id, updateModuleDto);
-    } catch (error) {
-      throw new BadRequestException('Failed to update module with version control.');
-    }
-  }
+  // /**
+  //  * Update a module with version control
+  //  */
+  // @Patch(':id/version-control')
+  // async updateModuleWithVersionControl(
+  //   @Param('id') id: string,
+  //   @Body() updateModuleDto: UpdateModuleDto,
+  // ) {
+  //   try {
+  //     return await this.modulesService.updateModuleWithVersionControl(id, updateModuleDto);
+  //   } catch (error) {
+  //     throw new BadRequestException('Failed to update module with version control.');
+  //   }
+  // }
 
-  @Delete(':id')
-  async delete(@Param('id') id: string) {
-    if (!this.isValidObjectId(id)) {
-      throw new BadRequestException('Invalid module ID format.');
-    }
-    try {
-      return await this.modulesService.delete(id);
-    } catch (error) {
-      throw new BadRequestException(error.message || 'Failed to delete the module.');
-    }
-  }
+  // @Delete(':id')
+  // async delete(@Param('id') id: string) {
+  //   if (!this.isValidObjectId(id)) {
+  //     throw new BadRequestException('Invalid module ID format.');
+  //   }
+  //   try {
+  //     return await this.modulesService.delete(id);
+  //   } catch (error) {
+  //     throw new BadRequestException(error.message || 'Failed to delete the module.');
+  //   }
+  // }
 
   @Patch(':id/rate')
   async rateModule(
@@ -173,27 +177,78 @@ async getModulesByCourseId(@Param('courseId') courseId: string) {
   }
 }
 
-@Get('difficulty/:courseId')
-async getModulesByCourseAndDifficulty(@Param('courseId') courseId: string) {
-  // Validate course ID format
-  if (!this.isValidObjectId(courseId)) {
-    throw new BadRequestException('Invalid course ID format.');
+   // Retrieve all modules ordered by module_order
+   @Get('ordered')
+   async findAllOrdered() {
+     try {
+       const modules = await this.modulesService.findAllOrdered();
+       return {
+         message: 'Modules retrieved and ordered by module_order successfully.',
+         data: modules,
+       };
+     } catch (error) {
+       throw new BadRequestException('Failed to retrieve ordered modules.');
+     }
+   }
+ 
+   // Retrieve modules by course ID, ordered by module_order
+   @Get('course/:courseId/ordered')
+   async getModulesByCourseOrdered(@Param('courseId') courseId: string) {
+     try {
+       const modules = await this.modulesService.getModulesByCourseOrdered(courseId);
+       return {
+         message: `Modules for course ID: ${courseId} retrieved and ordered by module_order successfully.`,
+         data: modules,
+       };
+     } catch (error) {
+       throw new BadRequestException(error.message || 'Failed to retrieve ordered modules.');
+     }
+   }
+ 
+/**
+ * Update a module with version control and update related references in questionBank and quizzes
+ */
+@Patch(':id/version-control')
+async updateModuleWithVersionControl(
+  @Param('id') id: string,
+  @Body() updateModuleDto: UpdateModuleDto,
+) {
+  if (!this.isValidObjectId(id)) {
+    throw new BadRequestException('Invalid module ID format.');
   }
 
   try {
-    // Call the service method to get and organize modules
-    const organizedModules = await this.modulesService.getModulesByCourseAndDifficulty(courseId);
-
-    // Return the response
+    // Call the service to update the module and related references
+    const updatedModule = await this.modulesService.updateModuleWithVersionControl(id,updateModuleDto);
     return {
-      message: `Modules organized by difficulty level for course ID: ${courseId}`,
-      data: organizedModules,
+      message: 'Module updated with version control successfully.',
+      updatedModule,
     };
   } catch (error) {
-    // Handle any errors
+    console.error('Error in updateModuleWithVersionControl:', error);
     throw new BadRequestException(
-      error.message || 'Failed to retrieve organized modules.',
+      error.message || 'Failed to update module with version control.',
     );
   }
-} 
+}
+
+@Get(':id')
+async getModuleById(@Param('id') id: string) {
+    if (!this.isValidObjectId(id)) {
+        throw new BadRequestException('Invalid module ID format.');
+    }
+    try {
+        const module = await this.modulesService.getModuleById(id);
+        if (!module) {
+            throw new NotFoundException(`Module with ID ${id} not found.`);
+        }
+        return {
+            message: `Module with ID ${id} retrieved successfully.`,
+            data: module,
+        };
+    } catch (error) {
+        throw new BadRequestException(error.message || 'Failed to retrieve module.');
+    }
+}
+
 }

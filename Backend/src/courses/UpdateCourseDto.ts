@@ -19,8 +19,6 @@
     description?: string;
     category?: string;
     difficulty_level?: string;
-    isOutdated?: boolean;
-    version?: number;
     course_rating?: number;
     ratingCount?: number;
     enrolled_students?: number;

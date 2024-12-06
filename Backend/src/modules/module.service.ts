@@ -13,12 +13,17 @@ import { courses } from 'src/courses/course.schema';
 import * as fs from 'fs';
 import * as path from 'path';
 import { ProgressDocument } from '../progress/progress.schema';
+import { Types } from 'mongoose';
+import { QuestionBankDocument } from '../questionbank/questionbank.schema'; // QuestionBank document type
+import { QuizDocument } from '../quizzes/quiz.schema'; // Quiz document type
 
 @Injectable()
 export class ModulesService {
   private readonly uploadDir: string;
   constructor(@InjectModel('modules') private moduleModel: Model<modules>,
   @InjectModel('progress') private progressModel: Model<ProgressDocument>,
+  @InjectModel('questionbank') private questionBankModel: Model<QuestionBankDocument>,
+  @InjectModel('quizzes') private quizModel: Model<QuizDocument>,
 ) {
   this.uploadDir = './uploads'; // Define the directory here
 }
@@ -41,17 +46,6 @@ export class ModulesService {
      throw new BadRequestException('Failed to retrieve modules.');
    }
  }
-
-// async getAllModulesStudent(courseId: string): Promise<ModuleDocument[]> {
-//   const modules = await this.moduleModel.find({ course_id: courseId });
-
-//   if (!modules || modules.length === 0) {
-//     throw new NotFoundException(`No modules found for course ID ${courseId}`);
-//   }
-
-//   return modules;
-// }
-
 
   // // Retrieve a module by ID
   // async findById(id: string): Promise<modules> {
@@ -136,68 +130,68 @@ export class ModulesService {
   }   //DONE
    
 
-  async updateModuleWithVersionControl(
-    id: string,
-    updateModuleDto: UpdateModuleDto,
-  ): Promise<modules> {
-    try {
-      // Find the existing module by ID
-      const existingModule = await this.moduleModel.findById(id).exec();
-      if (!existingModule) {
-        throw new NotFoundException('Module not found.');
-      }
+  // async updateModuleWithVersionControl(
+  //   id: string,
+  //   updateModuleDto: UpdateModuleDto,
+  // ): Promise<modules> {
+  //   try {
+  //     // Find the existing module by ID
+  //     const existingModule = await this.moduleModel.findById(id).exec();
+  //     if (!existingModule) {
+  //       throw new NotFoundException('Module not found.');
+  //     }
   
-      // Mark the existing module as outdated
-      existingModule.isModuleOutdated = true;
-      await existingModule.save();
+  //     // Mark the existing module as outdated
+  //     existingModule.isModuleOutdated = true;
+  //     await existingModule.save();
   
-      // Prepare new module data
-      const newModuleData = {
-        ...existingModule.toObject(),
-        ...updateModuleDto,
-        module_version: existingModule.module_version + 1,
-        previousVersion: existingModule._id, // Reference to the previous module
-        isModuleOutdated: false, // New module is not outdated
-      };
+  //     // Prepare new module data
+  //     const newModuleData = {
+  //       ...existingModule.toObject(),
+  //       ...updateModuleDto,
+  //       module_version: existingModule.module_version + 1,
+  //       previousVersion: existingModule._id, // Reference to the previous module
+  //       isModuleOutdated: false, // New module is not outdated
+  //     };
   
-      // Add the current module to the modules_previousVersions array
-      newModuleData.modules_previousVersions = [
-        ...(existingModule.modules_previousVersions || []), // Retain existing history
-        {
-          _id: existingModule._id,
-          title: existingModule.title,
-          content: existingModule.content,
-          created_at: existingModule.created_at,
-          module_rating: existingModule.module_rating,
-          module_ratingCount: existingModule.module_ratingCount,
-          module_version: existingModule.module_version,
-          isModuleOutdated: existingModule.isModuleOutdated,
-        },
-      ];
+  //     // Add the current module to the modules_previousVersions array
+  //     newModuleData.modules_previousVersions = [
+  //       ...(existingModule.modules_previousVersions || []), // Retain existing history
+  //       {
+  //         _id: existingModule._id,
+  //         title: existingModule.title,
+  //         content: existingModule.content,
+  //         created_at: existingModule.created_at,
+  //         module_rating: existingModule.module_rating,
+  //         module_ratingCount: existingModule.module_ratingCount,
+  //         module_version: existingModule.module_version,
+  //         isModuleOutdated: existingModule.isModuleOutdated,
+  //       },
+  //     ];
   
-      delete newModuleData._id; // Ensure MongoDB generates a new ID
+  //     delete newModuleData._id; // Ensure MongoDB generates a new ID
   
-      // Create and save the new module
-      const newModule = new this.moduleModel(newModuleData);
-      return await newModule.save();
-    } catch (error) {
-      console.error('Error:', error);
-      throw new BadRequestException('Failed to update module with version control.');
-    }
-  }
+  //     // Create and save the new module
+  //     const newModule = new this.moduleModel(newModuleData);
+  //     return await newModule.save();
+  //   } catch (error) {
+  //     console.error('Error:', error);
+  //     throw new BadRequestException('Failed to update module with version control.');
+  //   }
+  // }
   
 
   // Delete a module by ID
-  async delete(id: string): Promise<void> {
-    try {
-      const result = await this.moduleModel.findByIdAndDelete(id).exec();
-      if (!result) {
-        throw new NotFoundException("Module with ID ${id} not found");
-      }
-    } catch (error) {
-      throw new BadRequestException("Invalid ID format or delete failed for ID: ${id}");
-    }
-  }
+  // async delete(id: string): Promise<void> {
+  //   try {
+  //     const result = await this.moduleModel.findByIdAndDelete(id).exec();
+  //     if (!result) {
+  //       throw new NotFoundException("Module with ID ${id} not found");
+  //     }
+  //   } catch (error) {
+  //     throw new BadRequestException("Invalid ID format or delete failed for ID: ${id}");
+  //   }
+  // }
 
   async rateModule(moduleId: string, rateModuleDto:RateModuleDto): Promise<modules> {
     try {
@@ -245,47 +239,6 @@ export class ModulesService {
     }
   }
 
-  async getModulesByCourseAndDifficulty(courseId: string): Promise<{ [key: string]: ModuleDocument[] }> {
-    try {
-      // Retrieve all modules for the course
-      const modules = await this.getModulesByCourseId(courseId);
-  
-      // Define the order for difficulty levels
-      const difficultyOrder = ['Easy', 'Medium', 'Hard'];
-  
-      // Initialize an empty object with difficulty levels in the desired order
-      const organizedModules = difficultyOrder.reduce((result, difficulty) => {
-        result[difficulty] = [];
-        return result;
-      }, {} as { [key: string]: ModuleDocument[] });
-  
-      // Populate the organizedModules object
-      modules.forEach((module) => {
-        const difficulty = module.module_difficultyLevel || 'Unknown';
-        if (organizedModules[difficulty]) {
-          organizedModules[difficulty].push(module);
-        } else {
-          if (!organizedModules['Unknown']) {
-            organizedModules['Unknown'] = [];
-          }
-          organizedModules['Unknown'].push(module);
-        }
-      });
-  
-      // Remove any empty difficulty categories
-      for (const difficulty in organizedModules) {
-        if (organizedModules[difficulty].length === 0) {
-          delete organizedModules[difficulty];
-        }
-      }
-  
-      return organizedModules;
-    } catch (error) {
-      throw new BadRequestException(
-        error.message || 'Failed to organize modules by difficulty level.'
-      );
-    }
-  }
 
 //
 //*upload media
@@ -328,7 +281,6 @@ async saveFileToModule(moduleId: string, file: Express.Multer.File): Promise<{ m
   }
 }
 
-
 //
 // *download media
 //
@@ -347,5 +299,107 @@ async getFilePathFromModule(moduleId: string, filename: string): Promise<string>
 
   return filePath;
 }
-  
+
+  // Retrieve all modules ordered by module_order in ascending order
+  async findAllOrdered(): Promise<ModuleDocument[]> {
+    try {
+      return await this.moduleModel.find().sort({ module_order: 1 }).exec();
+    } catch (error) {
+      throw new BadRequestException('Failed to retrieve modules ordered by module_order.');
+    }
+  }
+
+  // Retrieve modules for a specific course, ordered by module_order in ascending order
+  async getModulesByCourseOrdered(courseId: string): Promise<ModuleDocument[]> {
+    try {
+      if (!Types.ObjectId.isValid(courseId)) {
+        throw new BadRequestException('Invalid course ID format.');
+      }
+
+      const modules = await this.moduleModel
+        .find({ course_id: courseId })
+        .sort({ module_order: 1 }) // Ascending order
+        .exec();
+
+      if (!modules || modules.length === 0) {
+        throw new NotFoundException(`No modules found for course ID ${courseId}.`);
+      }
+
+      return modules;
+    } catch (error) {
+      throw new BadRequestException(
+        error.message || `Error retrieving modules for course ID ${courseId}.`
+      );
+    }
+  }
+
+async updateModuleWithVersionControl(
+  id: string,
+  updateModuleDto: UpdateModuleDto,
+): Promise<modules> {
+  try {
+    // Find the existing module by ID
+    const existingModule = await this.moduleModel.findById(id).exec();
+    if (!existingModule) {
+      throw new NotFoundException('Module not found.');
+    }
+
+    // Mark the existing module as outdated
+    existingModule.isModuleOutdated = true;
+    await existingModule.save();
+
+    // Prepare new module data
+    const newModuleData = {
+      ...existingModule.toObject(),
+      ...updateModuleDto,
+      module_version: existingModule.module_version + 1,
+      previousVersion: existingModule._id, // Reference to the previous module
+      isModuleOutdated: false, // New module is not outdated
+    };
+
+    delete newModuleData._id; // Ensure MongoDB generates a new ID
+
+    // Create and save the new module
+    const newModule = new this.moduleModel(newModuleData);
+    const savedModule = await newModule.save();
+
+    // Update question banks with the new module ID
+    const questionBankUpdateResult = await this.questionBankModel.updateMany(
+      { module_id: id }, // Match the old module ID
+      { $set: { module_id: savedModule._id } }, // Replace with the new module ID
+    );
+    console.log(
+      `Updated ${questionBankUpdateResult.modifiedCount} question banks to new module ID.`,
+    );
+
+    // Update quizzes with the new module ID
+    const quizzesUpdateResult = await this.quizModel.updateMany(
+      { module_id: id }, // Match the old module ID
+      { $set: { module_id: savedModule._id } }, // Replace with the new module ID
+    );
+    console.log(
+      `Updated ${quizzesUpdateResult.modifiedCount} quizzes to new module ID.`,
+    );
+
+    return savedModule;
+  } catch (error) {
+    console.error('Error:', error);
+    throw new BadRequestException('Failed to update module with version control.');
+  }
+}
+
+
+async getModuleById(id: string): Promise<ModuleDocument> {
+  try {
+      const module = await this.moduleModel.findById(id).exec();
+      if (!module) {
+          throw new NotFoundException(`Module with ID ${id} not found.`);
+      }
+      return module;
+  } catch (error) {
+      throw new BadRequestException(
+          error.message || `Failed to retrieve module with ID ${id}.`
+      );
+  }
+}
 }

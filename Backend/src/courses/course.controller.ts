@@ -1,48 +1,29 @@
-import {Controller,Get,Post,Patch,Delete,Param,Body,UploadedFile,UseInterceptors,UseGuards,BadRequestException} from '@nestjs/common';
+import {Controller,Get,Post,Patch,Delete,Query,Param,Body,UploadedFile,UseInterceptors,UseGuards,BadRequestException, NotFoundException} from '@nestjs/common';
   import { CoursesService } from './course.service';
   import { CreateCourseDto } from './CreateCourseDto';
   import { RateCourseDto } from './RateCourseDto';
   import { UpdateCourseDto } from './UpdateCourseDto';
   import { Express } from 'express';
   import { RateInstructorDto } from './RateInstructorDto';
-  
+  import { courses } from './course.schema';
 
-
-  //import { InstructorGuard } from './InstructorGuard'; 
+   
   
   @Controller('courses')
   export class CoursesController {
     constructor(private coursesService: CoursesService) {}
 
-    /**
-     * Retrieve all courses for students
-     */
-    @Get('students')
-    async findAllForStudents() {
-      try {
-        const courses = await this.coursesService.findAllForStudents();
-        return {
-          message: 'Courses retrieved successfully for students.',
-          courses,
-        };
-      } catch (error) {
-        console.error('Error retrieving courses for students:', error);
-        throw new BadRequestException('Failed to retrieve courses for students.');
-      }
-    }
     
-  
     /**
-     * Retrieve all courses for instructors with version control
+     * Retrieve all courses for all 
      */
     @Get('instructors')
-    //@UseGuards(InstructorGuard) // Restrict access to instructors
     async findAllForInstructors() {
       return this.coursesService.findAllForInstructors();
     }
   
     /**
-     * Retrieve a course by its ID
+     * Retrieve a course by its ID for all
      */
     @Get(':id')
     async findCourseById(@Param('id') id: string) {
@@ -52,7 +33,7 @@ import {Controller,Get,Post,Patch,Delete,Param,Body,UploadedFile,UseInterceptors
         throw new BadRequestException('Invalid course ID.');
       }
     }
-  
+
     /**
      * Create a new course
      */
@@ -66,28 +47,31 @@ import {Controller,Get,Post,Patch,Delete,Param,Body,UploadedFile,UseInterceptors
       }
     }
 
-    /**
-     * Update a course with version control (instructors only)
-     */
-@Patch(':id/version-control')
-async updateWithVersionControl(
-  @Param('id') id: string,
-  @Body() updateCourseDto: UpdateCourseDto,
-) {
-  try {
-    const updatedCourse = await this.coursesService.updateWithVersionControl(id, updateCourseDto);
+//     /**
+//      * Update a course 
+//      */
+@Patch(':id')
+  async updateCourse(
+    @Param('id') id: string,
+    @Body() updateCourseDto: UpdateCourseDto,
+  ): Promise<{ message: string; updatedCourse: courses }> {
+    try {
+      const updatedCourse = await this.coursesService.updateCourse(id, updateCourseDto);
+      return {
+        message: 'Course updated successfully.',
+        updatedCourse,
+      };
+    } catch (error) {
+      console.error('Error updating course:', error);
 
-    return {
-      message: 'Course updated with version control successfully.',
-      updatedCourse,
-    };
-  } catch (error) {
-    console.error('Error:', error);
-    throw new BadRequestException(
-      error.message || 'Failed to update course with version control.',
-    );
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException(error.message);
+      }
+
+      throw new BadRequestException('Failed to update course.');
+    }
   }
-}
+
 
     /**
      * Delete a course (instructors only)
@@ -111,9 +95,9 @@ async updateWithVersionControl(
     }
   
     /**
-     * Rate a course (students)
-     */
-    @Get(':id/course-rating')
+ * Rate a course (students)
+ */
+@Get(':id/course-rating')
 async getCourseRating(@Param('id') id: string) {
   try {
     const courseRating = await this.coursesService.calculateCourseRating(id);
@@ -125,6 +109,7 @@ async getCourseRating(@Param('id') id: string) {
     throw new BadRequestException(error.message || 'Failed to retrieve the course rating.');
   }
 }
+
 
 /**
    * Modules per course
@@ -168,4 +153,89 @@ async rateInstructor(
   }
 }
 
- }
+/**
+   * Find Course details By the module title
+   */
+
+@Get()
+  async findCourseByModuleTitle(@Query('title') title: string) {
+    try {
+      if (!title) {
+        throw new BadRequestException('Module title is required.');
+      }
+
+      const result = await this.coursesService.findCourseByModuleTitle(title);
+
+      return {
+        message: 'Course retrieved successfully by module title.',
+        ...result,
+      };
+    } catch (error) {
+      console.error('Error retrieving course by module title:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Find Course details By the created_by//instructor
+   */
+
+
+//   @Get('created-by')
+// async findCoursesByCreator(@Query('created_by') createdBy: string) {
+//   try {
+//     if (!createdBy) {
+//       throw new BadRequestException('Creator is required.');
+//     }
+
+//     const result = await this.coursesService.findCoursesByCreator(createdBy);
+
+//     return {
+//       message: 'Courses retrieved successfully by creator.',
+//       ...result,
+//     };
+//   } catch (error) {
+//     console.error('Error retrieving courses by creator:', error);
+//     throw error;
+//   }
+// }
+
+
+// @Get()
+//   async findCourseByModulecreated_by(@Query('created_by') created_by: string) {
+//     try {
+//       if (!created_by) {
+//         throw new BadRequestException('Module title is required.');
+//       }
+
+//       const result = await this.coursesService.findCourseByModulecreated_by(created_by);
+
+//       return {
+//         message: 'Course retrieved successfully by module title.',
+//         ...result,
+//       };
+//     } catch (error) {
+//       console.error('Error retrieving course by module title:', error);
+//       throw error;
+//     }
+//   }
+
+
+// @Get('created-byextra')
+// async findCoursesByCreator(@Query('created_by') createdBy: string) {
+//   try {
+//     if (!createdBy) {
+//       throw new BadRequestException('Creator is required.');
+//     }
+
+//     const result = await this.coursesService.findCourseByModuleCreatedBy(createdBy);
+
+//     return {
+//       message: 'Course retrieved successfully by creator.',
+//       ...result,
+//     };
+//   } catch (error) {
+//     throw new BadRequestException(error.message || 'Failed to retrieve course by creator.');
+//   }
+// }
+}
