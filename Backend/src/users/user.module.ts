@@ -16,6 +16,7 @@ import { ProgressSchema } from '../progress/models/progress.schema';
         { name: 'progress', schema: ProgressSchema, collection: 'progress' },
       ]),
     ],
+    exports: [MongooseModule],
     controllers: [UserController], // UserController is here
     providers: [UserService],
   })

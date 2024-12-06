@@ -27,11 +27,14 @@ export class courses {
   @Prop({ type: Date, default: () => new Date() })   
   created_at: Date;
 
+  @Prop({ type: Number, default: 0, required:true})
+  completed_students: number;
+
+  @Prop({ type: Number, default: 0, required:true })
+  nom_of_modules: number;
+  
   @Prop({ type: Number, default: 0, required: true })
   enrolled_students: number;
-
-  @Prop({ type: Number, default: 0, required: true })
-  nom_of_modules: number;
 
   @Prop({ type: Number, default: 0, required: true })
   course_rating: number;
