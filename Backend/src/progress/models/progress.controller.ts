@@ -1,10 +1,16 @@
-import { Controller, Get, Param, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { Controller, Get, Param, NotFoundException, InternalServerErrorException, UseGuards } from '@nestjs/common';
 import { ProgressService } from './progress.service';
+import { RolesGuard } from '../../authentication/roles.guard';
+import { Role, Roles } from '../../authentication/roles.decorator';
+import { AuthGuard } from '../../authentication/auth.guard';
 
 @Controller('progress')
 export class ProgressController {
   constructor(private readonly progressService: ProgressService) {}
 
+// instructor
+  @UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+  @Roles('admin' as Role, 'instructor' as Role)
  // Student Engagement Report
  @Get('engagement/:courseId')
  async getStudentsEngagementReport(@Param('courseId') courseId: string) {
@@ -25,6 +31,9 @@ export class ProgressController {
   }
  }
 
+// instructor
+@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+@Roles('admin' as Role, 'instructor' as Role)
  // Content Effectiveness Report
  @Get('content-effectiveness/:courseId')
  async getContentEffectivenessReport(@Param('courseId') courseId: string) {
@@ -41,7 +50,9 @@ export class ProgressController {
     throw new InternalServerErrorException(`An unexpected error occurred while fetching the content effectiveness report: ${error.message}`);
   }
  }
-
+// instructor
+  @UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+  @Roles('admin' as Role, 'instructor' as Role)
  // Assessment Results Report
  @Get('quiz-results/:courseId')
  async getQuizResultsReport(@Param('courseId') courseId: string) {
@@ -56,7 +67,9 @@ export class ProgressController {
   }
  }
 
-
+// student
+  @UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+  @Roles('admin' as Role, 'student' as Role)
   // Individual Student Report
   @Get('student-reports/:studentId')
   async getStudentReport(@Param('studentId') studentId: string) {
@@ -72,5 +85,5 @@ export class ProgressController {
       }
       throw new InternalServerErrorException(`An unexpected error occurred while fetching the student report: ${error.message}`);
     }
-  }w
+  }
 }

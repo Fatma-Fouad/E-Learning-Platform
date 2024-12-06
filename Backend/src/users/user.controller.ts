@@ -27,8 +27,9 @@ export class UserController {
   }
   
 // hana
+
   @Post(':id/enroll-course/:courseId')
-async enrollCourse(
+  async enrollCourse(
   @Param('id') userId: string,
   @Param('courseId') courseId: string
   
