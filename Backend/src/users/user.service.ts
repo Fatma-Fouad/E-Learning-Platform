@@ -6,11 +6,13 @@ import { ResponseDocument, ResponseSchema } from '../responses/response.schema';
 import { Types } from 'mongoose';
 import { courses, CourseDocument } from '../courses/course.schema';
 import mongoose from 'mongoose';
+import { ProgressDocument } from '../progress/models/progress.schema';
 
 // hana
 @Injectable()
 export class UserService {
     constructor(
+       @InjectModel('progress') private readonly progressModel: Model<ProgressDocument>,
         @InjectModel(User.name) private userModel: Model<UserDocument>,
         @InjectModel('responses') private responseModel: Model<ResponseDocument>, // Inject the responses model
         @InjectModel(courses.name) private courseModel: Model<CourseDocument>, // Inject the courses model
@@ -93,6 +95,7 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
     return user.completed_courses;
   }
 
+
   async addCourseToEnrolled(userId: string, courseId: string): Promise<User> {
     // Validate userId and courseId
     if (!userId.match(/^[0-9a-fA-F]{24}$/) || !courseId.match(/^[0-9a-fA-F]{24}$/)) {
@@ -120,12 +123,36 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
     user.enrolled_courses.push(courseId);
     await user.save();
   
-    // Increment the course's enrolled_students count
-    course.enrolled_students = (course.enrolled_students || 0) + 1;
-    await course.save();
+    // Increment the course's enrolled_students count without triggering validation
+    await this.courseModel.updateOne(
+      { _id: courseId },
+      { $inc: { enrolled_students: 1 } } // Increment enrolled_students count
+    ).exec();
+  
+    // Initialize quiz_grades based on nom_of_modules
+    const numOfModules = course.nom_of_modules || 0;
+    const quizGrades = Array(numOfModules).fill(null);
+  
+    // Create progress for this course
+    const progress = new this.progressModel({
+      user_id: userId,
+      user_name: user.name,
+      course_id: courseId,
+      course_name: course.title,
+      completed_modules: 0,
+      completion_percentage: 0,
+      quizzes_taken: 0,
+      quiz_grades: quizGrades,
+      last_quiz_score: null,
+      avg_score: null,
+    });
+    await progress.save();
   
     return user;
   }
+  
+
+
   
  
 

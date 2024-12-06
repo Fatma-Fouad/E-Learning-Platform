@@ -56,6 +56,8 @@ export class ProgressController {
   }
  }
 
+
+  // Individual Student Report
   @Get('student-reports/:studentId')
   async getStudentReport(@Param('studentId') studentId: string) {
     try {
@@ -70,5 +72,5 @@ export class ProgressController {
       }
       throw new InternalServerErrorException(`An unexpected error occurred while fetching the student report: ${error.message}`);
     }
-  }
+  }w
 }
