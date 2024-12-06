@@ -12,7 +12,7 @@ import { CourseModule } from './courses/course.module';
 @Module({
   imports: [ QuizModule, QuestionBankModule, UserModule, ProgressModule, ResponseModule, CourseModule,
     MongooseModule.forRoot('mongodb+srv://softwareproject:sp123@clustersp.wvdbq.mongodb.net/EduLink') ],
-  controllers: [AppController],
+    controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}

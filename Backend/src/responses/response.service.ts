@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ResponseDocument } from './response.schema';
 import { QuizDocument } from '../quizzes/quiz.schema';
-import { ProgressDocument } from '../progress/progress.schema';
+import { ProgressDocument } from '../progress/models/progress.schema';
 import { ModuleDocument } from 'src/modules/module.schema';
 import { UserDocument } from 'src/users/user.schema';
 import { CourseDocument } from 'src/courses/course.schema';
