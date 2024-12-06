@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { HydratedDocument } from 'mongoose';
 import { User } from '../../users/user.schema';
 import { courses } from '../../courses/course.schema';
+import { modules } from '../../modules/module.schema';
 
 export type ProgressDocument = HydratedDocument<progress>;
 
@@ -39,7 +40,8 @@ export class progress {
   last_quiz_score: number | null;
 
   @Prop({ type: Number, min: 0, max: 100, default: 0})
-  avg_score: number;
+  avg_score: number; 
+
 }
 
 export const ProgressSchema = SchemaFactory.createForClass(progress);
