@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Error } from 'mongoose';
 import { User, UserDocument } from './user.schema';
@@ -18,30 +18,38 @@ export class UserService {
         @InjectModel(courses.name) private courseModel: Model<CourseDocument>, // Inject the courses model
       
     ) {}
-    //admin
-  async getAllUsers(): Promise<UserDocument[]> {
-    try {
-      const users = await this.userModel.find().exec();
-      return users;
-    } catch (error) {
-      throw new BadRequestException('Error fetching users');
-    }
+  // Fetch all users except admins
+async getAllUsers(): Promise<User[]> {
+  try {
+    // Filter out users with the role "admin"
+    const users = await this.userModel.find({ role: { $ne: 'admin' } }).exec();
+    return users;
+  } catch (error) {
+    throw new BadRequestException('Error fetching users');
+  }
+}
+
+
+  // Fetch user profile except for admin users
+async getUserProfile(userId: string): Promise<User> {
+  if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
+    throw new BadRequestException('Invalid user ID format');
   }
 
-  // Fetch user profile
-  async getUserProfile(userId: string): Promise<User> {
-    if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
-      throw new BadRequestException('Invalid user ID format');
-    }
+  const user = await this.userModel.findById(userId).exec();
 
-    const user = await this.userModel.findById(userId).exec();
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-    return user;
+  // Check if the user is an admin
+  if (user?.role === 'admin') {
+    throw new ForbiddenException('Access denied: Admin profile cannot be viewed');
   }
 
-  // Update user profile
+  if (!user) {
+    throw new NotFoundException('User not found');
+  }
+
+  return user;
+}
+
 async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User> {
   // Validate userId format
   if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
@@ -49,7 +57,7 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
   }
 
   // Remove email and role from the updateData to prevent them from being updated
-  const { email, role, ...filteredUpdateData } = updateData;
+  const { email, role,gpa,completed_courses,enrolled_courses, ...filteredUpdateData } = updateData;
 
   try {
     const user = await this.userModel.findByIdAndUpdate(
@@ -94,6 +102,8 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
     }
     return user.completed_courses;
   }
+   
+
 
 
   async addCourseToEnrolled(userId: string, courseId: string): Promise<User> {
@@ -150,52 +160,6 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
   
     return user;
   }
-  
-
-
-  
- 
-
-  // Delete from enrolled courses
-async removeEnrolledCourse(userId: string, courseId: string): Promise<User> {
-  // Validate userId and courseId format
-  if (!userId.match(/^[0-9a-fA-F]{24}$/) || !courseId.match(/^[0-9a-fA-F]{24}$/)) {
-    throw new BadRequestException('Invalid user ID or course ID format');
-  }
-
-  // Convert courseId to ObjectId
-  const courseObjectId = new mongoose.Types.ObjectId(courseId);
-
-  // Check if the user exists
-  const user = await this.userModel.findById(userId).exec();
-  if (!user) {
-    throw new NotFoundException('User not found');
-  }
-
-  // Check if the course exists
-  const course = await this.courseModel.findById(courseId).exec();
-  if (!course) {
-    throw new NotFoundException('This course is not in our system');
-  }
-
-  // Check if the course is in the user's enrolled courses
-  const enrolledCoursesAsObjectIds = user.enrolled_courses.map(id => new mongoose.Types.ObjectId(id));
-  if (!enrolledCoursesAsObjectIds.some(id => id.equals(courseObjectId))) {
-    throw new BadRequestException('The course is not in the user\'s enrolled courses');
-  }
-
-  // Remove the course from the user's enrolledCourses array
-  user.enrolled_courses = user.enrolled_courses.filter(
-    enrolledCourse => !new mongoose.Types.ObjectId(enrolledCourse).equals(courseObjectId)
-  );
-  await user.save();
-
-  // Decrement the course's enrolled_students count
-  course.enrolled_students = Math.max(0, (course.enrolled_students || 0) - 1); // Ensure it doesn't go below 0
-  await course.save();
-
-  return user;
-}
 
   //admin
   async createUser(createUserDto: Partial<User>): Promise<User> {
@@ -222,21 +186,65 @@ async removeEnrolledCourse(userId: string, courseId: string): Promise<User> {
     }
   }
 
-
-// fatma
-  // Get a student by ID
-  async findById(id: string): Promise<UserDocument> {
-    console.log(id)
-    const student=  await this.userModel.findById(id);  // Fetch a student by ID
-    return student
+  async enrollStudentInCourse(
+    userId: string, // Can be instructor or admin
+    studentId: string,
+    courseId: string,
+  ): Promise<string> {
+    // Validate user (instructor or admin)
+    const user = await this.userModel.findById(userId).exec();
+    if (!user || (user.role !== 'instructor' && user.role !== 'admin')) {
+      throw new BadRequestException(
+        'Access denied. Only instructors or admins can enroll students.',
+      );
+    }
+  
+    // Validate student
+    const student = await this.userModel.findById(studentId).exec();
+    if (!student || student.role !== 'student') {
+      throw new NotFoundException('Student not found.');
+    }
+  
+    // Validate course
+    const course = await this.courseModel.findById(courseId).exec();
+    if (!course) {
+      throw new NotFoundException('Course not found.');
+    }
+  
+    // Check if the student is already enrolled in the course
+    if (student.enrolled_courses.includes(courseId)) {
+      throw new BadRequestException('The student is already enrolled in this course.');
+    }
+  
+    // Enroll the student in the course
+    student.enrolled_courses.push(courseId);
+    await student.save();
+  
+    // Increment the course's enrolled_students count
+    course.enrolled_students = (course.enrolled_students || 0) + 1;
+    await course.save();
+  
+    // Initialize quiz_grades based on nom_of_modules
+    const numOfModules = course.nom_of_modules || 0;
+    const quizGrades = Array(numOfModules).fill(null);
+  
+    // Create progress for this course
+    const progress = new this.progressModel({
+      user_id: studentId,
+      user_name: student.name,
+      course_id: courseId,
+      course_name: course.title,
+      completed_modules: 0,
+      completion_percentage: 0,
+      quizzes_taken: 0,
+      quiz_grades: quizGrades,
+      last_quiz_score: null,
+      avg_score: null,
+    });
+    await progress.save();
+  
+    return 'Student successfully enrolled in the course.';
   }
- 
-  async findByName(username: string):Promise<UserDocument> {
-    return await this.userModel.findOne({username});  // Fetch a student by username
-  }
-  async findByEmail(email: string):Promise<UserDocument> {
-    const user=await this.userModel.findOne({email}).exec();
-    return user;  // Fetch a student by username
-  }
+  
   
 }
