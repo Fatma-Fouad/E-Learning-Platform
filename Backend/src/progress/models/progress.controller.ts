@@ -9,10 +9,10 @@ export class ProgressController {
   constructor(private readonly progressService: ProgressService) {}
 
 // instructor
-  @UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
-  @Roles('admin' as Role, 'instructor' as Role)
- // Student Engagement Report
- @Get('engagement/:courseId')
+// Student Engagement Report
+@Get('engagement/:courseId')
+@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+@Roles('admin' as Role, 'instructor' as Role)
  async getStudentsEngagementReport(@Param('courseId') courseId: string) {
   try {
     const report = await this.progressService.getStudentsEngagementReport(courseId);
@@ -32,10 +32,10 @@ export class ProgressController {
  }
 
 // instructor
+// Content Effectiveness Report
+@Get('content-effectiveness/:courseId')
 @UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
 @Roles('admin' as Role, 'instructor' as Role)
- // Content Effectiveness Report
- @Get('content-effectiveness/:courseId')
  async getContentEffectivenessReport(@Param('courseId') courseId: string) {
   try {
     const report = await this.progressService.getContentEffectivenessReport(courseId);
@@ -51,10 +51,10 @@ export class ProgressController {
   }
  }
 // instructor
-  @UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
-  @Roles('admin' as Role, 'instructor' as Role)
- // Assessment Results Report
- @Get('quiz-results/:courseId')
+// Assessment Results Report
+@Get('quiz-results/:courseId')
+@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+@Roles('admin' as Role, 'instructor' as Role)
  async getQuizResultsReport(@Param('courseId') courseId: string) {
   try {
     const report = await this.progressService.getQuizResultsReport(courseId);
@@ -68,10 +68,10 @@ export class ProgressController {
  }
 
 // student
-  @UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
-  @Roles('admin' as Role, 'student' as Role)
-  // Individual Student Report
-  @Get('student-reports/:studentId')
+// Individual Student Report
+@Get('student-reports/:studentId')
+@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+@Roles('admin' as Role, 'student' as Role)
   async getStudentReport(@Param('studentId') studentId: string) {
     try {
       const report = await this.progressService.getStudentReport(studentId);

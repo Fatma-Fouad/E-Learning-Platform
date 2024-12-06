@@ -8,7 +8,7 @@ import { courses, CourseDocument } from '../courses/course.schema';
 import mongoose from 'mongoose';
 import { ProgressDocument } from '../progress/models/progress.schema';
 
-// hana
+
 @Injectable()
 export class UserService {
     constructor(
@@ -160,6 +160,52 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
   
     return user;
   }
+  
+
+
+  
+ 
+
+  // Delete from enrolled courses
+async removeEnrolledCourse(userId: string, courseId: string): Promise<User> {
+  // Validate userId and courseId format
+  if (!userId.match(/^[0-9a-fA-F]{24}$/) || !courseId.match(/^[0-9a-fA-F]{24}$/)) {
+    throw new BadRequestException('Invalid user ID or course ID format');
+  }
+
+  // Convert courseId to ObjectId
+  const courseObjectId = new mongoose.Types.ObjectId(courseId);
+
+  // Check if the user exists
+  const user = await this.userModel.findById(userId).exec();
+  if (!user) {
+    throw new NotFoundException('User not found');
+  }
+
+  // Check if the course exists
+  const course = await this.courseModel.findById(courseId).exec();
+  if (!course) {
+    throw new NotFoundException('This course is not in our system');
+  }
+
+  // Check if the course is in the user's enrolled courses
+  const enrolledCoursesAsObjectIds = user.enrolled_courses.map(id => new mongoose.Types.ObjectId(id));
+  if (!enrolledCoursesAsObjectIds.some(id => id.equals(courseObjectId))) {
+    throw new BadRequestException('The course is not in the user\'s enrolled courses');
+  }
+
+  // Remove the course from the user's enrolledCourses array
+  user.enrolled_courses = user.enrolled_courses.filter(
+    enrolledCourse => !new mongoose.Types.ObjectId(enrolledCourse).equals(courseObjectId)
+  );
+  await user.save();
+
+  // Decrement the course's enrolled_students count
+  course.enrolled_students = Math.max(0, (course.enrolled_students || 0) - 1); // Ensure it doesn't go below 0
+  await course.save();
+
+  return user;
+}
 
   //admin
   async createUser(createUserDto: Partial<User>): Promise<User> {
@@ -245,6 +291,10 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
   
     return 'Student successfully enrolled in the course.';
   }
+  
+
+
+
   
   
 }

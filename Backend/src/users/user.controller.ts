@@ -27,8 +27,9 @@ export class UserController {
   }
   
 // hana
-
-  @Post(':id/enroll-course/:courseId')
+@Post(':id/enroll-course/:courseId')
+@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+@Roles('admin' as Role, 'student' as Role)
   async enrollCourse(
   @Param('id') userId: string,
   @Param('courseId') courseId: string 
@@ -48,6 +49,7 @@ export class UserController {
 
 //admin , student, instrctor
 @Get(':id/profile')
+@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
 async getUserProfile(@Param('id') userId: string) {
   try {
     return await this.userService.getUserProfile(userId);
@@ -57,6 +59,7 @@ async getUserProfile(@Param('id') userId: string) {
 }
 //admin , student, instrctor
 @Get()
+@UseGuards(AuthGuard, RolesGuard)
 async getAllUser() {
   try {
     return await this.userService.getAllUsers();
@@ -68,6 +71,8 @@ async getAllUser() {
 //student, instrctor not admin
   // Update user profile with error handling
 @Put(':id/profile')
+@UseGuards(AuthGuard, RolesGuard)
+@Roles('instructor' as Role, 'student' as Role)
 async updateUserProfile(@Param('id') userId: string, @Body() updateData: any) {
   if (Object.keys(updateData).length === 0) {
     throw new BadRequestException('Update data cannot be empty');
@@ -94,6 +99,8 @@ async updateUserProfile(@Param('id') userId: string, @Body() updateData: any) {
 //admin , student 
   // Get enrolled courses for a user
   @Get(':id/enrolled-courses')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin' as Role, 'student' as Role)
   async getEnrolledCourses(@Param('id') userId: string) {
     try {
       return await this.userService.getEnrolledCourses(userId);
@@ -104,6 +111,8 @@ async updateUserProfile(@Param('id') userId: string, @Body() updateData: any) {
 //admin , student
   // Get completed courses for a user
   @Get(':id/completed-courses')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('admin' as Role, 'student' as Role)
   async getCompletedCourses(@Param('id') userId: string) {
     try {
       return await this.userService.getCompletedCourses(userId);
@@ -156,6 +165,8 @@ async deleteAccount(@Param('role') role: string, @Param('id') userId: string) {
 
 //admin , instrctor
 @Post(':instructorId/enroll-student/:studentId/:courseId')
+@UseGuards(AuthGuard, RolesGuard)
+@Roles('instructor' as Role, 'admin' as Role)
   async enrollStudentInCourse(
     @Param('instructorId') instructorId: string,
     @Param('studentId') studentId: string,
