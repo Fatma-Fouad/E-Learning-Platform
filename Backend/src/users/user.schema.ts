@@ -17,7 +17,7 @@ export class User {
   @Prop({ type: [String], default: [] })
   completed_courses: string[];
 
-  @Prop({ required: true  })
+  @Prop({ required: true, enum: ['student', 'instructor', 'admin'] })
   role: string;
 
 @Prop({ default: () => new Date()})
@@ -28,6 +28,10 @@ export class User {
 
   @Prop({  required: false })
   profile_picture_url: string;
+
+  @Prop({ type: Number, default: 0 }) // Add average_score attribute
+  gpa: number;
+
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
