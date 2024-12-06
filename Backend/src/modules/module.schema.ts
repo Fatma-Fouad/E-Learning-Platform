@@ -21,6 +21,9 @@ export class modules {
 
   @Prop({ type: Number, default: 0, required: true })
   module_rating: number;
+
+  @Prop({ type: Number, required: true, unique: true, min: 1 })
+  module_order: number;
 }
 
 export const ModuleSchema = SchemaFactory.createForClass(modules);

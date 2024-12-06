@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { ProgressDocument } from './progress.schema';
+import { progress, ProgressDocument } from './progress.schema';
 import { CourseDocument } from '../../courses/course.schema';
 import { ModuleDocument } from '../../modules/module.schema';
 
@@ -82,63 +82,60 @@ async getStudentsEngagementReport(courseId: string) {
 
 // Reports on Content Effectiveness; Ratings
 async getContentEffectivenessReport(courseId: string) {
-    const course = await this.courseModel.findById(courseId).populate('modules').exec();
-    if (!course) throw new NotFoundException('Course not found.');
-  
-    const modules = await this.moduleModel.find({ course_id: courseId }).exec();
-    if (!modules.length) throw new NotFoundException('No modules found for this course.');
-  
-    const validModuleRatings = modules
-      .map((module) => module.module_rating)
-      .filter((rating) => rating !== null);
-    const totalRatings = validModuleRatings.reduce((sum, rating) => sum + rating, 0);
-    const averageCourseRating =
-      validModuleRatings.length > 0 ? totalRatings / validModuleRatings.length : 0;
-  
-    const modulePerformance = {
-      below_average: [],
-      average: [],
-      above_average: [],
-      excellent: [],
-    };
-  
-    const baselineRating = averageCourseRating;
-  
-    modules.forEach((module) => {
-      const moduleRating = module.module_rating ?? 0;
-      if (moduleRating < baselineRating * 0.5) {
-        modulePerformance.below_average.push({
-          moduleId: module._id,
-          moduleName: module.title,
-          rating: moduleRating,
-        });
-      } else if (moduleRating >= baselineRating * 0.5 && moduleRating < baselineRating) {
-        modulePerformance.average.push({
-          moduleId: module._id,
-          moduleName: module.title,
-          rating: moduleRating,
-        });
-      } else if (moduleRating >= baselineRating && moduleRating < baselineRating * 1.2) {
-        modulePerformance.above_average.push({
-          moduleId: module._id,
-          moduleName: module.title,
-          rating: moduleRating,
-        });
-      } else if (moduleRating >= baselineRating * 1.2) {
-        modulePerformance.excellent.push({
-          moduleId: module._id,
-          moduleName: module.title,
-          rating: moduleRating,
-        });
-      }
-    });
-  
+  // Fetch the course details
+  const course = await this.courseModel.findById(courseId).exec();
+  if (!course) throw new NotFoundException('Course not found.');
+
+  // Fetch all modules associated with the course and sort them by `module_order`
+  const modules = await this.moduleModel.find({ course_id: courseId }).sort({ module_order: 1 }).exec();
+  if (!modules.length) throw new NotFoundException('No modules found for this course.');
+
+  // Calculate average course rating
+  const validModuleRatings = modules
+    .map((module) => module.module_rating)
+    .filter((rating) => rating !== null); // Exclude null ratings
+
+  const totalRatings = validModuleRatings.reduce((sum, rating) => sum + rating, 0);
+  const averageCourseRating =
+    validModuleRatings.length > 0 ? totalRatings / validModuleRatings.length : 0;
+
+  // Prepare detailed module data
+  const moduleDetails = modules.map((module) => {
+    const moduleRating = module.module_rating ?? 0;
+    let performanceMetric: string;
+
+    // Determine performance category for the module
+    if (moduleRating < averageCourseRating * 0.5) {
+      performanceMetric = 'Below Average';
+    } else if (moduleRating >= averageCourseRating * 0.5 && moduleRating < averageCourseRating) {
+      performanceMetric = 'Average';
+    } else if (moduleRating >= averageCourseRating && moduleRating < averageCourseRating * 1.2) {
+      performanceMetric = 'Above Average';
+    } else {
+      performanceMetric = 'Excellent';
+    }
+
     return {
-      courseRating: parseFloat(averageCourseRating.toFixed(2)) || 'No rating yet',
-      instructorRating: course.instructor_rating || 'No rating yet',
-      modulePerformance,
+      title: `Module ${module.module_order}`, // Title for each module based on its order
+      details: {
+        moduleId: module._id,
+        moduleName: module.title,
+        moduleOrder: module.module_order,
+        moduleRating: module.module_rating || 'No rating yet',
+        performanceMetric,
+      },
     };
-  }
+  });
+
+  // Compile the final report
+  return {
+    courseRating: parseFloat(averageCourseRating.toFixed(2)) || 'No rating yet',
+    instructorRating: course.instructor_rating || 'No rating yet',
+    modules: moduleDetails, // Each module with its title
+  };
+}
+
+
   
 
 
@@ -188,62 +185,60 @@ async getQuizResultsReport(courseId: string) {
 
   
 
-// Student Detailed Report
-async getStudentReport(studentId: string) {
-    // Fetch all progress records for the student
-    const studentProgress = await this.progressModel.find({ user_id: studentId }).exec();
-    if (!studentProgress || studentProgress.length === 0) {
-        throw new NotFoundException(`No progress data found for student with ID: ${studentId}.`);
-    }
-  
-    // Map over the progress records to generate a detailed report for each course
-    const courseReports = await Promise.all(
-        studentProgress.map(async (progress) => {
-            // Fetch the course associated with the progress
-            const course = await this.courseModel.findById(progress.course_id).exec();
-            if (!course) {
-                throw new NotFoundException(`Course with ID: ${progress.course_id} not found.`);
-            }
-  
-            // Fetch modules for the course
-            const modules = await this.moduleModel.find({ course_id: course._id }).exec();
-  
-            // Process module ratings
-            const moduleRatings = modules.map((module) => ({
-                moduleId: module._id,
-                moduleName: module.title,
-                rating: module.module_rating || 'No rating yet',
-            }));
-  
-            // Quiz details from progress
-            const quizzesTaken = progress.quizzes_taken || 0;
-            const lastQuizScore = progress.last_quiz_score || 0;
-            const avgScore = progress.avg_score || 0;
-  
-            // Prepare course-specific report
-            return {
-                courseId: course._id,
-                courseName: course.title,
-                courseRating: course.course_rating || 'No rating yet',
-                instructorRating: course.instructor_rating || 'No rating yet',
-                progress: {
-                    completionPercentage: progress.completion_percentage,
-                    quizzesTaken,
-                    lastQuizScore,
-                    avgScore,
-                },
-                moduleRatings,
-            };
-        })
-    );
-  
-    // Compile the full student report
-    return {
-        studentId,
-        totalCourses: courseReports.length,
-        courses: courseReports,
-    };
+async getStudentReport(userId: string) {
+  // Fetch all progress records for the student
+  const studentProgress = await this.progressModel.find({ user_id: userId }).exec();
+  if (!studentProgress || studentProgress.length === 0) {
+    throw new NotFoundException(`No progress data found for student with ID: ${userId}.`);
   }
+
+  // Extract the student's name from the first progress record
+  const studentName = studentProgress[0].user_name;
+
+  // Map over the progress records to generate a detailed report for each course
+  const courseReports = await Promise.all(
+    studentProgress.map(async (progress) => {
+      // Fetch the course associated with the progress
+      const course = await this.courseModel.findById(progress.course_id).exec();
+      if (!course) {
+        throw new NotFoundException(`Course with ID: ${progress.course_id} not found.`);
+      }
+
+      // Quiz details from progress
+      const quizzesTaken = progress.quizzes_taken || 0;
+      const lastQuizScore = progress.last_quiz_score || 0;
+      const avgScore = progress.avg_score || 0;
+
+      // Process quiz grades
+      const quizGradesDetails = (progress.quiz_grades || []).map((grade, index) => ({
+        quizNumber: index + 1, // Quiz number (1-based)
+        grade: grade !== null ? grade : 'Not Attempted', // Show "Not Attempted" if null
+      }));
+
+      // Prepare course-specific report
+      return {
+        courseId: course._id,
+        courseName: course.title,
+        progress: {
+          completionPercentage: progress.completion_percentage,
+          quizzesTaken,
+          lastQuizScore,
+          avgScore,
+        },
+        quizGrades: quizGradesDetails, // Include detailed quiz grades
+      };
+    })
+  );
+
+  // Compile the full student report
+  return {
+    userId,
+    studentName, // Use the user_name from progress records
+    totalCourses: courseReports.length,
+    courses: courseReports,
+  };
+}
+
 
 
 }

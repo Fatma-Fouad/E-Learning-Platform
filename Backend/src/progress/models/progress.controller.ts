@@ -56,6 +56,8 @@ export class ProgressController {
   }
  }
 
+
+  // Individual Student Report
   @Get('student-reports/:studentId')
   async getStudentReport(@Param('studentId') studentId: string) {
     try {
