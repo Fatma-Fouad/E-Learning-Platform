@@ -105,7 +105,7 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
    
 
 
-  async addCourseToEnrolled(userId: string, courseId: string): Promise<User> {
+  async addCourseToEnrolled(userId: string, courseId: string): Promise<{ user: User; recommendedCourses: string[] }> {
     // Validate userId and courseId
     if (!userId.match(/^[0-9a-fA-F]{24}$/) || !courseId.match(/^[0-9a-fA-F]{24}$/)) {
       throw new BadRequestException('Invalid user ID or course ID format');
@@ -130,6 +130,12 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
   
     // Add the course to the user's enrolled courses
     user.enrolled_courses.push(courseId);
+  
+    // Remove the course from the user's recommended_courses if it exists
+    user.recommended_courses = user.recommended_courses.filter(
+      (recommendedCourse) => recommendedCourse !== courseId
+    );
+  
     await user.save();
   
     // Increment the course's enrolled_students count without triggering validation
@@ -157,51 +163,105 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
     });
     await progress.save();
   
-    return user;
+    // Recommend new courses based on the user's enrolled courses
+    const enrolledCourseIds = user.enrolled_courses;
+    const enrolledCourses = await this.courseModel
+      .find({ _id: { $in: enrolledCourseIds } })
+      .exec();
+    const enrolledCategories = enrolledCourses.map((c) => c.category);
+  
+    const recommendedCourses = await this.courseModel
+      .find({
+        category: { $in: enrolledCategories }, // Match enrolled categories
+        _id: { $nin: [...enrolledCourseIds, ...user.recommended_courses] }, // Exclude already enrolled or recommended
+      })
+      .exec();
+  
+    // Extract IDs of recommended courses
+    const recommendedCourseIds = recommendedCourses.map((c) => c._id.toString());
+  
+    // Update the user's recommended_courses
+    user.recommended_courses.push(...recommendedCourseIds);
+    await user.save();
+  
+    return {
+      user,
+      recommendedCourses: recommendedCourseIds,
+    };
   }
+  
+  
   
  
 
-  // Delete from enrolled courses
-async removeEnrolledCourse(userId: string, courseId: string): Promise<User> {
-  // Validate userId and courseId format
-  if (!userId.match(/^[0-9a-fA-F]{24}$/) || !courseId.match(/^[0-9a-fA-F]{24}$/)) {
-    throw new BadRequestException('Invalid user ID or course ID format');
+  async removeEnrolledCourse(userId: string, courseId: string): Promise<User> {
+    // Validate userId and courseId format
+    if (!userId.match(/^[0-9a-fA-F]{24}$/) || !courseId.match(/^[0-9a-fA-F]{24}$/)) {
+      throw new BadRequestException('Invalid user ID or course ID format');
+    }
+  
+    // Convert courseId to ObjectId
+    const courseObjectId = new mongoose.Types.ObjectId(courseId);
+  
+    // Check if the user exists
+    const user = await this.userModel.findById(userId).exec();
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+  
+    // Check if the course exists
+    const course = await this.courseModel.findById(courseId).exec();
+    if (!course) {
+      throw new NotFoundException('This course is not in our system');
+    }
+  
+    // Check if the course is in the user's enrolled courses
+    const enrolledCoursesAsObjectIds = user.enrolled_courses.map(id => new mongoose.Types.ObjectId(id));
+    if (!enrolledCoursesAsObjectIds.some(id => id.equals(courseObjectId))) {
+      throw new BadRequestException('The course is not in the user\'s enrolled courses');
+    }
+  
+    // Remove the course from the user's enrolledCourses array
+    user.enrolled_courses = user.enrolled_courses.filter(
+      enrolledCourse => !new mongoose.Types.ObjectId(enrolledCourse).equals(courseObjectId)
+    );
+  
+    // Handle recommended_courses logic
+    // Find the category of the removed course
+    const removedCourseCategory = course.category;
+  
+    // Check if the user is still enrolled in any courses of the same category
+    const stillEnrolledInCategory = await this.courseModel.exists({
+      _id: { $in: user.enrolled_courses },
+      category: removedCourseCategory,
+    });
+  
+    if (!stillEnrolledInCategory) {
+      // If no other courses of the same category are enrolled, remove recommendations of this category
+      user.recommended_courses = await this.courseModel
+        .find({
+          _id: { $in: user.recommended_courses.map(id => new mongoose.Types.ObjectId(id)) },
+          category: removedCourseCategory,
+        })
+        .then(recommendedCourses => {
+          const recommendedIdsToRemove = recommendedCourses.map(c => c._id.toString());
+          return user.recommended_courses.filter(
+            recommendedId => !recommendedIdsToRemove.includes(recommendedId)
+          );
+        });
+    }
+  
+    // Save the updated user document
+    await user.save();
+  
+    // Decrement the course's enrolled_students count
+    course.enrolled_students = Math.max(0, (course.enrolled_students || 0) - 1); // Ensure it doesn't go below 0
+    await course.save();
+  
+    return user;
   }
-
-  // Convert courseId to ObjectId
-  const courseObjectId = new mongoose.Types.ObjectId(courseId);
-
-  // Check if the user exists
-  const user = await this.userModel.findById(userId).exec();
-  if (!user) {
-    throw new NotFoundException('User not found');
-  }
-
-  // Check if the course exists
-  const course = await this.courseModel.findById(courseId).exec();
-  if (!course) {
-    throw new NotFoundException('This course is not in our system');
-  }
-
-  // Check if the course is in the user's enrolled courses
-  const enrolledCoursesAsObjectIds = user.enrolled_courses.map(id => new mongoose.Types.ObjectId(id));
-  if (!enrolledCoursesAsObjectIds.some(id => id.equals(courseObjectId))) {
-    throw new BadRequestException('The course is not in the user\'s enrolled courses');
-  }
-
-  // Remove the course from the user's enrolledCourses array
-  user.enrolled_courses = user.enrolled_courses.filter(
-    enrolledCourse => !new mongoose.Types.ObjectId(enrolledCourse).equals(courseObjectId)
-  );
-  await user.save();
-
-  // Decrement the course's enrolled_students count
-  course.enrolled_students = Math.max(0, (course.enrolled_students || 0) - 1); // Ensure it doesn't go below 0
-  await course.save();
-
-  return user;
-}
+  
+  
 
   //admin
   async createUser(createUserDto: Partial<User>): Promise<User> {
@@ -232,7 +292,7 @@ async removeEnrolledCourse(userId: string, courseId: string): Promise<User> {
     userId: string, // Can be instructor or admin
     studentId: string,
     courseId: string,
-  ): Promise<string> {
+  ): Promise<{ message: string; recommendedCourses: string[] }> {
     // Validate user (instructor or admin)
     const user = await this.userModel.findById(userId).exec();
     if (!user || (user.role !== 'instructor' && user.role !== 'admin')) {
@@ -260,6 +320,12 @@ async removeEnrolledCourse(userId: string, courseId: string): Promise<User> {
   
     // Enroll the student in the course
     student.enrolled_courses.push(courseId);
+  
+    // Remove the course from the student's recommended_courses if it exists
+    student.recommended_courses = student.recommended_courses.filter(
+      (recommendedCourse) => recommendedCourse !== courseId
+    );
+  
     await student.save();
   
     // Increment the course's enrolled_students count
@@ -285,10 +351,33 @@ async removeEnrolledCourse(userId: string, courseId: string): Promise<User> {
     });
     await progress.save();
   
-    return 'Student successfully enrolled in the course.';
+    // Recommend new courses based on the student's enrolled courses
+    const enrolledCourseIds = student.enrolled_courses;
+    const enrolledCourses = await this.courseModel
+      .find({ _id: { $in: enrolledCourseIds } })
+      .exec();
+    const enrolledCategories = enrolledCourses.map((c) => c.category);
+  
+    const recommendedCourses = await this.courseModel
+      .find({
+        category: { $in: enrolledCategories }, // Match enrolled categories
+        _id: { $nin: [...enrolledCourseIds, ...student.recommended_courses] }, // Exclude already enrolled or recommended
+      })
+      .exec();
+  
+    // Extract IDs of recommended courses
+    const recommendedCourseIds = recommendedCourses.map((c) => c._id.toString());
+  
+    // Update the student's recommended_courses
+    student.recommended_courses.push(...recommendedCourseIds);
+    await student.save();
+  
+    return {
+      message: 'Student successfully enrolled in the course.',
+      recommendedCourses: recommendedCourseIds,
+    };
   }
   
-
 
 
   

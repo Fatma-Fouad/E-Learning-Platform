@@ -32,6 +32,10 @@ export class User {
   @Prop({ type: Number, default: 0 }) // Add average_score attribute
   gpa: number;
 
+  @Prop({ type: [String], default: [] })
+  recommended_courses: string[];
+
+
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
