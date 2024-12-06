@@ -12,15 +12,15 @@ export class User {
   email: string;
 
   @Prop({ type: [String], default: [] }) // Ensure `enrolledCourses` is an array of strings
-  enrolledCourses: string[];
+  enrolled_courses: string[];
 
   @Prop({ type: [String], default: [] })
-  completedCourses: string[];
+  completed_courses: string[];
 
   @Prop({ type: [String], default: [] })
   role: string[];
 
-@Prop({ type: [Date], default: [] })
+  @Prop({ type: [Date], default: [] })
   created_at: Date[];
 
   @Prop({ type: [String], default: [] })

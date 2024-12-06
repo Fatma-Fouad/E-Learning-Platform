@@ -70,5 +70,5 @@ export class ProgressController {
       }
       throw new InternalServerErrorException(`An unexpected error occurred while fetching the student report: ${error.message}`);
     }
-  }
+  }w
 }
