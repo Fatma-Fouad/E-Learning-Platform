@@ -7,7 +7,7 @@ import { Types } from 'mongoose';
 import { courses, CourseDocument } from '../courses/course.schema';
 import mongoose from 'mongoose';
 
-
+// hana
 @Injectable()
 export class UserService {
     constructor(
@@ -17,7 +17,7 @@ export class UserService {
       
     ) {}
     //admin
-  async getAllUsers(): Promise<User[]> {
+  async getAllUsers(): Promise<UserDocument[]> {
     try {
       const users = await this.userModel.find().exec();
       return users;
@@ -77,7 +77,7 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    return user.enrolledCourses;
+    return user.enrolled_courses;
   }
 
   // Fetch completed courses
@@ -90,7 +90,7 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    return user.completedCourses;
+    return user.completed_courses;
   }
 
   async addCourseToEnrolled(userId: string, courseId: string): Promise<User> {
@@ -112,12 +112,12 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
     }
   
     // Check if the course is already enrolled
-    if (user.enrolledCourses.includes(courseId)) {
+    if (user.enrolled_courses.includes(courseId)) {
       throw new BadRequestException('This course is already enrolled');
     }
   
     // Add the course to the user's enrolled courses
-    user.enrolledCourses.push(courseId);
+    user.enrolled_courses.push(courseId);
     await user.save();
   
     // Increment the course's enrolled_students count
@@ -152,13 +152,13 @@ async removeEnrolledCourse(userId: string, courseId: string): Promise<User> {
   }
 
   // Check if the course is in the user's enrolled courses
-  const enrolledCoursesAsObjectIds = user.enrolledCourses.map(id => new mongoose.Types.ObjectId(id));
+  const enrolledCoursesAsObjectIds = user.enrolled_courses.map(id => new mongoose.Types.ObjectId(id));
   if (!enrolledCoursesAsObjectIds.some(id => id.equals(courseObjectId))) {
     throw new BadRequestException('The course is not in the user\'s enrolled courses');
   }
 
   // Remove the course from the user's enrolledCourses array
-  user.enrolledCourses = user.enrolledCourses.filter(
+  user.enrolled_courses = user.enrolled_courses.filter(
     enrolledCourse => !new mongoose.Types.ObjectId(enrolledCourse).equals(courseObjectId)
   );
   await user.save();
@@ -196,8 +196,20 @@ async removeEnrolledCourse(userId: string, courseId: string): Promise<User> {
   }
 
 
-
-
-  
+// fatma
+  // Get a student by ID
+  async findById(id: string): Promise<UserDocument> {
+    console.log(id)
+    const student=  await this.userModel.findById(id);  // Fetch a student by ID
+    return student
+  }
+ 
+  async findByName(username: string):Promise<UserDocument> {
+    return await this.userModel.findOne({username});  // Fetch a student by username
+  }
+  async findByEmail(email: string):Promise<UserDocument> {
+    const user=await this.userModel.findOne({email}).exec();
+    return user;  // Fetch a student by username
+  }
   
 }

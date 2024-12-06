@@ -128,6 +128,8 @@ async removeEnrolledCourse(
 
 
 // Create a new account (student/instructor) - admin
+@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+@Roles('admin' as Role)  // Only admins can access this route
 @Post('/accounts/:role')
 async createAccount(@Param('role') role: string, @Body() createUserDto: any) {
   try {
@@ -138,6 +140,8 @@ async createAccount(@Param('role') role: string, @Body() createUserDto: any) {
 }
 
 // Update an existing account -admin
+@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+@Roles('admin' as Role)  // Only admins can access this route
 @Put('/accounts/:role/:id')
 async updateAccount(
   @Param('role') role: string,
@@ -152,6 +156,8 @@ async updateAccount(
 }
 
 // Delete an account - admin
+@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+@Roles('admin' as Role)  // Only admins can access this route
 @Delete('/accounts/:role/:id')
 async deleteAccount(@Param('role') role: string, @Param('id') userId: string) {
   try {

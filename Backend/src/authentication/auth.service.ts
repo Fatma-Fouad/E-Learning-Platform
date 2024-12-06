@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
-import { UsersService } from '../users/user.service';
+import { UserService } from '../users/user.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { RegisterUserDto } from '../users/registeruser.dto';
@@ -7,18 +7,33 @@ import { ObjectId, Types } from 'mongoose';
 @Injectable()
 export class AuthService {
     constructor(
-        private usersService: UsersService,
+        private usersService: UserService,
         private jwtService: JwtService
     ) { }
-    async register(user: RegisterUserDto): Promise<string> {
+
+      async register(user: RegisterUserDto): Promise<string> {
         const existingUser = await this.usersService.findByEmail(user.email);
         if (existingUser) {
-          throw new ConflictException('email already exists');
+          throw new ConflictException('Email already exists');
         }
+        
         const hashedPassword = await bcrypt.hash(user.password, 10);
-        const newUser: RegisterUserDto = { ...user, password: hashedPassword };
-        await this.usersService.create(newUser);
-        return 'registered successfully';
+        
+        // Initialize role-specific attributes
+        if (user.role === 'student') {
+          // Initialize courses for students
+          user.enrolled_courses = [];
+          user.completed_courses = [];
+        }else if(user.role === 'instructor'){
+          // Initialize courses for instructors
+          
+        }
+        
+        const newUser = { ...user, password_hash: hashedPassword};
+        console.log('New user to be saved:', newUser);
+        await this.usersService.createUser(newUser);
+      
+        return 'User registered successfully';
       }
 
     async signIn(email: string, password: string): Promise< {access_token:string,payload:{userid:Types.ObjectId,role:string}}> {
@@ -33,7 +48,7 @@ export class AuthService {
             throw new UnauthorizedException('Invalid credentials');
           }
 
-        const payload = { userid: user._id, role: user.role };
+        const payload = { userid: user._id as Types.ObjectId, role: user.role };
 
         return {
             access_token: await this.jwtService.signAsync(payload),

@@ -1,20 +1,11 @@
 import { IsEmail, IsNotEmpty, IsString, IsEnum } from 'class-validator';
+import { courses } from 'src/courses/course.schema';
 
 export class RegisterUserDto {
-  @IsNotEmpty()
-  @IsString()
-  name: string;
-
-  @IsNotEmpty()
-  @IsEmail()
-  email: string;
-
-  @IsNotEmpty()
-  @IsString()
-  password: string;
-
-  @IsNotEmpty()
-  @IsString()
-  @IsEnum(['student', 'instructor', 'admin'])
-  role: string;
+    email:string;
+    name: string;
+    role:string;
+    password:string;
+    enrolled_courses?: string[];
+    completed_courses?: string[];
 }
