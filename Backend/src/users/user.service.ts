@@ -6,11 +6,13 @@ import { ResponseDocument, ResponseSchema } from '../responses/response.schema';
 import { Types } from 'mongoose';
 import { courses, CourseDocument } from '../courses/course.schema';
 import mongoose from 'mongoose';
+import { ProgressDocument } from '../progress/models/progress.schema';
 
 
 @Injectable()
 export class UserService {
     constructor(
+       @InjectModel('progress') private readonly progressModel: Model<ProgressDocument>,
         @InjectModel(User.name) private userModel: Model<UserDocument>,
         @InjectModel('responses') private responseModel: Model<ResponseDocument>, // Inject the responses model
         @InjectModel(courses.name) private courseModel: Model<CourseDocument>, // Inject the courses model
@@ -77,7 +79,7 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    return user.enrolledCourses;
+    return user.enrolled_courses;
   }
 
   // Fetch completed courses
@@ -90,8 +92,9 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    return user.completedCourses;
+    return user.completed_courses;
   }
+
 
   async addCourseToEnrolled(userId: string, courseId: string): Promise<User> {
     // Validate userId and courseId
@@ -112,20 +115,44 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
     }
   
     // Check if the course is already enrolled
-    if (user.enrolledCourses.includes(courseId)) {
+    if (user.enrolled_courses.includes(courseId)) {
       throw new BadRequestException('This course is already enrolled');
     }
   
     // Add the course to the user's enrolled courses
-    user.enrolledCourses.push(courseId);
+    user.enrolled_courses.push(courseId);
     await user.save();
   
-    // Increment the course's enrolled_students count
-    course.enrolled_students = (course.enrolled_students || 0) + 1;
-    await course.save();
+    // Increment the course's enrolled_students count without triggering validation
+    await this.courseModel.updateOne(
+      { _id: courseId },
+      { $inc: { enrolled_students: 1 } } // Increment enrolled_students count
+    ).exec();
+  
+    // Initialize quiz_grades based on nom_of_modules
+    const numOfModules = course.nom_of_modules || 0;
+    const quizGrades = Array(numOfModules).fill(null);
+  
+    // Create progress for this course
+    const progress = new this.progressModel({
+      user_id: userId,
+      user_name: user.name,
+      course_id: courseId,
+      course_name: course.title,
+      completed_modules: 0,
+      completion_percentage: 0,
+      quizzes_taken: 0,
+      quiz_grades: quizGrades,
+      last_quiz_score: null,
+      avg_score: null,
+    });
+    await progress.save();
   
     return user;
   }
+  
+
+
   
  
 
@@ -152,13 +179,13 @@ async removeEnrolledCourse(userId: string, courseId: string): Promise<User> {
   }
 
   // Check if the course is in the user's enrolled courses
-  const enrolledCoursesAsObjectIds = user.enrolledCourses.map(id => new mongoose.Types.ObjectId(id));
+  const enrolledCoursesAsObjectIds = user.enrolled_courses.map(id => new mongoose.Types.ObjectId(id));
   if (!enrolledCoursesAsObjectIds.some(id => id.equals(courseObjectId))) {
     throw new BadRequestException('The course is not in the user\'s enrolled courses');
   }
 
   // Remove the course from the user's enrolledCourses array
-  user.enrolledCourses = user.enrolledCourses.filter(
+  user.enrolled_courses = user.enrolled_courses.filter(
     enrolledCourse => !new mongoose.Types.ObjectId(enrolledCourse).equals(courseObjectId)
   );
   await user.save();
