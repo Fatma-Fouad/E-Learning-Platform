@@ -105,6 +105,7 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
    
 
 
+
   async addCourseToEnrolled(userId: string, courseId: string): Promise<User> {
     // Validate userId and courseId
     if (!userId.match(/^[0-9a-fA-F]{24}$/) || !courseId.match(/^[0-9a-fA-F]{24}$/)) {
@@ -159,6 +160,9 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
   
     return user;
   }
+  
+
+
   
  
 

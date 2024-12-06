@@ -20,7 +20,7 @@ export class User {
   @Prop({ required: true, enum: ['student', 'instructor', 'admin'] })
   role: string;
 
-@Prop({ default: () => new Date()})
+  @Prop({ default: () => new Date()})
   created_at: Date;
 
   @Prop({  required: true })
