@@ -26,6 +26,9 @@ export class users {
 
   @Prop({ type: [String], default: [] })
   completed_courses?: string[];
+
+  @Prop({ type: Number, default: 0 }) // Add average_score attribute
+  gpa: number;
 }
 
 export const UserSchema = SchemaFactory.createForClass(users);
