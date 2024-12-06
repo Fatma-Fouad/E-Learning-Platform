@@ -29,6 +29,8 @@ export class User {
   @Prop({ type: [String], default: [] })
   profile_picture_url: string[];
 
+  @Prop({ type: Number, default: 0 }) // Add average_score attribute
+  gpa: number;
 
 }
 
