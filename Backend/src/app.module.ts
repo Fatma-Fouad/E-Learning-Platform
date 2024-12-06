@@ -5,7 +5,6 @@ import { AppService } from './app.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { QuizModule } from './quizzes/quiz.module';
 import { QuestionBankModule } from './questionbank/questionbank.module';
-
 import { CourseModule } from './courses/course.module';
 import { ModulesModule } from './modules/module.module';
 import { UserModule } from './users/user.module';

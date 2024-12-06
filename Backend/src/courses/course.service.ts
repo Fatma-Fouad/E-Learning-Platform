@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model } from 'mongoose';
 import { courses } from './course.schema';
-import { users } from 'src/users/user.schema';
+import { User } from 'src/users/user.schema';
 import { progress } from '../progress/models/progress.schema';
 import { CreateCourseDto } from './CreateCourseDto';
 import { RateCourseDto } from './RateCourseDto';
@@ -17,7 +17,7 @@ import { NotificationGateway } from '../communication/notifications/notification
 export class CoursesService {
   constructor(
     @InjectModel('courses') private courseModel: Model<courses>,
-    @InjectModel('users') private userModel: Model<users>,
+    @InjectModel('users') private userModel: Model<User>,
     @InjectModel('modules') private moduleModel: Model<modules>,
     private readonly notificationGateway: NotificationGateway // Inject NotificationGateway
   ) { }

@@ -3,13 +3,13 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model } from 'mongoose';
 import { Chat, ChatDocument, Message } from './chats.schema';
-import { users, UserDocument } from './../../users/user.schema';
+import { User, UserDocument } from './../../users/user.schema';
 
 @Injectable()
 export class ChatService {
     constructor(
         @InjectModel(Chat.name) private readonly chatModel: Model<ChatDocument>,
-        @InjectModel(users.name) private userModel: Model<UserDocument>
+        @InjectModel(User.name) private userModel: Model<UserDocument>
     ) { }
 
     async getAllChats(): Promise<Chat[]> {

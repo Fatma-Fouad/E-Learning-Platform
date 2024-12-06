@@ -7,6 +7,8 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { NotificationService } from './notification.service';
+import { forwardRef, Inject } from '@nestjs/common';
+
 
 @WebSocketGateway({
     cors: {
@@ -16,8 +18,11 @@ import { NotificationService } from './notification.service';
 export class NotificationGateway {
     @WebSocketServer()
     server: Server;
-
-    constructor(public readonly notificationService: NotificationService) { } // Change to public
+    constructor(
+    @Inject(forwardRef(() => NotificationService))
+    public readonly notificationService: NotificationService
+        
+    ) { } // Change to public
 
     /**
      * Send a notification in real-time to specific users.

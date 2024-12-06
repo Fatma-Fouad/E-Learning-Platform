@@ -6,13 +6,13 @@ import { Forum, ForumSchema } from './fourms.schema';
 import { NotificationGateway } from '../notifications/notificationGateway'; // Import the NotificationGateway
 import { NotificationService } from '../notifications/notification.service'; // Import NotificationService
 import { Notification, NotificationSchema } from '../notifications/notifications.schema'; // Import Notification schema
-import { users, UserSchema } from '../../users/user.schema'; // Import users schema
+import { User, UserSchema } from '../../users/user.schema'; // Import users schema
 
 @Module({
     imports: [
         MongooseModule.forFeature([
             { name: 'Forum', schema: ForumSchema },
-            { name: users.name, schema: UserSchema },
+            { name: User.name, schema: UserSchema },
             { name: 'Notification', schema: NotificationSchema }, // Include Notification schema
         ]),
     ],

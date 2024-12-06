@@ -4,21 +4,24 @@ import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model } from 'mongoose';
 import { Forum } from './fourms.schema';
 import { NotificationGateway } from '../notifications/notificationGateway';
-import { users, UserSchema } from '../../users/user.schema';
+import { User, UserSchema } from '../../users/user.schema';
 
 
 @Injectable()
 export class ForumsService {
     constructor(
         @InjectModel(Forum.name) private forumModel: Model<Forum>,
-        @InjectModel(users.name) private userModel: Model<users>, // Inject user model
+        @InjectModel(User.name) private userModel: Model<User>, // Inject user model
         private readonly notificationGateway: NotificationGateway // Inject NotificationGateway
     ) { }
 
+
+    //retrieving all forums in the database 
     async getAllForums(): Promise<Forum[]> {
         return this.forumModel.find().exec();
     }
 
+    //adding a new forum 
     async addForum(courseId: string, courseName: string, createdBy: string): Promise<any> {
         try {
             // Validate the `createdBy` field
@@ -54,27 +57,6 @@ export class ForumsService {
     }
 
 
-
-
-    //getforumsByCourseId
-    /* async getForumByCourseId(courseId: string): Promise<Forum | null> {
-         console.log('Received courseId in service:', courseId); // Log the raw courseId before processing
- 
-         try {
-             if (!mongoose.Types.ObjectId.isValid(courseId)) {
-                 console.error('Invalid ObjectId format:', courseId); // Log invalid format
-                 throw new Error('Invalid ObjectId format');
-             }
- 
-             const objectId = new mongoose.Types.ObjectId(courseId);
-             console.log('Searching for forum with ObjectId:', objectId); // Log the converted ObjectId
- 
-             return await this.forumModel.findOne({ courseId: objectId }).exec();
-         } catch (error) {
-             console.error('Error in getForumByCourseId:', error.message);
-             throw error;
-         }
-     }*/
     //add thread
     async addThread(courseId: string, thread: any): Promise<any> {
         try {
@@ -90,7 +72,7 @@ export class ForumsService {
         }
     }
 
-    //add replay
+    //add reply
     async addReply(courseId: string, threadId: string, reply: any): Promise<any> {
         try {
             const courseObjectId = new mongoose.Types.ObjectId(courseId);
@@ -155,7 +137,24 @@ export class ForumsService {
         }
     }
 
+    //searching for the course first 
+    async searchCourses(searchTerm: string): Promise<any> {
+        try {
+            const regex = new RegExp(searchTerm, 'i'); // Case-insensitive regex
+            console.log('Search Term Regex for Courses:', regex);
 
+            // Query the database for matching courses
+            const results = await this.forumModel.find({
+                courseName: { $regex: searchTerm, $options: 'i' }, // Searching in course names
+            }).exec();
+
+            console.log('Course Search Results:', results);
+            return results;
+        } catch (error) {
+            console.error('Error during course search:', error.message);
+            throw new Error('Unable to perform course search.');
+        }
+    }
 
 
     // Search forums by thread title
@@ -213,23 +212,8 @@ export class ForumsService {
         }
     }
 
-    async searchCourses(searchTerm: string): Promise<any> {
-        try {
-            const regex = new RegExp(searchTerm, 'i'); // Case-insensitive regex
-            console.log('Search Term Regex for Courses:', regex);
 
-            // Query the database for matching courses
-            const results = await this.forumModel.find({
-                courseName: { $regex: searchTerm, $options: 'i' }, // Searching in course names
-            }).exec();
-
-            console.log('Course Search Results:', results);
-            return results;
-        } catch (error) {
-            console.error('Error during course search:', error.message);
-            throw new Error('Unable to perform course search.');
-        }
-    }
+    
 
     //delete a forum (has to be an insturctor )
     async deleteForum(courseId: string, userId: string): Promise<any> {
@@ -366,6 +350,25 @@ export class ForumsService {
 
 
 
+//getforumsByCourseId
+/* async getForumByCourseId(courseId: string): Promise<Forum | null> {
+     console.log('Received courseId in service:', courseId); // Log the raw courseId before processing
+ 
+     try {
+         if (!mongoose.Types.ObjectId.isValid(courseId)) {
+             console.error('Invalid ObjectId format:', courseId); // Log invalid format
+             throw new Error('Invalid ObjectId format');
+         }
+ 
+         const objectId = new mongoose.Types.ObjectId(courseId);
+         console.log('Searching for forum with ObjectId:', objectId); // Log the converted ObjectId
+ 
+         return await this.forumModel.findOne({ courseId: objectId }).exec();
+     } catch (error) {
+         console.error('Error in getForumByCourseId:', error.message);
+         throw error;
+     }
+ }*/
 // now student can search for a specific course then he will get all threads in that course 
 // student can search for a specific thread then he will get the thread details(only the one he searched for)
 

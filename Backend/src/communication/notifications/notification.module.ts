@@ -5,14 +5,25 @@ import { NotificationService } from './notification.service';
 import { NotificationGateway } from './notificationGateway';
 import { NotificationController } from './notifications.controller';
 import { ChatModule } from '.././chats/chats.module'; // Import ChatModule
+import { User, UserSchema } from '../../users/user.schema'; // Import users schema
+import { UserModule } from 'src/users/user.module';
 
 @Module({
     imports: [
-        MongooseModule.forFeature([{ name: Notification.name, schema: NotificationSchema }]),
-        forwardRef(() => ChatModule), // Use forwardRef to avoid circular dependency
+        MongooseModule.forFeature([
+            { name: Notification.name, schema: NotificationSchema },
+            { name: User.name, schema: UserSchema },
+        ]),
+        forwardRef(() => ChatModule), // Avoid circular dependency
     ],
-    providers: [NotificationService, NotificationGateway],
+    providers: [
+        NotificationService,
+        NotificationGateway, // Both services provided
+    ],
     controllers: [NotificationController],
-    exports: [NotificationService, NotificationGateway],
+    exports: [
+        NotificationService,
+        NotificationGateway, // Ensure they're exported
+    ],
 })
 export class NotificationModule { }

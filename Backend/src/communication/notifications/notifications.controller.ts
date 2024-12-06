@@ -1,5 +1,5 @@
 import { ChatService } from './../chats/chats.service';
-import { Controller, Get, Post, Param, Body, Put } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Put, BadRequestException, Query } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { NotificationGateway } from './notificationGateway';
 import mongoose from 'mongoose';
@@ -82,6 +82,93 @@ export class NotificationController {
         }
     }
 
+//platformwide notifications
+    @Post('platform')
+    async sendPlatformNotificationToAllUsers(@Body('content') content: string) {
+        if (!content) {
+            throw new BadRequestException('Notification content is required.');
+        }
+
+        try {
+            await this.notificationService.sendPlatformNotificationToAllUsers(content);
+            return { success: true, message: 'Platform notification sent to all users.' };
+        } catch (error) {
+            console.error('Error in sendPlatformNotification:', error.message);
+            throw new BadRequestException('Failed to send platform notification.');
+        }
+    }
+
+    //
+    @Get(':userId')
+    async getUserNotifications(
+        @Param('userId') userId: string,
+        @Query('page') page: number = 1,
+        @Query('limit') limit: number = 10
+    ) {
+        try {
+            return await this.notificationService.getUserNotifications(userId, page, limit);
+        } catch (error) {
+            throw new BadRequestException('Failed to retrieve notifications.');
+        }
+    }
+
+
+
+    @Get(':userId/unread')
+    async getUnreadNotifications(@Param('userId') userId: string) {
+        try {
+            return await this.notificationService.getUnreadNotifications(userId);
+        } catch (error) {
+            console.error(`Error fetching unread notifications for user ${userId}:`, error.message);
+            throw new BadRequestException('Failed to retrieve unread notifications.');
+        }
+    }
+
+    @Put(':notificationId/read')
+    async markNotificationAsRead(@Param('notificationId') notificationId: string) {
+        try {
+            return await this.notificationService.markNotificationAsRead(notificationId);
+        } catch (error) {
+            console.error(`Error marking notification ${notificationId} as read:`, error.message);
+            throw new BadRequestException('Failed to mark notification as read.');
+        }
+    }
+
+    @Put(':userId/read-all')
+    async markAllNotificationsAsRead(@Param('userId') userId: string) {
+        try {
+            return await this.notificationService.markAllNotificationsAsRead(userId);
+        } catch (error) {
+            console.error(`Error marking all notifications as read for user ${userId}:`, error.message);
+            throw new BadRequestException('Failed to mark all notifications as read.');
+        }
+    }
+
+    @Get(':userId/type')
+    async getNotificationsByType(
+        @Param('userId') userId: string,
+        @Query('type') type: string
+    ) {
+        try {
+            if (!userId || !type) {
+                throw new BadRequestException('User ID and type are required.');
+            }
+
+            // Validate the type
+            const validTypes = ['message', 'reply', 'course-update', 'platform'];
+            if (!validTypes.includes(type)) {
+                throw new BadRequestException(`Invalid notification type. Valid types are: ${validTypes.join(', ')}`);
+            }
+
+            const notifications = await this.notificationService.getNotificationsByType(userId, type);
+            return {
+                message: `Notifications of type "${type}" retrieved successfully for user ${userId}.`,
+                notifications,
+            };
+        } catch (error) {
+            throw new BadRequestException(error.message || 'Failed to retrieve notifications by type.');
+        }
+    }
 
 
 

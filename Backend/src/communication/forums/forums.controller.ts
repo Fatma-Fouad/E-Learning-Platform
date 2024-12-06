@@ -11,8 +11,8 @@ export class ForumsController {
     getAllForums() {
         return this.forumsService.getAllForums();
     }
-
-    @Post('create')
+    
+    //create a new forum 
     @Post('create')
     async addForum(
         @Body() body: { courseId: string; courseName: string; createdBy: string }
