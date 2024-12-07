@@ -1,11 +1,16 @@
-import { Controller, Post, Body, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, NotFoundException, BadRequestException, UseGuards } from '@nestjs/common';
 import { ResponseService } from './response.service';
+import { AuthGuard } from 'src/authentication/auth.guard';
+import { Roles, Role } from 'src/authentication/roles.decorator';
+import { RolesGuard } from 'src/authentication/roles.guard';
 
 @Controller('responses')
 export class ResponseController {
   constructor(private responseService: ResponseService) {}
 
   @Post()
+  @UseGuards(AuthGuard, RolesGuard) 
+  @Roles('student' as Role)
   async submitQuizResponse(
     @Body('user_id') userId: string,
     @Body('quiz_id') quizId: string,

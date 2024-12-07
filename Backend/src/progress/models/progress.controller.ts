@@ -11,7 +11,7 @@ export class ProgressController {
 // instructor
 // Student Engagement Report
 @Get('engagement/:courseId')
-@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+@UseGuards(AuthGuard, RolesGuard) 
 @Roles('admin' as Role, 'instructor' as Role)
  async getStudentsEngagementReport(@Param('courseId') courseId: string) {
   try {
