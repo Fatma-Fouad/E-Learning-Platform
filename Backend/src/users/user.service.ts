@@ -18,8 +18,8 @@ export class UserService {
         @InjectModel('responses') private responseModel: Model<ResponseDocument>, // Inject the responses model
       @InjectModel(courses.name) private courseModel: Model<CourseDocument>, // Inject the courses model
       private readonly notificationService: NotificationService, // Inject NotificationService
-      private readonly notificationGateway: NotificationGateway // Inject NotificationGateway
-         @InjectModel('progress') private readonly progressModel: Model<ProgressDocument>
+      private readonly notificationGateway: NotificationGateway ,// Inject NotificationGateway
+       @InjectModel('progress') private readonly progressModel: Model<ProgressDocument>
       
     ) {}
     //admin
@@ -62,7 +62,8 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
   }
 
     // Remove email and role from the updateData to prevent them from being updated
-    const { email, role, gpa, completed_courses, enrolled_courses,gpa,completed_courses,enrolled_courses, ...filteredUpdateData } = updateData;
+  const { email, role, gpa, completed_courses, enrolled_courses, ...filteredUpdateData } = updateData;
+
 
     try {
       const user = await this.userModel.findByIdAndUpdate(
@@ -111,7 +112,7 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
 
 
 
-  async addCourseToEnrolled(userId: string, courseId: string): Promise<{ user: { user: User; recommendedCourses: string[] }; recommendedCourses: string[] }> {
+  async addCourseToEnrolled(userId: string, courseId: string): Promise<{ user: User; recommendedCourses: string[] }> {
     // Validate userId and courseId
     if (!userId.match(/^[0-9a-fA-F]{24}$/) || !courseId.match(/^[0-9a-fA-F]{24}$/)) {
       throw new BadRequestException('Invalid user ID or course ID format');
@@ -193,7 +194,7 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
     });
     await progress.save();
 
-    // **Send enrollment confirmation notification**
+    // Send enrollment confirmation notification
     await this.notificationService.createNotification(
       userId,
       'course-update',
@@ -226,7 +227,6 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
       recommendedCourses: recommendedCourseIds,
     };
   }
-
 
 
 

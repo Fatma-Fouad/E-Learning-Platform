@@ -1,7 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import mongoose, { Document, HydratedDocument } from 'mongoose';
+import { courses } from '../courses/course.schema';
 
-export type UserDocument = User & Document;
+export type UserDocument = HydratedDocument<User>;
 
 @Schema()
 export class User {
@@ -11,15 +12,14 @@ export class User {
   @Prop({ required: true })
   email: string;
 
-  @Prop({ type: [String], default: [] }) // Ensure enrolledCourses is an array of strings
+  @Prop({ type: [String], required: false })
   enrolled_courses: string[];
 
-  @Prop({ type: [String], default: [] })
+  @Prop({ type: [String], required: false })
   completed_courses: string[];
 
   @Prop({ required: true, enum: ['student', 'instructor', 'admin'] })
   role: string;
-
 
   @Prop({ default: () => new Date() })
   created_at: Date;
@@ -36,7 +36,14 @@ export class User {
   @Prop({ type: [String], default: [] })
   recommended_courses: string[];
 
-
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
+
+UserSchema.pre('save', function (next) {
+  if (this.role === 'instructor') {
+    this.enrolled_courses = undefined; // Remove enrolled_courses
+    this.completed_courses = undefined; // Remove completed_courses
+  }
+  next();
+});

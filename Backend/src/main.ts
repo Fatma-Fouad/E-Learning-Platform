@@ -4,7 +4,7 @@ import { AppModule } from './app.module';
 import mongoose from 'mongoose';
 import { Logger } from '@nestjs/common';
 import 'reflect-metadata';
-import { ValidationPipe } from '@nestjs/common';
+
 
 async function bootstrap() {
   const logger = new Logger('MongoDB');

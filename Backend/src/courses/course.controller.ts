@@ -81,7 +81,7 @@ async updateWithVersionControl(
   @Body() updateCourseDto: UpdateCourseDto,
 ) {
   try {
-    const updatedCourse = await this.coursesService.updateWithVersionControl(id, updateCourseDto);
+    const updatedCourse = await this.coursesService.updateCourse(id, updateCourseDto);
 
     return {
       message: 'Course updated with version control successfully.',

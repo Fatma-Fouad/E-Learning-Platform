@@ -89,41 +89,19 @@ export class CoursesService {
    */
   async updateCourse(id: string, updateCourseDto: UpdateCourseDto): Promise<courses> {
     try {
-      // Find the course to update
-      const existingCourse = await this.courseModel.findById(id).exec();
-      if (!existingCourse) {
+      // Update the course in the database
+      const updatedCourse = await this.courseModel.findByIdAndUpdate(
+        id,
+        updateCourseDto,
+        { new: true }, // Return the updated document
+      ).exec();
+
+      if (!updatedCourse) {
         throw new NotFoundException('Course not found.');
       }
 
-      // Prepare the updated course data, including version control if needed
-      const updatedCourseData = {
-        ...existingCourse.toObject(),
-        ...updateCourseDto,
-        version: existingCourse.version + 1, // Increment version
-        previousVersions: [
-          ...(existingCourse.previousVersions || []),
-          {
-            _id: existingCourse._id,
-            title: existingCourse.title,
-            description: existingCourse.description,
-            category: existingCourse.category,
-            difficulty_level: existingCourse.difficulty_level,
-            created_at: existingCourse.created_at,
-            created_by: existingCourse.created_by,
-            multimedia: existingCourse.multimedia,
-            version: existingCourse.version,
-            isOutdated: true, // Mark as outdated
-          },
-        ],
-      };
-
-      // Save the updated course
-      delete updatedCourseData._id;
-      const updatedCourse = new this.courseModel(updatedCourseData);
-      const savedCourse = await updatedCourse.save();
-
-      // Notify enrolled students
-      for (const studentId of existingCourse.enrolled_student_ids) {
+      // Notify enrolled students about the course update
+      for (const studentId of updatedCourse.enrolled_student_ids) {
         const roomName = `user:${studentId}`;
         const roomMembers = this.notificationGateway.server.sockets.adapter.rooms.get(roomName);
 
@@ -134,9 +112,9 @@ export class CoursesService {
         // Create notification payload
         const notification = {
           type: 'course-update',
-          content: `The course "${savedCourse.title}" has been updated.`,
-          courseId: savedCourse._id,
-          version: savedCourse.version,
+          content: `The course "${updatedCourse.title}" has been updated.`,
+          courseId: updatedCourse._id,
+          version: updatedCourse.version, // You can adjust if version is being tracked
           read: false, // Mark as unread
           timestamp: new Date(), // Add timestamp
         };
@@ -154,19 +132,20 @@ export class CoursesService {
           studentId.toString(),
           'course-update',
           notification.content,
-          savedCourse._id.toString(),
+          updatedCourse._id.toString(),
         );
         console.log(`Notification saved to the database for user: ${studentId}`);
       }
 
-      // Return the saved updated course
-      return savedCourse;
+      // Return the updated course
+      return updatedCourse;
 
     } catch (error) {
       console.error('Error in updateCourse:', error.message);
       throw new BadRequestException('Failed to update course.');
     }
   }
+
 
 
   /**
