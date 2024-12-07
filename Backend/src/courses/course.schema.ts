@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
  import { UserSchema } from '../users/user.schema';
 import mongoose, { HydratedDocument } from 'mongoose';
+import { User } from '../users/user.schema';
 import { modules } from '../modules/module.schema';
 
 
@@ -9,7 +10,8 @@ export type CourseDocument = HydratedDocument<courses>;
 @Schema()  
 export class courses {
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true})
+  // MongoDB automatically adds `_id`, so no need to explicitly declare it.
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true })
   instructor_id: mongoose.Schema.Types.ObjectId; 
 
   @Prop({required: true})
@@ -27,37 +29,33 @@ export class courses {
   @Prop({ type: Date, default: () => new Date() })   
   created_at: Date;
 
+  @Prop({ type: Number, default: 0, min: 0, max: 5, required:true })
+  course_rating: number; // Overall course rating (1-5 stars)
+
+  @Prop({ type: [String], default: [], required:true })  
+  comments: string[];
+
+  @Prop({ default: 0 })
+  ratingCount: number; // Number of ratings submitted
+
   @Prop({ type: Number, default: 0, required:true})
-  completed_students: number;
+  enrolled_students: number; 
+  
+  @Prop({ type: [mongoose.Schema.Types.ObjectId], ref: 'users', default: [] })
+  enrolled_student_ids: mongoose.Schema.Types.ObjectId[]; 
 
   @Prop({ type: Number, default: 0, required:true })
   nom_of_modules: number;
-  
-  @Prop({ type: Number, default: 0, required: true })
-  enrolled_students: number;
-
-  @Prop({ type: Number, default: 0, required: true })
-  course_rating: number;
 
   @Prop({ type: Number, default: 0, required: true })
   instructor_rating: number;
 
-  @Prop({ default: false })
-  isOutdated: boolean; // Flag for version control
+  @Prop({ type: Number, default: 0, required: true })
+  instructor_ratingCount: number; 
 
-  @Prop({ default: 1 })
-  version: number; // Version of the course
-
-  @Prop({ type: [String], default: [] })
-  multimedia: string[]; // Array to store file paths or URLs
-
-  @Prop({ type: [Object], default: [] })
-  previousVersions: Record<string, any>[]; // Array of previous version details
+  @Prop({ type: Number, default: 0, required:true})
+  completed_students: number; 
 
 }
 
-export const CourseSchema = SchemaFactory.createForClass(courses);
-
-
-
-
+export const CourseSchema = SchemaFactory.createForClass(courses)
