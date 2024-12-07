@@ -1,12 +1,18 @@
-import { Controller, Get, Param, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { Controller, Get, Param, NotFoundException, InternalServerErrorException, UseGuards } from '@nestjs/common';
 import { ProgressService } from './progress.service';
+import { RolesGuard } from '../../authentication/roles.guard';
+import { Role, Roles } from '../../authentication/roles.decorator';
+import { AuthGuard } from '../../authentication/auth.guard';
 
 @Controller('progress')
 export class ProgressController {
   constructor(private readonly progressService: ProgressService) {}
 
- // Student Engagement Report
- @Get('engagement/:courseId')
+// instructor
+// Student Engagement Report
+@Get('engagement/:courseId')
+@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+@Roles('admin' as Role, 'instructor' as Role)
  async getStudentsEngagementReport(@Param('courseId') courseId: string) {
   try {
     const report = await this.progressService.getStudentsEngagementReport(courseId);
@@ -25,8 +31,11 @@ export class ProgressController {
   }
  }
 
- // Content Effectiveness Report
- @Get('content-effectiveness/:courseId')
+// instructor
+// Content Effectiveness Report
+@Get('content-effectiveness/:courseId')
+@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+@Roles('admin' as Role, 'instructor' as Role)
  async getContentEffectivenessReport(@Param('courseId') courseId: string) {
   try {
     const report = await this.progressService.getContentEffectivenessReport(courseId);
@@ -41,9 +50,11 @@ export class ProgressController {
     throw new InternalServerErrorException(`An unexpected error occurred while fetching the content effectiveness report: ${error.message}`);
   }
  }
-
- // Assessment Results Report
- @Get('quiz-results/:courseId')
+// instructor
+// Assessment Results Report
+@Get('quiz-results/:courseId')
+@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+@Roles('admin' as Role, 'instructor' as Role)
  async getQuizResultsReport(@Param('courseId') courseId: string) {
   try {
     const report = await this.progressService.getQuizResultsReport(courseId);
@@ -56,9 +67,11 @@ export class ProgressController {
   }
  }
 
-
-  // Individual Student Report
-  @Get('student-reports/:studentId')
+// student
+// Individual Student Report
+@Get('student-reports/:studentId')
+@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+@Roles('admin' as Role, 'student' as Role)
   async getStudentReport(@Param('studentId') studentId: string) {
     try {
       const report = await this.progressService.getStudentReport(studentId);
@@ -72,5 +85,5 @@ export class ProgressController {
       }
       throw new InternalServerErrorException(`An unexpected error occurred while fetching the student report: ${error.message}`);
     }
-  }w
+  }
 }

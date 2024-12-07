@@ -8,7 +8,7 @@ import { courses, CourseDocument } from '../courses/course.schema';
 import mongoose from 'mongoose';
 import { ProgressDocument } from '../progress/models/progress.schema';
 
-
+// hana
 @Injectable()
 export class UserService {
     constructor(
@@ -379,8 +379,10 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
     };
   }
   
-
-
-  
+// 
+  async findByEmail(email: string):Promise<UserDocument> {
+    const user=await this.userModel.findOne({email}).exec();
+    return user;  // Fetch a student by username
+  }
   
 }

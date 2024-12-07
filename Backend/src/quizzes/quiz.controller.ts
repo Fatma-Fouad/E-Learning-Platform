@@ -1,11 +1,16 @@
-import { Controller, Post, Body, Get, NotFoundException, BadRequestException} from '@nestjs/common';
+import { Controller, Post, Body, Get, NotFoundException, BadRequestException, UseGuards} from '@nestjs/common';
 import { QuizService } from './quiz.service';
+import { RolesGuard } from '../authentication/roles.guard';
+import { Role, Roles } from '../authentication/roles.decorator';
+import { AuthGuard } from '../authentication/auth.guard';
 
 @Controller('quizzes')
 export class QuizController {
   constructor(private quizService: QuizService) {}
 
   @Post()
+  @UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+  @Roles('admin' as Role, 'instructor' as Role)
   async generateQuiz(
     @Body('user_id') userId: string,
     @Body('module_id') moduleId: string,
