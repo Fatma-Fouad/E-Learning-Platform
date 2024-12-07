@@ -31,7 +31,8 @@ export class User {
   profile_picture_url: string[];
 
   @Prop({ type: Number, default: 0 }) // Add average_score attribute
-  gpa: number;
+  gpa: number;
+
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
