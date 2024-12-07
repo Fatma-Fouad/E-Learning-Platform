@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import mongoose, { Document, HydratedDocument } from 'mongoose';
+import { courses } from '../courses/course.schema';
 
 export type UserDocument = User & Document;
 
@@ -35,6 +36,8 @@ export class User {
   @Prop({ type: [String], default: [] })
   recommended_courses: string[];
 
+  @Prop({ type: Number, default: 0 }) // Add average_score attribute
+  gpa: number;
 
 }
 

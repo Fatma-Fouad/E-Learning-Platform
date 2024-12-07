@@ -4,12 +4,14 @@ import { Model } from 'mongoose';
 import { progress, ProgressDocument } from './progress.schema';
 import { CourseDocument } from '../../courses/course.schema';
 import { ModuleDocument } from '../../modules/module.schema';
+import { UserDocument } from '../../users/user.schema';
 
 @Injectable()
 export class ProgressService {
   constructor(@InjectModel('progress') private readonly progressModel: Model<ProgressDocument>,
   @InjectModel('course') private readonly courseModel: Model<CourseDocument>,
-  @InjectModel('module') private readonly moduleModel: Model<ModuleDocument>
+  @InjectModel('module') private readonly moduleModel: Model<ModuleDocument>,
+  @InjectModel('user') private readonly userModel: Model<UserDocument>
 ) {}
 
 // Reports on student engagement:
@@ -80,7 +82,7 @@ async getStudentsEngagementReport(courseId: string) {
   
 
 
-// Reports on Content Effectiveness; Ratings
+// Reports on Content Effectiveness; Ratings and Comments
 async getContentEffectivenessReport(courseId: string) {
   // Fetch the course details
   const course = await this.courseModel.findById(courseId).exec();
@@ -118,7 +120,6 @@ async getContentEffectivenessReport(courseId: string) {
     return {
       title: `Module ${module.module_order}`, // Title for each module based on its order
       details: {
-        moduleId: module._id,
         moduleName: module.title,
         moduleOrder: module.module_order,
         moduleRating: module.module_rating || 'No rating yet',
@@ -127,10 +128,16 @@ async getContentEffectivenessReport(courseId: string) {
     };
   });
 
+  // Retrieve course comments
+  const comments = course.comments && course.comments.length > 0
+    ? course.comments
+    : ['No comments on the course!'];
+
   // Compile the final report
   return {
     courseRating: parseFloat(averageCourseRating.toFixed(2)) || 'No rating yet',
     instructorRating: course.instructor_rating || 'No rating yet',
+    comments, // Include comments or a default message
     modules: moduleDetails, // Each module with its title
   };
 }
@@ -184,16 +191,23 @@ async getQuizResultsReport(courseId: string) {
 }
 
   
-
+// Reports on Individual Students
 async getStudentReport(userId: string) {
+  // Fetch the user details
+  const user = await this.userModel.findById(userId).exec();
+  if (!user) {
+    throw new NotFoundException(`User with ID: ${userId} not found.`);
+  }
+
   // Fetch all progress records for the student
   const studentProgress = await this.progressModel.find({ user_id: userId }).exec();
   if (!studentProgress || studentProgress.length === 0) {
     throw new NotFoundException(`No progress data found for student with ID: ${userId}.`);
   }
 
-  // Extract the student's name from the first progress record
-  const studentName = studentProgress[0].user_name;
+  // Extract the student's name and GPA from the user record
+  const studentName = user.name;
+  const studentGpa = user.gpa || 'Not Available'; // Default to 'Not Available' if GPA is missing
 
   // Map over the progress records to generate a detailed report for each course
   const courseReports = await Promise.all(
@@ -204,12 +218,34 @@ async getStudentReport(userId: string) {
         throw new NotFoundException(`Course with ID: ${progress.course_id} not found.`);
       }
 
+      // Fetch all progress records for this course to calculate the course-wide average
+      const courseProgress = await this.progressModel.find({ course_id: course._id }).exec();
+
+      // Calculate the average quiz score for the course
+      const validScores = courseProgress
+        .map((record) => record.avg_score)
+        .filter((score) => score !== null); // Exclude null scores
+
+      const totalAvgScore = validScores.reduce((sum, score) => sum + score, 0);
+      const averageCourseScore = validScores.length > 0 ? totalAvgScore / validScores.length : 0;
+
+      // Determine the student's performance metric
+      const avgScore = progress.avg_score || 0;
+      let performanceMetric: string;
+      if (avgScore < averageCourseScore * 0.5) {
+        performanceMetric = 'Below Average';
+      } else if (avgScore >= averageCourseScore * 0.5 && avgScore < averageCourseScore) {
+        performanceMetric = 'Average';
+      } else if (avgScore >= averageCourseScore && avgScore < averageCourseScore * 1.2) {
+        performanceMetric = 'Above Average';
+      } else {
+        performanceMetric = 'Excellent';
+      }
+
       // Quiz details from progress
       const quizzesTaken = progress.quizzes_taken || 0;
       const lastQuizScore = progress.last_quiz_score || 0;
-      const avgScore = progress.avg_score || 0;
 
-      // Process quiz grades
       const quizGradesDetails = (progress.quiz_grades || []).map((grade, index) => ({
         quizNumber: index + 1, // Quiz number (1-based)
         grade: grade !== null ? grade : 'Not Attempted', // Show "Not Attempted" if null
@@ -226,6 +262,8 @@ async getStudentReport(userId: string) {
           avgScore,
         },
         quizGrades: quizGradesDetails, // Include detailed quiz grades
+        averageCourseScore: parseFloat(averageCourseScore.toFixed(2)), // Course-wide average score
+        performanceMetric, // Student's performance relative to the course
       };
     })
   );
@@ -233,11 +271,14 @@ async getStudentReport(userId: string) {
   // Compile the full student report
   return {
     userId,
-    studentName, // Use the user_name from progress records
+    studentName, // Use the user name from the user schema
+    gpa: studentGpa, // Include the GPA from the user schema
     totalCourses: courseReports.length,
     courses: courseReports,
   };
 }
+
+
 
 
 
