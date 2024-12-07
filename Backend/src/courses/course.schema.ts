@@ -1,6 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+ import { UserSchema } from '../users/user.schema';
 import mongoose, { HydratedDocument } from 'mongoose';
-import { users } from '../users/user.schema';
+import { User } from '../users/user.schema';
+import { modules } from '../modules/module.schema';
+
 
 export type CourseDocument = HydratedDocument<courses>;
 
@@ -19,9 +22,6 @@ export class courses {
 
   @Prop({required: true})
   category: string;
-
-  @Prop({required: true, enum: ['Beginner', 'Intermediate', 'Advanced']})
-  difficulty_level: string;
 
   @Prop({required: true})
   created_by: string;

@@ -7,11 +7,13 @@ import { QuestionBankModule } from './questionbank/questionbank.module';
 import { CourseModule } from './courses/course.module';
 import { ModulesModule } from './modules/module.module';
 import { ProgressModule } from './progress/progress.module';
+import { UserModule } from './users/user.module';
+import { ResponseModule } from './responses/response.module';
 
 @Module({
-  imports: [ QuizModule, QuestionBankModule,ModulesModule,CourseModule,ModulesModule, ProgressModule,
+  imports: [ QuizModule, QuestionBankModule,ModulesModule,ProgressModule, UserModule, ResponseModule, CourseModule,
     MongooseModule.forRoot('mongodb+srv://softwareproject:sp123@clustersp.wvdbq.mongodb.net/EduLink') ],
-  controllers: [AppController],
+    controllers: [AppController],
   providers: [AppService],
 }) 
 export class AppModule {}
