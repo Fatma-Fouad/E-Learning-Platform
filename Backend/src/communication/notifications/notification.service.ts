@@ -19,15 +19,10 @@ export class NotificationService {
         userId: string,
         type: string,
         content: string,
-        chatId: string, // Required chatId parameter
-    ) {
-        if (!userId || !type || !content || !chatId) {
+        chatId?: string // Make chatId optional
+    ): Promise<any> {
+        if (!userId || !type || !content) {
             throw new Error('Missing required fields for notification creation');
-        }
-
-        // Validate `chatId` as a valid ObjectId
-        if (!mongoose.Types.ObjectId.isValid(chatId)) {
-            throw new Error(`Invalid chatId: ${chatId}`);
         }
 
         // Validate `userId` as a valid ObjectId
@@ -40,11 +35,12 @@ export class NotificationService {
             userId: new mongoose.Types.ObjectId(userId), // Convert userId to ObjectId
             type,
             content,
-            chatId: new mongoose.Types.ObjectId(chatId), // Convert chatId to ObjectId
+            chatId: chatId ? new mongoose.Types.ObjectId(chatId) : undefined, // Only convert chatId if provided
         });
 
         return notification.save();
     }
+
     
     
 
