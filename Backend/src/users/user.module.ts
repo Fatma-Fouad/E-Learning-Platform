@@ -19,6 +19,7 @@ import { LoginAttemptSchema } from '../authentication/login.schema';
         { name: 'LoginAttempt', schema: LoginAttemptSchema },
       ]),
     ],
+    exports: [MongooseModule],
     controllers: [UserController], // UserController is here
     providers: [UserService],
     exports: [UserService],

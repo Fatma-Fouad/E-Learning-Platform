@@ -186,6 +186,22 @@ async deleteAccount(@Param('role') role: string, @Param('id') userId: string) {
       throw new BadRequestException(error.message);
     }
   }
+  //all-
+  @Delete(':id/remove-course/:courseId')
+  async removeEnrolledCourse(
+    @Param('id') userId: string,
+    @Param('courseId') courseId: string,
+  ) {
+    try {
+      const updatedUser = await this.userService.removeEnrolledCourse(userId, courseId);
+      return {
+        message: 'Course successfully removed from enrolled courses.',
+        user: updatedUser,
+      };
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
 
   // fatma
   @Get('login-attempts')

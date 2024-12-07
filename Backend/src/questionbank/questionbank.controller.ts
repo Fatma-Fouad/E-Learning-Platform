@@ -1,4 +1,4 @@
-import { Controller, Param, Post, Patch, Body , Get, NotFoundException, UseGuards} from '@nestjs/common';
+import { Controller, Param, Post, Patch, Body , Get, Delete,NotFoundException, UseGuards} from '@nestjs/common';
 import { QuestionBankService } from './questionbank.service';
 import { CreateQuestionBankDto } from './createquestionbank.dto';
 import { UpdateQuestionBankDto } from './updatequestionbank.dto';
@@ -48,5 +48,13 @@ export class QuestionBankController {
       message: 'Question bank retrieved successfully',
       questionBank,
     };
+  }
+
+  @Delete()
+  async deleteQuestion(@Body('module_id') moduleId: string, @Body('question_id') questionId: string) {
+    if (!moduleId || !questionId) {
+      throw new Error('Both module_id and question_id are required.');
+    }
+    return await this.questionBankService.deleteQuestion(moduleId, questionId);
   }
 }

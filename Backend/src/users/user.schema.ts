@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import mongoose, { HydratedDocument } from 'mongoose';
+import mongoose, { Document, HydratedDocument } from 'mongoose';
+import { courses } from '../courses/course.schema';
 
 export type UserDocument = HydratedDocument<User>;
 
@@ -11,10 +12,10 @@ export class User {
   @Prop({ required: true })
   email: string;
 
-  @Prop({ required: false}) 
+  @Prop({type: [String], required: false}) 
   enrolled_courses: string[];
 
-  @Prop({ required: false})
+  @Prop({type: [String], required: false})
   completed_courses: string[];
 
   @Prop({ required: true, enum: ['student', 'instructor', 'admin'] })
@@ -31,6 +32,9 @@ export class User {
 
   @Prop({ type: Number, default: 0 }) // Add average_score attribute
   gpa: number;
+
+  @Prop({ type: [String], default: [] })
+  recommended_courses: string[];
 
 }
 
