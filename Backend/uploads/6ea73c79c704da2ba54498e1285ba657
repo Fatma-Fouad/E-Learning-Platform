@@ -1,0 +1,453 @@
+COURSE CONTROLLER: 
+import { Controller, Get, Post, Patch, Delete, Param, Body } from '@nestjs/common';
+import { CoursesService } from './courses.service';
+import { CreateCourseDto } from './dto/create-course.dto';
+import { UpdateCourseDto } from './dto/update-course.dto';
+import { RateCourseDto } from './dto/rate-course.dto';
+import { users } from 'src/users/user.schema';
+
+
+@Controller('courses')
+export class CoursesController {
+  constructor(private readonly coursesService: CoursesService) {}
+
+  /**
+   * Retrieve all courses for students
+   */
+  @Get('students')
+  async findAllForStudents() {
+    return this.coursesService.findAllForStudents();
+  }
+
+  /**
+   * Retrieve all courses for instructors with version control
+   */
+  @Get('instructors')
+  async findAllForInstructors() {
+    return this.coursesService.findAllForInstructors();
+  }
+
+  /**
+   * Retrieve a course by its ID
+   */
+  @Get(':id')
+  async findCourseById(@Param('id') id: string) {
+    return this.coursesService.findCourseById(id);
+  }
+
+  /**
+   * Create a new course
+   */
+  @Post()
+  async createCourse(@Body() createCourseDto: CreateCourseDto) {
+    return this.coursesService.create(createCourseDto);
+  }
+
+  /**
+   * Update an existing course (instructors only)
+   */
+  @Patch(':id')
+  async updateCourse(
+    @Param('id') id: string,
+    @Body() updateCourseDto: UpdateCourseDto,
+  ) {
+    return this.coursesService.updateCourse(id, updateCourseDto);
+  }
+
+  /**
+   * Update a course with version control (instructors only)
+   */
+  @Patch(':id/version-control')
+  async updateWithVersionControl(
+    @Param('id') id: string,
+    @Body() updateCourseDto: UpdateCourseDto,
+  ) {
+    return this.coursesService.updateWithVersionControl(id, updateCourseDto);
+  }
+
+  /**
+   * Delete a course
+   */
+  @Delete(':id')
+  async deleteCourse(@Param('id') id: string) {
+    return this.coursesService.deleteCourse(id);
+  }
+
+  /**
+   * Retrieve number of enrolled students in a specific course
+   */
+  @Get(':id/enrolled-students')
+  async getEnrolledStudents(@Param('id') id: string) {
+    return this.coursesService.getEnrolledStudents(id);
+  }
+
+  /**
+   * Retrieve number of students completed a specific course
+   */
+  @Get(':id/completed-students')
+  async getCompletedStudents(@Param('id') id: string) {
+    return this.coursesService.getCompletedStudents(id);
+  }
+
+  /**
+   * Retrieve numbers of students based on performance metric
+   */
+  @Get(':id/performance-metrics')
+  async getStudentsByPerformance(@Param('id') id: string) {
+    return this.coursesService.getStudentsByPerformance(id);
+  }
+
+  /**
+   * Rate a course (students)
+   */
+  @Patch(':id/rate')
+  async rateCourse(
+    @Param('id') id: string,
+    @Body() rateCourseDto: RateCourseDto,
+  ) {
+    return this.coursesService.rateCourse(id, rateCourseDto);
+  }
+
+  /**
+   * Retrieve version history of a course (instructors only)
+   */
+  @Get(':id/versions')
+  async getVersionHistory(@Param('id') id: string) {
+    return this.coursesService.getVersionHistory(id);
+  }
+
+  @Get('search-student/:name')
+  async searchStudentByName(@Param('name') name: string) {
+    return this.coursesService.searchStudentByName(name);
+  }
+
+  /**
+   * Search for a specific instructor (students only)
+   */
+  @Get('search-instructor/:name')
+  async searchInstructorByName(@Param('name') name: string) {
+    return this.coursesService.searchInstructorByName(name);
+  }
+}
+
+
+COURSE SERVICE: 
+
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Course } from './schemas/course.schema';
+import { Progress } from './schemas/progress.schema';
+import { CreateCourseDto } from './dto/create-course.dto';
+import { UpdateCourseDto } from './dto/update-course.dto';
+import { RateCourseDto } from './dto/rate-course.dto';
+import { users } from 'src/users/user.schema';
+
+
+@Injectable()
+export class CoursesService {
+  constructor(
+    @InjectModel('courses') private courseModel: Model<Course>,
+    @InjectModel('progress') private progressModel: Model<Progress>,
+    @InjectModel('users') private userModel: Model<users>, // Inject User model
+  ) {}
+
+  
+  
+  /**
+   * Retrieve all courses for students
+   */
+  async findAllForStudents(): Promise<Course[]> {
+    return this.courseModel.find({ isOutdated: false }).exec();
+  }
+
+  /**
+   * Retrieve all courses for instructors with version control
+   */
+  async findAllForInstructors(): Promise<Course[]> {
+    return this.courseModel.find().exec();
+  }
+
+  /**
+   * Retrieve a course by its ID
+   */
+  async findCourseById(id: string): Promise<Course> {
+    return this.courseModel.findById(id).exec();
+  }
+
+  /**
+   * Create a new course
+   */
+  async create(createCourseDto: CreateCourseDto): Promise<Course> {
+    const newCourse = new this.courseModel(createCourseDto);
+    return newCourse.save();
+  }
+
+  /**
+   * Update an existing course (instructors only)
+   */
+  async updateCourse(id: string, updateCourseDto: UpdateCourseDto): Promise<Course> {
+    return this.courseModel.findByIdAndUpdate(id, updateCourseDto, { new: true }).exec();
+  }
+
+  /**
+   * Update a course with version control (instructors only)
+   */
+  async updateWithVersionControl(
+    id: string,
+    updateCourseDto: UpdateCourseDto,
+  ): Promise<Course> {
+    // Find the current course
+    const outdatedCourse = await this.courseModel.findById(id);
+    if (!outdatedCourse) {
+      throw new Error('Course not found');
+    }
+
+    // Mark the current course as outdated
+    outdatedCourse.isOutdated = true;
+    await outdatedCourse.save();
+
+    // Create a new course version
+    const newCourseData = {
+      ...outdatedCourse.toObject(),
+      ...updateCourseDto,
+      isOutdated: false,
+      version: outdatedCourse.version + 1, // Increment the version
+      previousVersion: outdatedCourse._id, // Link to the previous version
+    };
+
+    // Remove _id to let MongoDB generate a new ID for the new version
+    delete newCourseData._id;
+
+    const newCourse = new this.courseModel(newCourseData);
+    return newCourse.save();
+  }
+
+  /**
+   * Delete a course (instructors only)
+   */
+  async deleteCourse(id: string): Promise<void> {
+    await this.courseModel.findByIdAndDelete(id).exec();
+  }
+
+  /**
+   * Retrieve number of enrolled students in a specific course
+   */
+  async getEnrolledStudents(courseId: string): Promise<number> {
+    return this.progressModel.countDocuments({ course_id: courseId }).exec();
+  }
+
+  /**
+   * Retrieve number of students completed a specific course
+   */
+  async getCompletedStudents(courseId: string): Promise<number> {
+    return this.progressModel.countDocuments({
+      course_id: courseId,
+      completion_percentage: 100,
+    }).exec();
+  }
+
+  /**
+   * Retrieve numbers of students based on performance metric
+   */
+  async getStudentsByPerformance(courseId: string): Promise<any> {
+    return this.progressModel.aggregate([
+      { $match: { course_id: courseId } },
+      { $group: { _id: '$performanceMetric', count: { $sum: 1 } } },
+    ]);
+  }
+
+  /**
+   * Rate a course (students)
+   */
+  async rateCourse(courseId: string, rateCourseDto: RateCourseDto): Promise<Course> {
+    const course = await this.courseModel.findById(courseId);
+    if (!course) {
+      throw new Error('Course not found');
+    }
+
+    const totalRatings = course.ratingCount || 0;
+    const currentRating = course.rating || 0;
+
+    const updatedRating =
+      (currentRating * totalRatings + rateCourseDto.rating) / (totalRatings + 1);
+
+    course.rating = updatedRating;
+    course.ratingCount = totalRatings + 1;
+
+    return course.save();
+  }
+
+  /**
+   * Retrieve version history of a course (instructors only)
+   */
+  async getVersionHistory(courseId: string): Promise<Course[]> {
+    return this.courseModel
+      .find({ $or: [{ _id: courseId }, { previousVersion: courseId }] })
+      .sort({ version: 1 }) // Sort by version number
+      .exec();
+  }
+  /**
+   * Search for a specific student (instructors only)
+   */
+  async searchStudentByName(name: string): Promise<users[]> {
+    return this.userModel.find({ name: { $regex: name, $options: 'i' }, role: 'student' }).exec();
+  }
+
+  /**
+   * Search for a specific instructor (students only)
+   */
+  async searchInstructorByName(name: string): Promise<users[]> {
+    return this.userModel.find({ name: { $regex: name, $options: 'i' }, role: 'instructor' }).exec();
+  }
+}
+
+
+PROGESS SCHEMA: 
+
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import mongoose, { HydratedDocument } from 'mongoose';
+import { users } from '../users/user.schema';
+import { courses } from '../courses/course.schema';
+
+export type ProgressDocument = HydratedDocument<progress>;
+
+@Schema()
+export class progress {
+
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true})
+  user_id: mongoose.Schema.Types.ObjectId; 
+
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'courses', required: true})
+  course_id: mongoose.Schema.Types.ObjectId; 
+
+  @Prop({ type: Number, min: 0, max: 100, required: true })
+  completion_percentage: number;
+
+  @Prop({ type: Date, default: () => new Date(), required: true })
+  last_accessed: Date;
+
+  @Prop({ type: Number, default: 0, required: true })
+  quizzes_taken: number;
+
+  @Prop({ type: Number, min: 0, max: 100, default: 0, required: true })
+  avg_score: number;
+
+  @Prop({ type: Number, min: 0, max: 100, default: null })
+  last_quiz_score: number | null;
+
+  @Prop({ required: true })
+  performanceMetric: string; // Below Average, Average, Above Average, Excellent
+}
+
+export const ProgressSchema = SchemaFactory.createForClass(progress);
+
+
+Module SCHEMA:
+
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import mongoose, { HydratedDocument } from 'mongoose';
+import { courses } from '../courses/course.schema';
+
+export type ModuleDocument = HydratedDocument<modules>;
+
+@Schema()  
+export class modules {
+
+  @Prop({type: mongoose.Schema.Types.ObjectId, ref:'courses',required: true})
+  course_id: mongoose.Schema.Types.ObjectId;
+
+  @Prop({required: true})
+  title: string;
+
+  @Prop({required: true})
+  content: string;
+
+  @Prop({ type: Date, default: () => new Date() })   
+  created_at: Date;
+
+  @Prop({ default: 0 })
+  rating: number; // Overall course rating (1-5 stars)
+}
+
+export const ModuleSchema = SchemaFactory.createForClass(modules);
+
+CREATECOURSE DTO: 
+
+export class CreateCourseDto {
+    title: string;
+    description: string;
+    category: string;
+    difficulty_level: string;
+    created_by: string;
+  }
+  
+
+UPDATECOURSE DTO:
+
+export class UpdateCourseDto {
+    title?: string;
+    description?: string;
+    category?: string;
+    difficulty_level?: string;
+    isOutdated?: boolean; // To mark the course as outdated
+    version?: number; // For manual version updates
+    previousVersion?: string; // Reference to the previous course version
+  }
+  
+
+RATECOURSE Dto: 
+
+export class RateCourseDto {
+    rating: number; // 1-5 stars
+  }
+  
+
+COURSE SCHEMA:   
+
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import mongoose, { HydratedDocument } from 'mongoose';
+
+export type CourseDocument = HydratedDocument<courses>;
+
+@Schema()  
+export class courses {
+
+  @Prop({required: true})
+  title: string;
+
+  @Prop({required: true})
+  description: string;
+
+  @Prop({required: true})
+  category: string;
+
+  @Prop({required: true, enum: ['Beginner', 'Intermediate', 'Advanced']})
+  difficulty_level: string;
+
+  @Prop({required: true})
+  created_by: string;
+
+  @Prop({ type: Date, default: () => new Date() })   
+  created_at: Date;
+
+  @Prop({ default: false })
+  isOutdated: boolean; // Flag for version control
+
+  @Prop({ default: 1 })
+  version: number; // Version of the course
+
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Course', default: null })
+  previousVersion?: mongoose.Schema.Types.ObjectId; // Links to previous version
+
+  @Prop({ default: 0 })
+  rating: number; // Overall course rating (1-5 stars)
+}
+
+export const CourseSchema = SchemaFactory.createForClass(courses);
+
+
+
+
+
+ 

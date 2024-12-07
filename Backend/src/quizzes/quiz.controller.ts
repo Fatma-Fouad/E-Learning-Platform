@@ -1,14 +1,56 @@
-import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
+import { Controller, Post, Body, Get, NotFoundException, BadRequestException, UseGuards} from '@nestjs/common';
 import { QuizService } from './quiz.service';
-import { CreateQuizDto } from './createquiz.dto';
+import { RolesGuard } from '../authentication/roles.guard';
+import { Role, Roles } from '../authentication/roles.decorator';
+import { AuthGuard } from '../authentication/auth.guard';
 
-@Controller('quizzes') 
+@Controller('quizzes')
 export class QuizController {
-  constructor(private quizService: QuizService) {} 
+  constructor(private quizService: QuizService) {}
 
-  @Post() 
-  async createQuiz(@Body() quizData: CreateQuizDto) {
-    const newQuiz = await this.quizService.create(quizData);
-    return newQuiz; 
+  @Post()
+  @UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+  @Roles('admin' as Role, 'instructor' as Role)
+  async generateQuiz(
+    @Body('user_id') userId: string,
+    @Body('module_id') moduleId: string,
+    @Body('question_count') questionCount: number,
+    @Body('type') type: string,
+  ) {
+    if (!userId || !moduleId || !questionCount || !type) {
+      throw new BadRequestException(
+        'user_id, module_id, question_count, and type are required.',
+      );
+    }
+
+    const result = await this.quizService.generateQuiz(userId, moduleId, questionCount, type);
+
+    return {
+      message: result.message,
+      quiz: result.quiz,
+    };
+  }
+
+  @Get('student')
+  async getStudentQuiz(
+    @Body('user_id') userId: string,
+    @Body('course_id') courseId: string,
+    @Body('module_id') moduleId: string,
+  ) {
+
+    if (!userId || !courseId || !moduleId) {
+      throw new NotFoundException('user_id, course_id, and module_id must be provided.');
+    }
+
+    const quiz = await this.quizService.getQuizForStudent(userId, courseId, moduleId);
+
+    if (!quiz) {
+      throw new NotFoundException(`No quizzes available for module ID ${moduleId}`);
+    }
+
+    return {
+      message: 'Quiz generated successfully for the student',
+      quiz,
+    };
   }
 }
