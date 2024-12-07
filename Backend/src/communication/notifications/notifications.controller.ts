@@ -1,8 +1,8 @@
-import { ChatService } from './../chats/chats.service';
 import { Controller, Get, Post, Param, Body, Put, BadRequestException, Query } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { NotificationGateway } from './notificationGateway';
 import mongoose from 'mongoose';
+import { ChatService } from './../chats/chats.service';
 
 @Controller('notifications')
 export class NotificationController {
@@ -10,19 +10,21 @@ export class NotificationController {
         private readonly notificationService: NotificationService,
         private readonly notificationGateway: NotificationGateway,
         private readonly chatService: ChatService // Inject the ChatService
-
     ) { }
 
+    // Get notifications for a specific user (Access: Admin, Instructor, Student)
     @Get(':userId')
     async getNotifications(@Param('userId') userId: string) {
         return this.notificationService.getNotifications(userId);
     }
 
+    // Mark a notification as read (Access: Admin, Instructor, Student)
     @Put(':notificationId/read')
     async markAsRead(@Param('notificationId') notificationId: string) {
         return this.notificationService.markAsRead(notificationId);
     }
 
+    // Create a new notification (Access: Admin, Instructor)
     @Post()
     async createNotification(
         @Body('userId') userId: string,
@@ -38,8 +40,7 @@ export class NotificationController {
         return this.notificationService.createNotification(userId, type, content, chatId);
     }
 
-
-
+    // Test notification (Access: Admin, Instructor)
     @Post('test-notification')
     async testNotification(@Body() body: { chatId: string; userId: string; type: string; content: string }) {
         const { chatId, userId, type, content } = body;
@@ -82,7 +83,7 @@ export class NotificationController {
         }
     }
 
-//platformwide notifications
+    // Platform-wide notifications (Access: Admin)
     @Post('platform')
     async sendPlatformNotificationToAllUsers(@Body('content') content: string) {
         if (!content) {
@@ -98,7 +99,7 @@ export class NotificationController {
         }
     }
 
-    //
+    // Get user notifications with pagination (Access: Admin, Instructor, Student)
     @Get(':userId')
     async getUserNotifications(
         @Param('userId') userId: string,
@@ -112,8 +113,7 @@ export class NotificationController {
         }
     }
 
-
-
+    // Get unread notifications for a user (Access: Admin, Instructor, Student)
     @Get(':userId/unread')
     async getUnreadNotifications(@Param('userId') userId: string) {
         try {
@@ -124,6 +124,7 @@ export class NotificationController {
         }
     }
 
+    // Mark a specific notification as read (Access: Admin, Instructor, Student)
     @Put(':notificationId/read')
     async markNotificationAsRead(@Param('notificationId') notificationId: string) {
         try {
@@ -134,6 +135,7 @@ export class NotificationController {
         }
     }
 
+    // Mark all notifications as read for a user (Access: Admin, Instructor, Student)
     @Put(':userId/read-all')
     async markAllNotificationsAsRead(@Param('userId') userId: string) {
         try {
@@ -144,6 +146,7 @@ export class NotificationController {
         }
     }
 
+    // Get notifications by type (Access: Admin, Instructor, Student)
     @Get(':userId/type')
     async getNotificationsByType(
         @Param('userId') userId: string,
@@ -169,9 +172,4 @@ export class NotificationController {
             throw new BadRequestException(error.message || 'Failed to retrieve notifications by type.');
         }
     }
-
-
-
-
 }
-

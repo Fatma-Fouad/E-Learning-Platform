@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Body, Query, NotFoundException, BadRequestException, Delete, } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Query, NotFoundException, BadRequestException, Delete } from '@nestjs/common';
 import { ForumsService } from './forums.service';
 import mongoose from 'mongoose';
 
@@ -6,13 +6,13 @@ import mongoose from 'mongoose';
 export class ForumsController {
     constructor(private readonly forumsService: ForumsService) { }
 
-    // Get all forums
+    // Get all forums (Access: Admin)
     @Get()
     getAllForums() {
         return this.forumsService.getAllForums();
     }
-    
-    //create a new forum 
+
+    // Create a new forum (Access: Instructor, Admin)
     @Post('create')
     async addForum(
         @Body() body: { courseId: string; courseName: string; createdBy: string }
@@ -28,9 +28,7 @@ export class ForumsController {
         return this.forumsService.addForum(courseId, courseName, createdBy);
     }
 
-
-
-    // Search for a specific course
+    // Search for a specific course (Access: Student, Instructor, Admin)
     @Get('search-courses')
     async searchCourses(@Query('q') searchTerm: string) {
         console.log('Search term received for courses:', searchTerm);
@@ -40,7 +38,7 @@ export class ForumsController {
         return this.forumsService.searchCourses(searchTerm);
     }
 
-    // Search forums by thread title in all courses
+    // Search forums by thread title in all courses (Access: Student, Instructor, Admin)
     @Get('search')
     async searchForum(@Query('q') searchTerm: string) {
         console.log('Search term received:', searchTerm);
@@ -50,7 +48,7 @@ export class ForumsController {
         return this.forumsService.searchForum(searchTerm);
     }
 
-    // Search for threads within a specific course
+    // Search for threads within a specific course (Access: Student, Instructor, Admin)
     @Get(':courseId/search-threads')
     async searchThreadsInCourse(
         @Param('courseId') courseId: string,
@@ -63,7 +61,7 @@ export class ForumsController {
         return this.forumsService.searchThreadsInCourse(courseId, searchTerm);
     }
 
-    // Post a new thread
+    // Post a new thread (Access: Student, Instructor, Admin)
     @Post(':courseId/threads')
     addThread(
         @Param('courseId') courseId: string,
@@ -87,8 +85,7 @@ export class ForumsController {
         return this.forumsService.addThread(courseId, thread);
     }
 
-
-    // Add a reply to a thread
+    // Add a reply to a thread (Access: Student, Instructor, Admin)
     @Post(':courseId/threads/:threadId/replies')
     async addReply(
         @Param('courseId') courseId: string,
@@ -109,7 +106,7 @@ export class ForumsController {
         return this.forumsService.addReply(courseId, threadId, reply);
     }
 
-    // Delete a forum
+    // Delete a forum (Access: Admin, Instructor)
     @Delete(':courseId')
     async deleteForum(
         @Param('courseId') courseId: string,
@@ -123,8 +120,7 @@ export class ForumsController {
         return this.forumsService.deleteForum(courseId, userId);
     }
 
-
-    // Delete a thread in a course
+    // Delete a thread in a course (Access: Admin,User who posted the thread)
     @Delete(':courseId/threads/:threadId')
     async deleteThread(
         @Param('courseId') courseId: string,
@@ -139,7 +135,7 @@ export class ForumsController {
         return this.forumsService.deleteThread(courseId, threadId, userId);
     }
 
-    // Delete a reply in a thread
+    // Delete a reply in a thread (Access: Admin,User who posted the reply)
     @Delete(':courseId/threads/:threadId/replies/:replyId')
     async deleteReply(
         @Param('courseId') courseId: string,
