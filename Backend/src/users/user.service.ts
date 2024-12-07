@@ -8,7 +8,7 @@ import { courses, CourseDocument } from '../courses/course.schema';
 import mongoose from 'mongoose';
 import { ProgressDocument } from '../progress/models/progress.schema';
 
-
+// hana
 @Injectable()
 export class UserService {
     constructor(
@@ -292,9 +292,10 @@ async removeEnrolledCourse(userId: string, courseId: string): Promise<User> {
     return 'Student successfully enrolled in the course.';
   }
   
-
-
-
-  
+// 
+  async findByEmail(email: string):Promise<UserDocument> {
+    const user=await this.userModel.findOne({email}).exec();
+    return user;  // Fetch a student by username
+  }
   
 }

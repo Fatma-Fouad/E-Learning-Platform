@@ -4,14 +4,18 @@ import { UserService } from './user.service';
 import { ForbiddenException , NotFoundException } from '@nestjs/common';
 import { RolesGuard } from '../authentication/roles.guard';
 import { Role, Roles } from '../authentication/roles.decorator';
-
-
+import { LoginAttempt } from '../authentication/login.schema';
+import { Model } from 'mongoose';
+import { InjectModel } from '@nestjs/mongoose';
 
 
 @Controller('user')
 
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    @InjectModel('LoginAttempt') private readonly LoginAttempt: Model<LoginAttempt>, // Correct injection
+    ) {}
 // fatma
   @Get('users')
   @UseGuards(AuthGuard) // Require authentication
@@ -183,5 +187,12 @@ async deleteAccount(@Param('role') role: string, @Param('id') userId: string) {
     }
   }
 
+  // fatma
+  @Get('login-attempts')
+  @UseGuards(AuthGuard, RolesGuard) 
+  @Roles('admin' as Role)
+  async getLoginAttempts() {
+    return this.LoginAttempt.find().sort({ timestamp: -1 }).exec();
+  }
 
 }

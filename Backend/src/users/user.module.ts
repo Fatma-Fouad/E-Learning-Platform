@@ -6,6 +6,8 @@ import { User, UserSchema } from './user.schema';
 import { ResponseSchema } from '../responses/response.schema'
 import { courses, CourseSchema } from '../courses/course.schema';
 import { ProgressSchema } from '../progress/models/progress.schema';
+import { LoginAttemptSchema } from '../authentication/login.schema'; 
+
 
 @Module({
     imports: [
@@ -14,6 +16,7 @@ import { ProgressSchema } from '../progress/models/progress.schema';
         { name: courses.name, schema: CourseSchema },
         { name: 'responses', schema: ResponseSchema },
         { name: 'progress', schema: ProgressSchema, collection: 'progress' },
+        { name: 'LoginAttempt', schema: LoginAttemptSchema },
       ]),
     ],
     controllers: [UserController], // UserController is here

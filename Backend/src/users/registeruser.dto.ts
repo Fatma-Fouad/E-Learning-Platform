@@ -1,5 +1,3 @@
-import { IsEmail, IsNotEmpty, IsString, IsEnum } from 'class-validator';
-import { courses } from 'src/courses/course.schema';
 
 export class RegisterUserDto {
     email:string;
