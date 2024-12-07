@@ -17,6 +17,7 @@ import { UserSchema } from '../../users/user.schema';
       { name: 'module', schema: ModuleSchema },
     ]),
   ],
+  exports: [MongooseModule],
   controllers: [ProgressController], // Register the ProgressController
   providers: [ProgressService], // Register the ProgressService
 })
