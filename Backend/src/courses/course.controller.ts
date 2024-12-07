@@ -6,6 +6,9 @@ import {Controller,Get,Post,Patch,Delete,Query,Param,Body,UploadedFile,UseInterc
   import { Express } from 'express';
   import { RateInstructorDto } from './RateInstructorDto';
   import { courses } from './course.schema';
+import { AuthGuard } from 'src/authentication/auth.guard';
+import { Roles, Role } from 'src/authentication/roles.decorator';
+import { RolesGuard } from 'src/authentication/roles.guard';
 
    
   
@@ -18,14 +21,17 @@ import {Controller,Get,Post,Patch,Delete,Query,Param,Body,UploadedFile,UseInterc
      * Retrieve all courses for all 
      */
     @Get('instructors')
+    @UseGuards(AuthGuard) 
     async findAllForInstructors() {
       return this.coursesService.findAllForInstructors();
     }
   
     /**
      * Retrieve a course by its ID for all
+     * all
      */
     @Get(':id')
+    @UseGuards(AuthGuard) 
     async findCourseById(@Param('id') id: string) {
       try {
         return await this.coursesService.findCourseById(id);
@@ -39,6 +45,8 @@ import {Controller,Get,Post,Patch,Delete,Query,Param,Body,UploadedFile,UseInterc
      */
     @Post()
     //@UseGuards(InstructorGuard) // Restrict access to instructors
+    @UseGuards(AuthGuard, RolesGuard) 
+    @Roles('instructor' as Role)
     async createCourse(@Body() createCourseDto: CreateCourseDto) {
       try {
         return await this.coursesService.create(createCourseDto);
@@ -49,8 +57,11 @@ import {Controller,Get,Post,Patch,Delete,Query,Param,Body,UploadedFile,UseInterc
 
 //     /**
 //      * Update a course 
+// instructor
 //      */
 @Patch(':id')
+@UseGuards(AuthGuard, RolesGuard) 
+    @Roles('admin' as Role, 'instructor' as Role)
   async updateCourse(
     @Param('id') id: string,
     @Body() updateCourseDto: UpdateCourseDto,
@@ -78,6 +89,8 @@ import {Controller,Get,Post,Patch,Delete,Query,Param,Body,UploadedFile,UseInterc
      */
     @Delete(':id')
     //@UseGuards(InstructorGuard) // Restrict access to instructors
+    @UseGuards(AuthGuard, RolesGuard) 
+    @Roles('admin' as Role, 'instructor' as Role)
     async deleteCourse(@Param('id') id: string) {
       try {
         return await this.coursesService.deleteCourse(id);
@@ -90,6 +103,8 @@ import {Controller,Get,Post,Patch,Delete,Query,Param,Body,UploadedFile,UseInterc
      * Retrieve number of enrolled students in a specific course
      */
     @Get(':id/enrolled-students')
+    @UseGuards(AuthGuard, RolesGuard) 
+    @Roles('admin' as Role, 'instructor' as Role)
     async getEnrolledStudents(@Param('id') id: string) {
       return this.coursesService.getEnrolledStudents(id);
     }
@@ -98,6 +113,7 @@ import {Controller,Get,Post,Patch,Delete,Query,Param,Body,UploadedFile,UseInterc
  * Rate a course (students)
  */
 @Get(':id/course-rating')
+@UseGuards(AuthGuard) 
 async getCourseRating(@Param('id') id: string) {
   try {
     const courseRating = await this.coursesService.calculateCourseRating(id);
@@ -115,6 +131,8 @@ async getCourseRating(@Param('id') id: string) {
  * add a comment on a course (students)
  */
     @Post(':courseId/comments')
+    @UseGuards(AuthGuard, RolesGuard) 
+    @Roles('admin' as Role, 'student' as Role)
     async addComment(
       @Param('courseId') courseId: string,
       @Body('comment') comment: string,
@@ -129,9 +147,11 @@ async getCourseRating(@Param('id') id: string) {
 
 /**
    * Modules per course
+   * all
    */
 
 @Get(':id/module-count')
+@UseGuards(AuthGuard) 
 async getModuleCount(@Param('id') courseId: string) {
   try {
     const moduleCount = await this.coursesService.getModuleCountForCourse(courseId);
@@ -147,9 +167,12 @@ async getModuleCount(@Param('id') courseId: string) {
 
 /**
    * Rate the instructor
+   * student
    */
 
 @Patch(':courseId/rate-instructor')
+@UseGuards(AuthGuard, RolesGuard) 
+@Roles('admin' as Role, 'student' as Role)
 async rateInstructor(
   @Param('courseId') courseId: string,
   @Body() body: { rating: number },
@@ -174,6 +197,7 @@ async rateInstructor(
    */
 
 @Get()
+@UseGuards(AuthGuard) 
   async findCourseByModuleTitle(@Query('title') title: string) {
     try {
       if (!title) {
@@ -198,6 +222,7 @@ async rateInstructor(
 
 
   @Get('course-by-creator/:created_by')
+  @UseGuards(AuthGuard) 
 async findCourseByCreator(@Param('created_by') createdBy: string) {
   try {
     if (!createdBy) {

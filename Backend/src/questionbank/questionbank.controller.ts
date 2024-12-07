@@ -7,6 +7,8 @@ import { Role, Roles } from '../authentication/roles.decorator';
 import { AuthGuard } from '../authentication/auth.guard';
 
 @Controller('questionbank')
+@UseGuards(AuthGuard, RolesGuard) 
+@Roles('admin' as Role, 'instructor' as Role)
 export class QuestionBankController {
   constructor(private readonly questionBankService: QuestionBankService) {}
 

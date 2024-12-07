@@ -251,4 +251,52 @@ async getModuleById(@Param('id') id: string) {
     }
 }
 
+  //
+// *upload media
+//
+@Patch(':moduleId/upload')
+@UseInterceptors(FileInterceptor('file'))
+async uploadFileToModule(
+  @Param('moduleId') moduleId: string,
+  @UploadedFile(
+    new ParseFilePipe({
+      validators: [
+        new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }), // Max size: 10 MB
+        new FileTypeValidator({ fileType: 'application/pdf|video/mp4' }), // Allow PDFs and MP4s
+      ],
+    }),
+  )
+  file: Express.Multer.File
+) {
+  return await this.modulesService.saveFileToModule(moduleId, file);
+}
+//
+// *download media
+//
+@Get(':moduleId/download/:filename')
+  async downloadFile(
+    @Param('moduleId') moduleId: string,
+    @Param('filename') filename: string,
+    @Res() res: Response,
+  ) {
+    try {
+      // Get the file path from the module
+      const filePath = await this.modulesService.getFilePathFromModule(moduleId, filename);
+      // Check if the file exists
+      if (!fs.existsSync(filePath)) {
+        throw new NotFoundException('File not found.');
+      }
+      // Set headers and send the file for download
+      res.download(filePath, filename, (err) => {
+        if (err) {
+          console.error('Error sending file:', err);
+          res.status(500).send({ message: 'Failed to download the file.' });
+        }
+      });
+    } catch (error) {
+      console.error('Error during file download:', error);
+      throw new NotFoundException('Failed to download the file.');
+    }
+  }
+
 }

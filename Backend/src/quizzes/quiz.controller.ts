@@ -5,12 +5,12 @@ import { Role, Roles } from '../authentication/roles.decorator';
 import { AuthGuard } from '../authentication/auth.guard';
 
 @Controller('quizzes')
+@UseGuards(AuthGuard, RolesGuard) 
+@Roles('admin' as Role, 'instructor' as Role)
 export class QuizController {
   constructor(private quizService: QuizService) {}
 
   @Post()
-  @UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
-  @Roles('admin' as Role, 'instructor' as Role)
   async generateQuiz(
     @Body('user_id') userId: string,
     @Body('module_id') moduleId: string,

@@ -53,7 +53,7 @@ export class UserController {
 
 //admin , student, instrctor
 @Get(':id/profile')
-@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+@UseGuards(AuthGuard) // Require authentication and specific roles
 async getUserProfile(@Param('id') userId: string) {
   try {
     return await this.userService.getUserProfile(userId);
@@ -63,7 +63,7 @@ async getUserProfile(@Param('id') userId: string) {
 }
 //admin , student, instrctor
 @Get()
-@UseGuards(AuthGuard, RolesGuard)
+@UseGuards(AuthGuard)
 async getAllUser() {
   try {
     return await this.userService.getAllUsers();
@@ -140,9 +140,9 @@ async createAccount(@Param('role') role: string, @Body() createUserDto: any) {
 }
 
 // Update an existing account -admin
+@Put('/accounts/:role/:id')
 @UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
 @Roles('admin' as Role)  // Only admins can access this route
-@Put('/accounts/:role/:id')
 async updateAccount(
   @Param('role') role: string,
   @Param('id') userId: string,
@@ -156,9 +156,9 @@ async updateAccount(
 }
 
 // Delete an account - admin
+@Delete('/accounts/:role/:id')
 @UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
 @Roles('admin' as Role)  // Only admins can access this route
-@Delete('/accounts/:role/:id')
 async deleteAccount(@Param('role') role: string, @Param('id') userId: string) {
   try {
     return await this.userService.deleteUser(userId);
@@ -188,6 +188,7 @@ async deleteAccount(@Param('role') role: string, @Param('id') userId: string) {
   }
   //all-
   @Delete(':id/remove-course/:courseId')
+  @UseGuards(AuthGuard)
   async removeEnrolledCourse(
     @Param('id') userId: string,
     @Param('courseId') courseId: string,
