@@ -12,11 +12,15 @@ import { AuthModule } from './authentication/auth.module';
 import { AuthGuard } from './authentication/auth.guard';
 import { BackupService } from './backup/backup.service';
 import { BackupController } from './backup/backup.controller';
+import { NoteModule } from './notes/note.module';
+
 
 @Module({
   imports: [ QuizModule, QuestionBankModule,ModulesModule,ProgressModule, AuthModule,  UserModule, CourseModule,
+    NoteModule,
     MongooseModule.forRoot('mongodb+srv://softwareproject:sp123@clustersp.wvdbq.mongodb.net/EduLink') ],
     controllers: [AppController, BackupController],
     providers: [AppService, AuthGuard, BackupService],
 })
 export class AppModule {}
+
