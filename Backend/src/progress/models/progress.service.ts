@@ -82,7 +82,7 @@ async getStudentsEngagementReport(courseId: string) {
   
 
 
-// Reports on Content Effectiveness; Ratings
+// Reports on Content Effectiveness; Ratings and Comments
 async getContentEffectivenessReport(courseId: string) {
   // Fetch the course details
   const course = await this.courseModel.findById(courseId).exec();
@@ -128,10 +128,16 @@ async getContentEffectivenessReport(courseId: string) {
     };
   });
 
+  // Retrieve course comments
+  const comments = course.comments && course.comments.length > 0
+    ? course.comments
+    : ['No comments on the course!'];
+
   // Compile the final report
   return {
     courseRating: parseFloat(averageCourseRating.toFixed(2)) || 'No rating yet',
     instructorRating: course.instructor_rating || 'No rating yet',
+    comments, // Include comments or a default message
     modules: moduleDetails, // Each module with its title
   };
 }

@@ -36,6 +36,9 @@ export class courses {
   @Prop({ type: Number, default: 0, required: true })
   course_rating: number;
 
+  @Prop({ type: [String], default: [], required:true })
+  comments: string[];
+
   @Prop({ type: Number, default: 0, required: true })
   instructor_rating: number;
 
