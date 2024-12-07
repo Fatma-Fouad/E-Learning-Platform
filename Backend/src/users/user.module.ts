@@ -1,13 +1,16 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { User, UserSchema } from './user.schema';
-import { ResponseSchema } from '../responses/response.schema'
+import { ResponseSchema } from '../responses/response.schema';
 import { courses, CourseSchema } from '../courses/course.schema';
-import { ProgressSchema } from '../progress/models/progress.schema';
 import { LoginAttemptSchema } from '../authentication/login.schema'; 
 
+import { progress, ProgressSchema } from '../progress/models/progress.schema';
+import { Notification, NotificationSchema } from '../communication/notifications/notifications.schema';
+import { NotificationService } from '../communication/notifications/notification.service';
+import { NotificationModule } from '../communication/notifications/notification.module';
 
 @Module({
     imports: [
@@ -17,12 +20,11 @@ import { LoginAttemptSchema } from '../authentication/login.schema';
         { name: 'responses', schema: ResponseSchema },
         { name: 'progress', schema: ProgressSchema, collection: 'progress' },
         { name: 'LoginAttempt', schema: LoginAttemptSchema },
+        { name: Notification.name, schema: NotificationSchema }, // Add Notification schema
       ]),
     ],
-    exports: [MongooseModule],
     controllers: [UserController], // UserController is here
     providers: [UserService],
-    exports: [UserService],
   })
   export class UserModule {
     

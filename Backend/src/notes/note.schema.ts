@@ -4,6 +4,8 @@ import { courses } from '../courses/course.schema';
 import { User } from '../users/user.schema';
 
 
+
+
 export type NoteDocument = HydratedDocument<notes>;
 
 @Schema({versionKey: false})

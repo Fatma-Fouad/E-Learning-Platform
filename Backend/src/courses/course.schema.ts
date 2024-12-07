@@ -5,31 +5,41 @@ import { User } from '../users/user.schema';
 import { modules } from '../modules/module.schema';
 
 
+
 export type CourseDocument = HydratedDocument<courses>;
 
-@Schema()  
+@Schema()
 export class courses {
 
   // MongoDB automatically adds `_id`, so no need to explicitly declare it.
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true })
   instructor_id: mongoose.Schema.Types.ObjectId; 
 
-  @Prop({required: true})
+  @Prop({ required: true })
   title: string;
 
-  @Prop({required: true})
+  @Prop({ required: true })
   description: string;
 
-  @Prop({required: true})
+  @Prop({ required: true })
   category: string;
 
-  @Prop({required: true})
+  @Prop({ required: true, enum: ['Beginner', 'Intermediate', 'Advanced'] })
+  difficulty_level: string;
+
+  @Prop({ required: true })
   created_by: string;
 
-  @Prop({ type: Date, default: () => new Date() })   
+  @Prop({ type: Date, default: () => new Date() })
   created_at: Date;
 
-  @Prop({ type: Number, default: 0, min: 0, max: 5, required:true })
+  @Prop({ default: false })
+  isOutdated: boolean; // Flag for version control
+
+  @Prop({ default: 1 })
+  version: number; // Version of the course
+
+  @Prop({ type: Number, default: 0, min: 0, max: 5, required: true })
   course_rating: number; // Overall course rating (1-5 stars)
 
   @Prop({ type: [String], default: [], required:true })  
@@ -44,7 +54,7 @@ export class courses {
   @Prop({ type: [mongoose.Schema.Types.ObjectId], ref: 'users', default: [] })
   enrolled_student_ids: mongoose.Schema.Types.ObjectId[]; 
 
-  @Prop({ type: Number, default: 0, required:true })
+  @Prop({ type: Number, default: 0, required: true })
   nom_of_modules: number;
 
   @Prop({ type: Number, default: 0, required: true })
@@ -58,4 +68,4 @@ export class courses {
 
 }
 
-export const CourseSchema = SchemaFactory.createForClass(courses)
+export const CourseSchema = SchemaFactory.createForClass(courses);
