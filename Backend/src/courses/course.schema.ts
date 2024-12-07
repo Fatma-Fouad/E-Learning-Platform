@@ -32,7 +32,7 @@ export class courses {
   @Prop({ type: Number, default: 0, min: 0, max: 5, required:true })
   course_rating: number; // Overall course rating (1-5 stars)
 
-  @Prop({ type: [String], default: [], required:true })
+  @Prop({ type: [String], default: [], required:true })  
   comments: string[];
 
   @Prop({ default: 0 })
@@ -42,7 +42,7 @@ export class courses {
   enrolled_students: number; 
   
   @Prop({ type: [mongoose.Schema.Types.ObjectId], ref: 'users', default: [] })
-  enrolled_student_ids: mongoose.Schema.Types.ObjectId[]; // Array of student IDs
+  enrolled_student_ids: mongoose.Schema.Types.ObjectId[]; 
 
   @Prop({ type: Number, default: 0, required:true })
   nom_of_modules: number;

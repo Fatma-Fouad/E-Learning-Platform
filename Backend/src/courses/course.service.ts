@@ -274,52 +274,31 @@ async updateCourse(id: string, updateCourseDto: UpdateCourseDto): Promise<course
    * Find Course details By the created_by//instructor
    */
 
-      // async findCourseByModulecreated_by(created_by: string): Promise<any> {
-      //   try {
-      //     const create_by = await this.courseModel.findOne({created_by}).exec();
-      
-      //     if (!create_by) {
-      //       throw new NotFoundException('course with the specified created_by not found.');
-      //     }
-      //     let course = null;
-    
-      //     // Populate or fallback to a direct query
-      //     if (create_by.course_id) {
-      //       course = await this.courseModel.findById(create_by.course_id).exec();
-      //     }
-      
-      //     if (!course) {
-      //       throw new NotFoundException('Course with this instructor not found.');
-      //     }
-      //     return {
-      //       course_details: course,
-      //       course_id: course.course_id.toString(),
-      //       // Convert ObjectId to string
-      //     };
-      //   } catch (error) {
-      //     throw new BadRequestException(
-      //       error.message || 'Failed to retrieve course by created_by.',
-      //     );
-      //   }
-      // }
-
-
-      async findCourseByModuleCreatedBy(created_by: string): Promise<any> {
+       async findCourseByCreator(createdBy: string): Promise<any> {
         try {
-          // Find the course based on the `created_by` field
-          const course = await this.courseModel.findOne({ created_by }).exec();
+          console.log('Service: Searching for courses created by:', createdBy);
       
-          if (!course) {
-            throw new NotFoundException('Course with the specified created_by not found.');
+          // Use `find` instead of `findOne` to retrieve all courses if needed
+          const courses = await this.courseModel.find({ created_by: createdBy }).exec();
+      
+          if (!courses || courses.length === 0) {
+            console.log('Service: No courses found for created_by:', createdBy);
+            throw new NotFoundException(`No courses found for creator: ${createdBy}`);
           }
       
+          console.log('Service: Found courses:', courses);
+      
+          // Return the first course found (if applicable) or all
           return {
-            course_details: course,
-            course_id: course._id.toString(), // Convert the ObjectId to a string
+            courses: courses.map(course => ({
+              ...course.toObject(),
+              course_id: course._id.toString(), // Convert ObjectId to string
+            })),
           };
         } catch (error) {
+          console.error('Service: Error in findCourseByCreator:', error.message);
           throw new BadRequestException(
-            error.message || 'Failed to retrieve course by created_by.',
+            error.message || 'Failed to retrieve courses by creator.'
           );
         }
       }

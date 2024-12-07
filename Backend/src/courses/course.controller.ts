@@ -197,61 +197,31 @@ async rateInstructor(
    */
 
 
-//   @Get('created-by')
-// async findCoursesByCreator(@Query('created_by') createdBy: string) {
-//   try {
-//     if (!createdBy) {
-//       throw new BadRequestException('Creator is required.');
-//     }
+  @Get('course-by-creator/:created_by')
+async findCourseByCreator(@Param('created_by') createdBy: string) {
+  try {
+    if (!createdBy) {
+      throw new BadRequestException('The "created_by" parameter is required.');
+    }
 
-//     const result = await this.coursesService.findCoursesByCreator(createdBy);
+    console.log('Controller: Received created_by:', createdBy);
 
-//     return {
-//       message: 'Courses retrieved successfully by creator.',
-//       ...result,
-//     };
-//   } catch (error) {
-//     console.error('Error retrieving courses by creator:', error);
-//     throw error;
-//   }
-// }
+    const result = await this.coursesService.findCourseByCreator(createdBy);
 
+    console.log('Controller: Retrieved result:', result);
 
-// @Get()
-//   async findCourseByModulecreated_by(@Query('created_by') created_by: string) {
-//     try {
-//       if (!created_by) {
-//         throw new BadRequestException('Module title is required.');
-//       }
-
-//       const result = await this.coursesService.findCourseByModulecreated_by(created_by);
-
-//       return {
-//         message: 'Course retrieved successfully by module title.',
-//         ...result,
-//       };
-//     } catch (error) {
-//       console.error('Error retrieving course by module title:', error);
-//       throw error;
-//     }
-//   }
+    return {
+      message: 'Course retrieved successfully by creator.',
+      ...result,
+    };
+  } catch (error) {
+    console.error('Controller: Error in findCourseByCreator:', error.message);
+    throw new BadRequestException(
+      error.message || 'Failed to retrieve course by creator.'
+    );
+  }
+}
 
 
-// @Get('created-byextra')
-// async findCoursesByCreator(@Query('created_by') createdBy: string) {
-//   try {
-//     if (!createdBy) {
-//       throw new BadRequestException('Creator is required.');
-//     }
-
-//     const result = await this.coursesService.findCourseByModuleCreatedBy(createdBy);
-
-//     return {
-//       message: 'Course retrieved successfully by creator.',
-//       ...result,
-//     };
-//   } catch (error) {
-//     throw new BadRequestException(error.message || 'Failed to retrieve course by creator.');
-//   }
-// }
+  
 }
