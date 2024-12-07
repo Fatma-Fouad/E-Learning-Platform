@@ -288,6 +288,7 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
     }
   }
 
+//admin, instructor
   async enrollStudentInCourse(
     userId: string, // Can be instructor or admin
     studentId: string,
