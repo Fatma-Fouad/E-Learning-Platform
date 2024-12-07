@@ -4,19 +4,16 @@ import { ForbiddenException , NotFoundException } from '@nestjs/common';
 
 
 
-
 @Controller('user')
 
 export class UserController {
   constructor(private readonly userService: UserService) {}
   
-
+//admin , student 
   @Post(':id/enroll-course/:courseId')
 async enrollCourse(
   @Param('id') userId: string,
-  @Param('courseId') courseId: string
-  
-  
+  @Param('courseId') courseId: string 
 ) {
    
   console.log(`Enroll Request: UserID - ${userId}, CourseID - ${courseId}`);
@@ -29,28 +26,28 @@ async enrollCourse(
   }
   
 }
+ 
 
-
-  
-  @Get()
-  async getAllUser() {
-    try {
-      return await this.userService.getAllUsers();
-    } catch (error) {
-      throw new BadRequestException(error.message);
-    }
+//admin , student, instrctor
+@Get(':id/profile')
+async getUserProfile(@Param('id') userId: string) {
+  try {
+    return await this.userService.getUserProfile(userId);
+  } catch (error) {
+    throw new BadRequestException(error.message);
   }
-
-  // Get user profile with error handling
-  @Get(':id/profile')
-  async getUserProfile(@Param('id') userId: string) {
-    try {
-      return await this.userService.getUserProfile(userId);
-    } catch (error) {
-      throw new BadRequestException(error.message);
-    }
+}
+//admin , student, instrctor
+@Get()
+async getAllUser() {
+  try {
+    return await this.userService.getAllUsers();
+  } catch (error) {
+    throw new BadRequestException(error.message);
   }
+}
 
+//student, instrctor not admin
   // Update user profile with error handling
 @Put(':id/profile')
 async updateUserProfile(@Param('id') userId: string, @Body() updateData: any) {
@@ -59,10 +56,11 @@ async updateUserProfile(@Param('id') userId: string, @Body() updateData: any) {
   }
 
   // Optional: Validate if only allowed fields (other than email and role) are passed
-  const { email, role, ...filteredUpdateData } = updateData;
-  if (email || role) {
-    throw new BadRequestException('Email and role cannot be updated');
+  const { email, role,created_at,completed_courses,enrolled_courses,gpa,...filteredUpdateData } = updateData;
+  if (email || role || created_at || completed_courses||enrolled_courses|| gpa ) {
+    throw new BadRequestException('cannot be updated ');
   }
+  
 
   try {
     const updatedUser = await this.userService.updateUserProfile(userId, filteredUpdateData);
@@ -75,7 +73,7 @@ async updateUserProfile(@Param('id') userId: string, @Body() updateData: any) {
   }
 }
 
-
+//admin , student 
   // Get enrolled courses for a user
   @Get(':id/enrolled-courses')
   async getEnrolledCourses(@Param('id') userId: string) {
@@ -85,7 +83,7 @@ async updateUserProfile(@Param('id') userId: string, @Body() updateData: any) {
       throw new BadRequestException(error.message);
     }
   }
-
+//admin , student
   // Get completed courses for a user
   @Get(':id/completed-courses')
   async getCompletedCourses(@Param('id') userId: string) {
@@ -96,19 +94,6 @@ async updateUserProfile(@Param('id') userId: string, @Body() updateData: any) {
     }
   }
 
-  @Delete(':id/remove-course/:courseId')
-async removeEnrolledCourse(
-  @Param('id') userId: string,
-  @Param('courseId') courseId: string
-) {
-  try {
-    return await this.userService.removeEnrolledCourse(userId, courseId);
-  } catch (error) {
-    throw new BadRequestException(error.message);
-  }
-}
-
-  
 
 
 // Create a new account (student/instructor) - admin
@@ -143,4 +128,41 @@ async deleteAccount(@Param('role') role: string, @Param('id') userId: string) {
   } catch (error) {
     throw new BadRequestException(error.message);
   }
-}}
+}
+
+//admin , instrctor
+@Post(':instructorId/enroll-student/:studentId/:courseId')
+  async enrollStudentInCourse(
+    @Param('instructorId') instructorId: string,
+    @Param('studentId') studentId: string,
+    @Param('courseId') courseId: string,
+  ) {
+    try {
+      return await this.userService.enrollStudentInCourse(
+        instructorId,
+        studentId,
+        courseId,
+      );
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+  //all-
+  @Delete(':id/remove-course/:courseId')
+  async removeEnrolledCourse(
+    @Param('id') userId: string,
+    @Param('courseId') courseId: string,
+  ) {
+    try {
+      const updatedUser = await this.userService.removeEnrolledCourse(userId, courseId);
+      return {
+        message: 'Course successfully removed from enrolled courses.',
+        user: updatedUser,
+      };
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+
+}

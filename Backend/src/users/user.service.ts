@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Error } from 'mongoose';
 import { User, UserDocument } from './user.schema';
@@ -18,30 +18,38 @@ export class UserService {
         @InjectModel(courses.name) private courseModel: Model<CourseDocument>, // Inject the courses model
       
     ) {}
-    //admin
-  async getAllUsers(): Promise<User[]> {
-    try {
-      const users = await this.userModel.find().exec();
-      return users;
-    } catch (error) {
-      throw new BadRequestException('Error fetching users');
-    }
+  // Fetch all users except admins
+async getAllUsers(): Promise<User[]> {
+  try {
+    // Filter out users with the role "admin"
+    const users = await this.userModel.find({ role: { $ne: 'admin' } }).exec();
+    return users;
+  } catch (error) {
+    throw new BadRequestException('Error fetching users');
+  }
+}
+
+
+  // Fetch user profile except for admin users
+async getUserProfile(userId: string): Promise<User> {
+  if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
+    throw new BadRequestException('Invalid user ID format');
   }
 
-  // Fetch user profile
-  async getUserProfile(userId: string): Promise<User> {
-    if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
-      throw new BadRequestException('Invalid user ID format');
-    }
+  const user = await this.userModel.findById(userId).exec();
 
-    const user = await this.userModel.findById(userId).exec();
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-    return user;
+  // Check if the user is an admin
+  if (user?.role === 'admin') {
+    throw new ForbiddenException('Access denied: Admin profile cannot be viewed');
   }
 
-  // Update user profile
+  if (!user) {
+    throw new NotFoundException('User not found');
+  }
+
+  return user;
+}
+
 async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User> {
   // Validate userId format
   if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
@@ -49,7 +57,7 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
   }
 
   // Remove email and role from the updateData to prevent them from being updated
-  const { email, role, ...filteredUpdateData } = updateData;
+  const { email, role,gpa,completed_courses,enrolled_courses, ...filteredUpdateData } = updateData;
 
   try {
     const user = await this.userModel.findByIdAndUpdate(
@@ -94,9 +102,10 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
     }
     return user.completed_courses;
   }
+   
 
 
-  async addCourseToEnrolled(userId: string, courseId: string): Promise<User> {
+  async addCourseToEnrolled(userId: string, courseId: string): Promise<{ user: User; recommendedCourses: string[] }> {
     // Validate userId and courseId
     if (!userId.match(/^[0-9a-fA-F]{24}$/) || !courseId.match(/^[0-9a-fA-F]{24}$/)) {
       throw new BadRequestException('Invalid user ID or course ID format');
@@ -121,6 +130,12 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
   
     // Add the course to the user's enrolled courses
     user.enrolled_courses.push(courseId);
+  
+    // Remove the course from the user's recommended_courses if it exists
+    user.recommended_courses = user.recommended_courses.filter(
+      (recommendedCourse) => recommendedCourse !== courseId
+    );
+  
     await user.save();
   
     // Increment the course's enrolled_students count without triggering validation
@@ -148,54 +163,105 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
     });
     await progress.save();
   
-    return user;
+    // Recommend new courses based on the user's enrolled courses
+    const enrolledCourseIds = user.enrolled_courses;
+    const enrolledCourses = await this.courseModel
+      .find({ _id: { $in: enrolledCourseIds } })
+      .exec();
+    const enrolledCategories = enrolledCourses.map((c) => c.category);
+  
+    const recommendedCourses = await this.courseModel
+      .find({
+        category: { $in: enrolledCategories }, // Match enrolled categories
+        _id: { $nin: [...enrolledCourseIds, ...user.recommended_courses] }, // Exclude already enrolled or recommended
+      })
+      .exec();
+  
+    // Extract IDs of recommended courses
+    const recommendedCourseIds = recommendedCourses.map((c) => c._id.toString());
+  
+    // Update the user's recommended_courses
+    user.recommended_courses.push(...recommendedCourseIds);
+    await user.save();
+  
+    return {
+      user,
+      recommendedCourses: recommendedCourseIds,
+    };
   }
   
-
-
+  
   
  
 
-  // Delete from enrolled courses
-async removeEnrolledCourse(userId: string, courseId: string): Promise<User> {
-  // Validate userId and courseId format
-  if (!userId.match(/^[0-9a-fA-F]{24}$/) || !courseId.match(/^[0-9a-fA-F]{24}$/)) {
-    throw new BadRequestException('Invalid user ID or course ID format');
+  async removeEnrolledCourse(userId: string, courseId: string): Promise<User> {
+    // Validate userId and courseId format
+    if (!userId.match(/^[0-9a-fA-F]{24}$/) || !courseId.match(/^[0-9a-fA-F]{24}$/)) {
+      throw new BadRequestException('Invalid user ID or course ID format');
+    }
+  
+    // Convert courseId to ObjectId
+    const courseObjectId = new mongoose.Types.ObjectId(courseId);
+  
+    // Check if the user exists
+    const user = await this.userModel.findById(userId).exec();
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+  
+    // Check if the course exists
+    const course = await this.courseModel.findById(courseId).exec();
+    if (!course) {
+      throw new NotFoundException('This course is not in our system');
+    }
+  
+    // Check if the course is in the user's enrolled courses
+    const enrolledCoursesAsObjectIds = user.enrolled_courses.map(id => new mongoose.Types.ObjectId(id));
+    if (!enrolledCoursesAsObjectIds.some(id => id.equals(courseObjectId))) {
+      throw new BadRequestException('The course is not in the user\'s enrolled courses');
+    }
+  
+    // Remove the course from the user's enrolledCourses array
+    user.enrolled_courses = user.enrolled_courses.filter(
+      enrolledCourse => !new mongoose.Types.ObjectId(enrolledCourse).equals(courseObjectId)
+    );
+  
+    // Handle recommended_courses logic
+    // Find the category of the removed course
+    const removedCourseCategory = course.category;
+  
+    // Check if the user is still enrolled in any courses of the same category
+    const stillEnrolledInCategory = await this.courseModel.exists({
+      _id: { $in: user.enrolled_courses },
+      category: removedCourseCategory,
+    });
+  
+    if (!stillEnrolledInCategory) {
+      // If no other courses of the same category are enrolled, remove recommendations of this category
+      user.recommended_courses = await this.courseModel
+        .find({
+          _id: { $in: user.recommended_courses.map(id => new mongoose.Types.ObjectId(id)) },
+          category: removedCourseCategory,
+        })
+        .then(recommendedCourses => {
+          const recommendedIdsToRemove = recommendedCourses.map(c => c._id.toString());
+          return user.recommended_courses.filter(
+            recommendedId => !recommendedIdsToRemove.includes(recommendedId)
+          );
+        });
+    }
+  
+    // Save the updated user document
+    await user.save();
+  
+    // Decrement the course's enrolled_students count
+    course.enrolled_students = Math.max(0, (course.enrolled_students || 0) - 1); // Ensure it doesn't go below 0
+    await course.save();
+  
+    return user;
   }
-
-  // Convert courseId to ObjectId
-  const courseObjectId = new mongoose.Types.ObjectId(courseId);
-
-  // Check if the user exists
-  const user = await this.userModel.findById(userId).exec();
-  if (!user) {
-    throw new NotFoundException('User not found');
-  }
-
-  // Check if the course exists
-  const course = await this.courseModel.findById(courseId).exec();
-  if (!course) {
-    throw new NotFoundException('This course is not in our system');
-  }
-
-  // Check if the course is in the user's enrolled courses
-  const enrolledCoursesAsObjectIds = user.enrolled_courses.map(id => new mongoose.Types.ObjectId(id));
-  if (!enrolledCoursesAsObjectIds.some(id => id.equals(courseObjectId))) {
-    throw new BadRequestException('The course is not in the user\'s enrolled courses');
-  }
-
-  // Remove the course from the user's enrolledCourses array
-  user.enrolled_courses = user.enrolled_courses.filter(
-    enrolledCourse => !new mongoose.Types.ObjectId(enrolledCourse).equals(courseObjectId)
-  );
-  await user.save();
-
-  // Decrement the course's enrolled_students count
-  course.enrolled_students = Math.max(0, (course.enrolled_students || 0) - 1); // Ensure it doesn't go below 0
-  await course.save();
-
-  return user;
-}
+  
+  
 
   //admin
   async createUser(createUserDto: Partial<User>): Promise<User> {
@@ -222,7 +288,97 @@ async removeEnrolledCourse(userId: string, courseId: string): Promise<User> {
     }
   }
 
-
+//admin, instructor
+  async enrollStudentInCourse(
+    userId: string, // Can be instructor or admin
+    studentId: string,
+    courseId: string,
+  ): Promise<{ message: string; recommendedCourses: string[] }> {
+    // Validate user (instructor or admin)
+    const user = await this.userModel.findById(userId).exec();
+    if (!user || (user.role !== 'instructor' && user.role !== 'admin')) {
+      throw new BadRequestException(
+        'Access denied. Only instructors or admins can enroll students.',
+      );
+    }
+  
+    // Validate student
+    const student = await this.userModel.findById(studentId).exec();
+    if (!student || student.role !== 'student') {
+      throw new NotFoundException('Student not found.');
+    }
+  
+    // Validate course
+    const course = await this.courseModel.findById(courseId).exec();
+    if (!course) {
+      throw new NotFoundException('Course not found.');
+    }
+  
+    // Check if the student is already enrolled in the course
+    if (student.enrolled_courses.includes(courseId)) {
+      throw new BadRequestException('The student is already enrolled in this course.');
+    }
+  
+    // Enroll the student in the course
+    student.enrolled_courses.push(courseId);
+  
+    // Remove the course from the student's recommended_courses if it exists
+    student.recommended_courses = student.recommended_courses.filter(
+      (recommendedCourse) => recommendedCourse !== courseId
+    );
+  
+    await student.save();
+  
+    // Increment the course's enrolled_students count
+    course.enrolled_students = (course.enrolled_students || 0) + 1;
+    await course.save();
+  
+    // Initialize quiz_grades based on nom_of_modules
+    const numOfModules = course.nom_of_modules || 0;
+    const quizGrades = Array(numOfModules).fill(null);
+  
+    // Create progress for this course
+    const progress = new this.progressModel({
+      user_id: studentId,
+      user_name: student.name,
+      course_id: courseId,
+      course_name: course.title,
+      completed_modules: 0,
+      completion_percentage: 0,
+      quizzes_taken: 0,
+      quiz_grades: quizGrades,
+      last_quiz_score: null,
+      avg_score: null,
+    });
+    await progress.save();
+  
+    // Recommend new courses based on the student's enrolled courses
+    const enrolledCourseIds = student.enrolled_courses;
+    const enrolledCourses = await this.courseModel
+      .find({ _id: { $in: enrolledCourseIds } })
+      .exec();
+    const enrolledCategories = enrolledCourses.map((c) => c.category);
+  
+    const recommendedCourses = await this.courseModel
+      .find({
+        category: { $in: enrolledCategories }, // Match enrolled categories
+        _id: { $nin: [...enrolledCourseIds, ...student.recommended_courses] }, // Exclude already enrolled or recommended
+      })
+      .exec();
+  
+    // Extract IDs of recommended courses
+    const recommendedCourseIds = recommendedCourses.map((c) => c._id.toString());
+  
+    // Update the student's recommended_courses
+    student.recommended_courses.push(...recommendedCourseIds);
+    await student.save();
+  
+    return {
+      message: 'Student successfully enrolled in the course.',
+      recommendedCourses: recommendedCourseIds,
+    };
+  }
+  
 
 
   

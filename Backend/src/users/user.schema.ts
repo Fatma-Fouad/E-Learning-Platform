@@ -18,17 +18,23 @@ export class User {
   @Prop({ type: [String], default: [] })
   completed_courses: string[];
 
-  @Prop({ type: [String], default: [] })
-  role: string[];
+  @Prop({ required: true, enum: ['student', 'instructor', 'admin'] })
+  role: string;
 
-  @Prop({ type: [Date], default: [] })
-  created_at: Date[];
+  @Prop({ default: () => new Date()})
+  created_at: Date;
+
+  @Prop({  required: true })
+  password_hash: string;
+
+  @Prop({  required: false })
+  profile_picture_url: string;
+
+  @Prop({ type: Number, default: 0 }) // Add average_score attribute
+  gpa: number;
 
   @Prop({ type: [String], default: [] })
-  password_hash: string[];
-
-  @Prop({ type: [String], default: [] })
-  profile_picture_url: string[];
+  recommended_courses: string[];
 
   @Prop({ type: Number, default: 0 }) // Add average_score attribute
   gpa: number;
