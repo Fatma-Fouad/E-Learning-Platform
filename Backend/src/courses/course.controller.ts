@@ -111,6 +111,22 @@ async getCourseRating(@Param('id') id: string) {
 }
 
 
+    /**
+ * add a comment on a course (students)
+ */
+    @Post(':courseId/comments')
+    async addComment(
+      @Param('courseId') courseId: string,
+      @Body('comment') comment: string,
+    ) {
+      if (!comment || comment.trim() === '') {
+        throw new BadRequestException('Comment cannot be empty.');
+      }
+      return this.coursesService.addCourseComment(courseId, comment);
+    }  
+
+
+
 /**
    * Modules per course
    */

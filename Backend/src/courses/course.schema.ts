@@ -32,6 +32,9 @@ export class courses {
   @Prop({ type: Number, default: 0, min: 0, max: 5, required:true })
   course_rating: number; // Overall course rating (1-5 stars)
 
+  @Prop({ type: [String], default: [], required:true })
+  comments: string[];
+
   @Prop({ default: 0 })
   ratingCount: number; // Number of ratings submitted
 

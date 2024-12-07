@@ -147,6 +147,34 @@ async updateCourse(id: string, updateCourseDto: UpdateCourseDto): Promise<course
       );
     }
   }
+
+
+ /**
+   * Add a comment about a course during rating
+   */
+  async addCourseComment(courseId: string, comment: string): Promise<any> {
+    // Validate the courseId format
+    if (!courseId.match(/^[0-9a-fA-F]{24}$/)) {
+      throw new BadRequestException('Invalid course ID format.');
+    }
+  
+    // Check if the course exists
+    const course = await this.courseModel.findById(courseId).exec();
+    if (!course) {
+      throw new NotFoundException(`Course with ID: ${courseId} not found.`);
+    }
+  
+    // Add the comment to the comments array
+    course.comments.push(comment);
+    await course.save();
+  
+    return {
+      message: 'Comment added successfully.',
+      courseId: course._id,
+      comments: course.comments,
+    };
+  }
+  
   
   /**
    * Numbers of Modules per course
