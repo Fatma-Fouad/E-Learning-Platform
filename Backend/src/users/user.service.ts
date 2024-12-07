@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Error } from 'mongoose';
 import { User, UserDocument } from './user.schema';
@@ -10,24 +10,22 @@ import { ProgressDocument } from '../progress/models/progress.schema';
 import { NotificationService } from '../communication/notifications/notification.service';
 import { NotificationGateway } from 'src/communication/notifications/notificationGateway';
 
-
+// hana
 @Injectable()
 export class UserService {
-  constructor(
-    @InjectModel('progress') private readonly progressModel: Model<ProgressDocument>,
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
-    @InjectModel('responses') private responseModel: Model<ResponseDocument>, // Inject the responses model
-    @InjectModel(courses.name) private courseModel: Model<CourseDocument>, // Inject the courses model
-    private readonly notificationService: NotificationService, // Inject NotificationService
-     private readonly notificationGateway: NotificationGateway // Inject NotificationGateway
-    
-
-  ) { }
-  // Fetch all users except admins
+    constructor(
+        @InjectModel(User.name) private userModel: Model<UserDocument>,
+        @InjectModel('responses') private responseModel: Model<ResponseDocument>, // Inject the responses model
+      @InjectModel(courses.name) private courseModel: Model<CourseDocument>, // Inject the courses model
+      private readonly notificationService: NotificationService, // Inject NotificationService
+      private readonly notificationGateway: NotificationGateway // Inject NotificationGateway
+         @InjectModel('progress') private readonly progressModel: Model<ProgressDocument>
+      
+    ) {}
+    //admin
   async getAllUsers(): Promise<User[]> {
     try {
-      // Filter out users with the role "admin"
-      const users = await this.userModel.find({ role: { $ne: 'admin' } }).exec();
+      const users = await this.userModel.find().exec();
       return users;
     } catch (error) {
       throw new BadRequestException('Error fetching users');
@@ -35,34 +33,36 @@ export class UserService {
   }
 
 
-  // Fetch user profile except for admin users
-  async getUserProfile(userId: string): Promise<User> {
-    if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
-      throw new BadRequestException('Invalid user ID format');
-    }
 
-    const user = await this.userModel.findById(userId).exec();
-
-    // Check if the user is an admin
-    if (user?.role === 'admin') {
-      throw new ForbiddenException('Access denied: Admin profile cannot be viewed');
-    }
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    return user;
+  // Fetch user profile except for admin users except for admin users
+async getUserProfile(userId: string): Promise<User> {
+  if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
+    throw new BadRequestException('Invalid user ID format');
   }
 
-  async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User> {
-    // Validate userId format
-    if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
-      throw new BadRequestException('Invalid user ID format');
-    }
+  const user = await this.userModel.findById(userId).exec();
+
+  // Check if the user is an admin
+  if (user?.role === 'admin') {
+    throw new ForbiddenException('Access denied: Admin profile cannot be viewed');
+  }
+
+  if (!user) {
+    throw new NotFoundException('User not found');
+  }
+
+  return user;
+}
+
+  // Update user profile
+async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User> {
+  // Validate userId format
+  if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
+    throw new BadRequestException('Invalid user ID format');
+  }
 
     // Remove email and role from the updateData to prevent them from being updated
-    const { email, role, gpa, completed_courses, enrolled_courses, ...filteredUpdateData } = updateData;
+    const { email, role, gpa, completed_courses, enrolled_courses,gpa,completed_courses,enrolled_courses, ...filteredUpdateData } = updateData;
 
     try {
       const user = await this.userModel.findByIdAndUpdate(
@@ -107,9 +107,11 @@ export class UserService {
     }
     return user.completed_courses;
   }
+   
 
 
-  async addCourseToEnrolled(userId: string, courseId: string): Promise<{ user: User; recommendedCourses: string[] }> {
+
+  async addCourseToEnrolled(userId: string, courseId: string): Promise<{ user: { user: User; recommendedCourses: string[] }; recommendedCourses: string[] }> {
     // Validate userId and courseId
     if (!userId.match(/^[0-9a-fA-F]{24}$/) || !courseId.match(/^[0-9a-fA-F]{24}$/)) {
       throw new BadRequestException('Invalid user ID or course ID format');
@@ -323,6 +325,7 @@ export class UserService {
     }
   }
 
+//admin, instructor
   async enrollStudentInCourse(
     userId: string, // Can be instructor or admin
     studentId: string,
@@ -335,42 +338,42 @@ export class UserService {
         'Access denied. Only instructors or admins can enroll students.',
       );
     }
-
+  
     // Validate student
     const student = await this.userModel.findById(studentId).exec();
     if (!student || student.role !== 'student') {
       throw new NotFoundException('Student not found.');
     }
-
+  
     // Validate course
     const course = await this.courseModel.findById(courseId).exec();
     if (!course) {
       throw new NotFoundException('Course not found.');
     }
-
+  
     // Check if the student is already enrolled in the course
     if (student.enrolled_courses.includes(courseId)) {
       throw new BadRequestException('The student is already enrolled in this course.');
     }
-
+  
     // Enroll the student in the course
     student.enrolled_courses.push(courseId);
-
+  
     // Remove the course from the student's recommended_courses if it exists
     student.recommended_courses = student.recommended_courses.filter(
       (recommendedCourse) => recommendedCourse !== courseId
     );
-
+  
     await student.save();
-
+  
     // Increment the course's enrolled_students count
     course.enrolled_students = (course.enrolled_students || 0) + 1;
     await course.save();
-
+  
     // Initialize quiz_grades based on nom_of_modules
     const numOfModules = course.nom_of_modules || 0;
     const quizGrades = Array(numOfModules).fill(null);
-
+  
     // Create progress for this course
     const progress = new this.progressModel({
       user_id: studentId,
@@ -385,36 +388,38 @@ export class UserService {
       avg_score: null,
     });
     await progress.save();
-
+  
     // Recommend new courses based on the student's enrolled courses
     const enrolledCourseIds = student.enrolled_courses;
     const enrolledCourses = await this.courseModel
       .find({ _id: { $in: enrolledCourseIds } })
       .exec();
     const enrolledCategories = enrolledCourses.map((c) => c.category);
-
+  
     const recommendedCourses = await this.courseModel
       .find({
         category: { $in: enrolledCategories }, // Match enrolled categories
         _id: { $nin: [...enrolledCourseIds, ...student.recommended_courses] }, // Exclude already enrolled or recommended
       })
       .exec();
-
+  
     // Extract IDs of recommended courses
     const recommendedCourseIds = recommendedCourses.map((c) => c._id.toString());
-
+  
     // Update the student's recommended_courses
     student.recommended_courses.push(...recommendedCourseIds);
     await student.save();
-
+  
     return {
       message: 'Student successfully enrolled in the course.',
       recommendedCourses: recommendedCourseIds,
     };
   }
-
-
-
-
-
+  
+// 
+  async findByEmail(email: string):Promise<UserDocument> {
+    const user=await this.userModel.findOne({email}).exec();
+    return user;  // Fetch a student by username
+  }
+  
 }

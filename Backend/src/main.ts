@@ -1,8 +1,9 @@
-/* eslint-disable prettier/prettier */
+import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import mongoose from 'mongoose';
 import { Logger } from '@nestjs/common';
+import 'reflect-metadata';
 import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
@@ -22,8 +23,8 @@ async function bootstrap() {
     logger.warn('MongoDB connection disconnected');
   });
 
-
-  await app.listen(process.env.PORT ?? 3001);
-  logger.log(`Application is running on: http://localhost:${process.env.PORT ?? 3001}`);
+  app.useGlobalPipes(new ValidationPipe());
+  await app.listen(process.env.PORT ?? 3000);
+  logger.log(`Application is running on: http://localhost:${process.env.PORT ?? 3000}`);
 }
 bootstrap();

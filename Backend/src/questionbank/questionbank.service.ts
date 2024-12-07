@@ -54,4 +54,30 @@ export class QuestionBankService {
 
     return questionBank;
   }
+  async deleteQuestion(moduleId: string, questionId: string): Promise<{ message: string }> {
+    //get question bank for this module
+    const questionBank = await this.questionBankModel.findOne({ module_id: moduleId });
+
+    if (!questionBank) {
+      throw new NotFoundException(`Question bank for module ID ${moduleId} not found.`);
+    }
+
+    //findIndex()->loops over the question array and checks if the id matches
+    //if found->0 if not found->-1
+    const questionIndex = questionBank.questions.findIndex(
+      (question) => question.question_id.toString() === questionId,
+    );
+
+    if (questionIndex === -1) {
+      throw new NotFoundException(`Question with ID ${questionId} not found.`);
+    }
+
+    //rmeove the question from the array
+    questionBank.questions.splice(questionIndex, 1);
+
+    //save the updated
+    await questionBank.save();
+
+    return { message: 'Question deleted successfully' };
+  }
 }

@@ -10,7 +10,9 @@ import { ModulesModule } from '../modules/module.module';
 import { ModuleSchema } from '../modules/module.schema';
 import { modules } from '../modules/module.schema';
 import { User } from '../users/user.schema';
-import { NotificationModule } from '../communication/notifications/notification.module'; // Import NotificationModule
+import { NotificationModule } from '../communication/notifications/notification.module'; // Import NotificationModuleimport { users } from '../users/user.schema';
+
+
 
 @Module({
   imports: [
@@ -27,6 +29,6 @@ import { NotificationModule } from '../communication/notifications/notification.
   ],
   controllers: [CoursesController],
   providers: [CoursesService],
-  exports: [CoursesService],
+  exports: [CoursesService],  
 })
 export class CourseModule { }

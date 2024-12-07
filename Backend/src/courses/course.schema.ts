@@ -1,5 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+ import { UserSchema } from '../users/user.schema';
 import mongoose, { HydratedDocument } from 'mongoose';
+import { User } from '../users/user.schema';
+import { modules } from '../modules/module.schema';
+
 
 
 export type CourseDocument = HydratedDocument<courses>;
@@ -7,8 +11,9 @@ export type CourseDocument = HydratedDocument<courses>;
 @Schema()
 export class courses {
 
+  // MongoDB automatically adds `_id`, so no need to explicitly declare it.
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true })
-  instructor_id: mongoose.Schema.Types.ObjectId;
+  instructor_id: mongoose.Schema.Types.ObjectId; 
 
   @Prop({ required: true })
   title: string;
@@ -21,7 +26,6 @@ export class courses {
 
   @Prop({ required: true, enum: ['Beginner', 'Intermediate', 'Advanced'] })
   difficulty_level: string;
-
 
   @Prop({ required: true })
   created_by: string;
@@ -38,33 +42,29 @@ export class courses {
   @Prop({ type: Number, default: 0, min: 0, max: 5, required: true })
   course_rating: number; // Overall course rating (1-5 stars)
 
+  @Prop({ type: [String], default: [], required:true })  
+  comments: string[];
+
   @Prop({ default: 0 })
   ratingCount: number; // Number of ratings submitted
 
-  @Prop({ type: [String], default: [] })
-  multimedia: string[]; // Array to store file paths or URLs
-
-  @Prop({ type: Number, default: 0, required: true })
-  enrolled_students: number;
-
+  @Prop({ type: Number, default: 0, required:true})
+  enrolled_students: number; 
+  
   @Prop({ type: [mongoose.Schema.Types.ObjectId], ref: 'users', default: [] })
-  enrolled_student_ids: mongoose.Schema.Types.ObjectId[]; // Array of student IDs
-
+  enrolled_student_ids: mongoose.Schema.Types.ObjectId[]; 
 
   @Prop({ type: Number, default: 0, required: true })
   nom_of_modules: number;
-
-  @Prop({ type: [Object], default: [] })
-  previousVersions: Record<string, any>[]; // Array of previous version details
 
   @Prop({ type: Number, default: 0, required: true })
   instructor_rating: number;
 
   @Prop({ type: Number, default: 0, required: true })
-  instructor_ratingCount: number;
+  instructor_ratingCount: number; 
 
-  @Prop({ type: Number, default: 0, required: true })
-  completed_students: number;
+  @Prop({ type: Number, default: 0, required:true})
+  completed_students: number; 
 
 }
 

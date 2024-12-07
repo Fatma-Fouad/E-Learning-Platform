@@ -7,14 +7,14 @@ export type ModuleDocument = HydratedDocument<modules>;
 @Schema()  
 export class modules {
 
-  @Prop({type: mongoose.Schema.Types.ObjectId, ref:'courses',required: true})
-  course_id: mongoose.Schema.Types.ObjectId;
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'courses', required: true })
+  course_id: mongoose.Schema.Types.ObjectId; 
 
   @Prop({required: true})
   title: string;
 
-  @Prop({required: true})
-  content: string;
+  @Prop({ type: [String], default: [] })
+   content: string[];
 
   @Prop({ type: Date, default: () => new Date() })   
   created_at: Date;
@@ -31,13 +31,11 @@ export class modules {
   @Prop({ default: 1 })
   module_version: number; // Version of the course
 
-  
-  @Prop({ type: [Object], default: [] })
-modules_previousVersions: Record<string, any>[]; // Array of previous version details
-
-
   @Prop({ type: String, enum: ['Easy', 'Medium', 'Hard'] }) // New field
   module_difficultyLevel: string;
+
+  @Prop({ type: Number, required: true, unique: true, min: 1 })
+  module_order: number;
 }
 
 export const ModuleSchema = SchemaFactory.createForClass(modules);
