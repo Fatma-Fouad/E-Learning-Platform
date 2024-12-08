@@ -1,7 +1,10 @@
 import { ChatSchema } from './chats.schema';
-import { Controller, Get, Post, Param, Body, Delete, Query, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Delete, Query, NotFoundException, BadRequestException, ForbiddenException, UseGuards } from '@nestjs/common';
 import { ChatService } from './chats.service';
 import mongoose from 'mongoose';
+import { AuthGuard } from 'src/authentication/auth.guard';
+import { Roles, Role } from 'src/authentication/roles.decorator';
+import { RolesGuard } from 'src/authentication/roles.guard';
 
 @Controller('chat')
 export class ChatController {
@@ -12,12 +15,15 @@ export class ChatController {
 
     // Get all chats (Access: Admin)
     @Get()
+    @UseGuards(AuthGuard, RolesGuard) 
+    @Roles('admin' as Role)
     async getAllChats() {
         return this.chatService.getAllChats();
     }
 
     // Create a new chat (Access: Instructor, Admin, Student)
     @Post('create')
+    @UseGuards(AuthGuard) 
     async createChat(
         @Body() body: { chatName: string; participants: string[]; courseId: string }
     ) {
@@ -33,6 +39,7 @@ export class ChatController {
 
     // Search chats by query (Access: Student, Instructor, Admin)
     @Get('search')
+    @UseGuards(AuthGuard) 
     async searchChats(@Query('q') searchTerm: string) {
         if (!searchTerm || searchTerm.trim() === '') {
             throw new BadRequestException('Search term is required');
@@ -42,6 +49,8 @@ export class ChatController {
 
     // Get chats by course ID (Access: Instructor, Admin)
     @Get('course/:courseId')
+    @UseGuards(AuthGuard, RolesGuard) 
+  @Roles('instructor' as Role, 'admin' as Role)
     async getChatsByCourse(@Param('courseId') courseId: string) {
         if (!mongoose.isValidObjectId(courseId)) {
             throw new BadRequestException('Invalid course ID');
@@ -52,6 +61,7 @@ export class ChatController {
 
     // Delete a chat (Access: Admin, User who created the chat)
     @Delete(':id')
+    @UseGuards(AuthGuard) 
     async deleteChat(@Param('id') id: string, @Query('userId') userId: string) {
         // Fetch the chat by ID to verify if the user is the creator
         const chat = await this.chatService.getChatById(id);
@@ -72,6 +82,7 @@ export class ChatController {
 
     // Add a message to a chat (Access: Student, Instructor, Admin)
     @Post('message/:id')
+    @UseGuards(AuthGuard) 
     async addMessage(
         @Param('id') chatId: string,
         @Body() messageData: { sender: string; content: string }
@@ -91,6 +102,7 @@ export class ChatController {
 
     // Get chat history (Access: Student, Instructor, Admin)
     @Get(':chatId/messages')
+    @UseGuards(AuthGuard) 
     async getChatHistory(@Param('chatId') chatId: string) {
         console.log(`Fetching messages for chatId: ${chatId}`);
         const messages = await this.chatService.getChatHistory(chatId);

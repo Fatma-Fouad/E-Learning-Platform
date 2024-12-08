@@ -4,14 +4,14 @@ import { Model } from 'mongoose';
 import { QuizDocument } from './quiz.schema';
 import { QuestionBankDocument } from '../questionbank/questionbank.schema';
 import { UserDocument } from '../users/user.schema';
-import { ProgressDocument } from '../progress/progress.schema';
+import { ProgressDocument } from '../progress/models/progress.schema';
 
 @Injectable()
 export class QuizService {
   constructor(
     @InjectModel('quizzes') private quizModel: Model<QuizDocument>,
     @InjectModel('questionbank') private questionBankModel: Model<QuestionBankDocument>,
-    @InjectModel('users') private userModel: Model<UserDocument>,
+    @InjectModel('User') private userModel: Model<UserDocument>,
     @InjectModel('progress') private progressModel: Model<ProgressDocument>,
   ) {}
 

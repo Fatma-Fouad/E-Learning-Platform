@@ -1,6 +1,9 @@
-import { Controller, Get, Post, Param, Body, Query, NotFoundException, BadRequestException, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Query, NotFoundException, BadRequestException, Delete, UseGuards } from '@nestjs/common';
 import { ForumsService } from './forums.service';
 import mongoose from 'mongoose';
+import { AuthGuard } from 'src/authentication/auth.guard';
+import { Roles, Role } from 'src/authentication/roles.decorator';
+import { RolesGuard } from 'src/authentication/roles.guard';
 
 @Controller('forums')
 export class ForumsController {
@@ -8,12 +11,16 @@ export class ForumsController {
 
     // Get all forums (Access: Admin)
     @Get()
+    @UseGuards(AuthGuard, RolesGuard) 
+    @Roles('admin' as Role)
     getAllForums() {
         return this.forumsService.getAllForums();
     }
 
     // Create a new forum (Access: Instructor, Admin)
     @Post('create')
+    @UseGuards(AuthGuard, RolesGuard) 
+    @Roles('admin' as Role, 'instructor' as Role)
     async addForum(
         @Body() body: { courseId: string; courseName: string; createdBy: string }
     ) {
@@ -30,6 +37,7 @@ export class ForumsController {
 
     // Search for a specific course (Access: Student, Instructor, Admin)
     @Get('search-courses')
+    @UseGuards(AuthGuard) 
     async searchCourses(@Query('q') searchTerm: string) {
         console.log('Search term received for courses:', searchTerm);
         if (!searchTerm || searchTerm.trim() === '') {
@@ -40,6 +48,7 @@ export class ForumsController {
 
     // Search forums by thread title in all courses (Access: Student, Instructor, Admin)
     @Get('search')
+    @UseGuards(AuthGuard) 
     async searchForum(@Query('q') searchTerm: string) {
         console.log('Search term received:', searchTerm);
         if (!searchTerm || searchTerm.trim() === '') {
@@ -50,6 +59,7 @@ export class ForumsController {
 
     // Search for threads within a specific course (Access: Student, Instructor, Admin)
     @Get(':courseId/search-threads')
+    @UseGuards(AuthGuard) 
     async searchThreadsInCourse(
         @Param('courseId') courseId: string,
         @Query('q') searchTerm: string,
@@ -63,6 +73,7 @@ export class ForumsController {
 
     // Post a new thread (Access: Student, Instructor, Admin)
     @Post(':courseId/threads')
+    @UseGuards(AuthGuard) 
     addThread(
         @Param('courseId') courseId: string,
         @Body() body: { title: string; description: string; createdBy: string },
@@ -87,6 +98,7 @@ export class ForumsController {
 
     // Add a reply to a thread (Access: Student, Instructor, Admin)
     @Post(':courseId/threads/:threadId/replies')
+    @UseGuards(AuthGuard) 
     async addReply(
         @Param('courseId') courseId: string,
         @Param('threadId') threadId: string,
@@ -108,6 +120,8 @@ export class ForumsController {
 
     // Delete a forum (Access: Admin, Instructor)
     @Delete(':courseId')
+    @UseGuards(AuthGuard, RolesGuard) 
+    @Roles('admin' as Role, 'instructor' as Role)
     async deleteForum(
         @Param('courseId') courseId: string,
         @Query('userId') userId: string // Pass userId as a query parameter
@@ -122,6 +136,7 @@ export class ForumsController {
 
     // Delete a thread in a course (Access: Admin,User who posted the thread)
     @Delete(':courseId/threads/:threadId')
+    @UseGuards(AuthGuard) 
     async deleteThread(
         @Param('courseId') courseId: string,
         @Param('threadId') threadId: string,
@@ -137,6 +152,7 @@ export class ForumsController {
 
     // Delete a reply in a thread (Access: Admin,User who posted the reply)
     @Delete(':courseId/threads/:threadId/replies/:replyId')
+    @UseGuards(AuthGuard) 
     async deleteReply(
         @Param('courseId') courseId: string,
         @Param('threadId') threadId: string,

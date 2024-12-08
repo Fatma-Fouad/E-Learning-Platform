@@ -21,6 +21,7 @@ import { RolesGuard } from 'src/authentication/roles.guard';
      * Retrieve all courses for students
      */
     @Get('students')
+    @UseGuards(AuthGuard) 
     async findAllForStudents() {
       try {
         const courses = await this.coursesService.findAllForStudents();
@@ -61,7 +62,8 @@ import { RolesGuard } from 'src/authentication/roles.guard';
      * Create a new course
      */
     @Post()
-    //@UseGuards(InstructorGuard) // Restrict access to instructors
+    @UseGuards(AuthGuard, RolesGuard) 
+    @Roles('instructor' as Role, 'admin' as Role)
     async createCourse(@Body() createCourseDto: CreateCourseDto) {
       try {
         return await this.coursesService.create(createCourseDto);
@@ -113,6 +115,7 @@ async updateWithVersionControl(
      * Retrieve number of enrolled students in a specific course
      */
     @Get(':id/enrolled-students')
+    @UseGuards(AuthGuard) 
     async getEnrolledStudents(@Param('id') id: string) {
       return this.coursesService.getEnrolledStudents(id);
     }
@@ -121,6 +124,8 @@ async updateWithVersionControl(
      * Rate a course (students)
      */
     @Get(':id/course-rating')
+    @UseGuards(AuthGuard, RolesGuard) 
+    @Roles('student' as Role)
 async getCourseRating(@Param('id') id: string) {
   try {
     const courseRating = await this.coursesService.calculateCourseRating(id);
