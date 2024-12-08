@@ -1,12 +1,13 @@
-import { Controller, Get, Put, Post, Delete, Param, BadRequestException , Body , UseGuards} from '@nestjs/common';
+import { Controller, Get, Put, Post, Delete, Param, BadRequestException, Body , UseGuards} from '@nestjs/common';
 import { AuthGuard } from '../authentication/auth.guard';
 import { UserService } from './user.service';
-import { ForbiddenException , NotFoundException } from '@nestjs/common';
 import { RolesGuard } from '../authentication/roles.guard';
 import { Role, Roles } from '../authentication/roles.decorator';
 import { LoginAttempt } from '../authentication/login.schema';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
+
 
 
 @Controller('user')
@@ -89,16 +90,16 @@ async updateUserProfile(@Param('id') userId: string, @Body() updateData: any) {
   }
   
 
-  try {
-    const updatedUser = await this.userService.updateUserProfile(userId, filteredUpdateData);
-    if (!updatedUser) {
-      throw new NotFoundException('User not found');
+    try {
+      const updatedUser = await this.userService.updateUserProfile(userId, filteredUpdateData);
+      if (!updatedUser) {
+        throw new NotFoundException('User not found');
+      }
+      return updatedUser;
+    } catch (error) {
+      throw new BadRequestException(error.message);
     }
-    return updatedUser;
-  } catch (error) {
-    throw new BadRequestException(error.message);
   }
-}
 
 //admin , student 
   // Get enrolled courses for a user

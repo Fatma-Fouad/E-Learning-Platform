@@ -3,34 +3,32 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { CoursesController } from './course.controller';
 import { CoursesService } from './course.service';
 import { courses, CourseSchema } from './course.schema';
-import { progress, ProgressSchema } from '../progress/progress.schema'; 
+import { progress, ProgressSchema } from '../progress/models/progress.schema';
 import { MulterModule } from '@nestjs/platform-express';
-import { UserSchema } from '../users/user.schema'; 
+import { UserSchema } from '../users/user.schema';
 import { ModulesModule } from '../modules/module.module';
-import { ModuleSchema } from '../modules/module.schema'; 
+import { ModuleSchema } from '../modules/module.schema';
 import { modules } from '../modules/module.schema';
-import { users } from '../users/user.schema';
-//import { NotificationModule } from '../communication/notifications/notification.module'; // Import NotificationModule
+import { User } from '../users/user.schema';
+import { NotificationModule } from '../communication/notifications/notification.module'; // Import NotificationModuleimport { users } from '../users/user.schema';
+
 
 
 @Module({
   imports: [
-    // Registering the Mongoose schema for courses
     MongooseModule.forFeature([
-      { name: 'courses', schema: CourseSchema},
-      { name: 'progress', schema: ProgressSchema }, 
-      { name: 'users', schema: UserSchema }, 
-      {name:'modules', schema: ModuleSchema},
+      { name: 'courses', schema: CourseSchema },
+      { name: 'progress', schema: ProgressSchema },
+      { name: 'users', schema: UserSchema },
+      { name: 'modules', schema: ModuleSchema },
     ]),
-    // Multer Module for file uploads
     MulterModule.register({
-      dest: './uploads', // Directory for file uploads
+      dest: './uploads',
     }),
-    //NotificationModule, // Import NotificationModule to resolve NotificationService
+    NotificationModule, // Import NotificationModule to resolve NotificationService
   ],
   controllers: [CoursesController],
   providers: [CoursesService],
-  exports: [CoursesService],   // Exporting the service if other modules need it
+  exports: [CoursesService],  
 })
-export class CourseModule {}
-
+export class CourseModule { }

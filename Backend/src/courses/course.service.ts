@@ -1,16 +1,18 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 import { courses } from './course.schema';
 import { User } from 'src/users/user.schema';
+import { progress } from '../progress/models/progress.schema';
 import { CreateCourseDto } from './CreateCourseDto';
 import { RateCourseDto } from './RateCourseDto';
 import { UpdateCourseDto } from './UpdateCourseDto';
 import { ModulesModule } from '../modules/module.module';
-import { ModuleSchema } from '../modules/module.schema'; 
+import { ModuleSchema } from '../modules/module.schema';
 import { modules } from '../modules/module.schema';
+import { NotificationGateway } from '../communication/notifications/notificationGateway';
 import { title } from 'process';
-import { progress } from 'src/progress/models/progress.schema';
+
 
 //import { NotificationGateway } from '../communication/notifications/notificationGateway';
 
@@ -22,10 +24,21 @@ export class CoursesService {
     @InjectModel('courses') private courseModel: Model<courses>,
     @InjectModel('users') private userModel: Model<User>,
     @InjectModel('modules') private moduleModel: Model<modules>,
-    //private readonly notificationGateway: NotificationGateway // Inject NotificationGateway
-  ) { 
+    private readonly notificationGateway: NotificationGateway // Inject NotificationGateway
+  ) { }
 
-    
+  /**
+   * Retrieve all courses for students
+   */
+  async findAllForStudents(): Promise<courses[]> {
+    try {
+      // Fetch all courses where isOutdated is false, excluding previousVersions field
+      return await this.courseModel
+        .find({ isOutdated: false }, { previousVersions: 0 }) // Exclude previousVersions field
+        .exec();
+    } catch (error) {
+      throw new BadRequestException('Failed to retrieve courses.');
+    }
   }
 
 
@@ -38,13 +51,16 @@ export class CoursesService {
     } catch (error) {
       throw new BadRequestException('Failed to retrieve courses.');
     }
-  }  
+  }
 
   /**
    * Retrieve a course by its ID  for all
    */
   async findCourseById(id: string): Promise<courses> {
     try {
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        throw new BadRequestException('Invalid course ID.');
+      }
       const course = await this.courseModel.findById(id).exec();
       if (!course) {
         throw new NotFoundException('Course not found.');
@@ -53,7 +69,8 @@ export class CoursesService {
     } catch (error) {
       throw new BadRequestException('Invalid course ID.');
     }
-  }   
+  }
+
 
   /**
    * Create a new course instructor only not admin
@@ -65,40 +82,84 @@ export class CoursesService {
     } catch (error) {
       throw new BadRequestException('Failed to create course.');
     }
-  }   
+  }
 
 /**
    * update course 
    */
+  async updateCourse(id: string, updateCourseDto: UpdateCourseDto): Promise<courses> {
+    try {
+      // Update the course in the database
+      const updatedCourse = await this.courseModel.findByIdAndUpdate(
+        id,
+        updateCourseDto,
+        { new: true }, // Return the updated document
+      ).exec();
 
-async updateCourse(id: string, updateCourseDto: UpdateCourseDto): Promise<courses> {
-  const updatedCourse = await this.courseModel.findByIdAndUpdate(
-    id,
-    updateCourseDto,
-    { new: true }, // Return the updated document
-  ).exec();
+      if (!updatedCourse) {
+        throw new NotFoundException('Course not found.');
+      }
 
-  if (!updatedCourse) {
-    throw new NotFoundException('Course not found.');
+      // Notify enrolled students about the course update
+      for (const studentId of updatedCourse.enrolled_student_ids) {
+        const roomName = `user:${studentId}`;
+        const roomMembers = this.notificationGateway.server.sockets.adapter.rooms.get(roomName);
+
+        // Log the room details
+        console.log(`Room Name: ${roomName}`);
+        console.log(`Room Members:`, roomMembers);
+
+        // Create notification payload
+        const notification = {
+          type: 'course-update',
+          content: `The course "${updatedCourse.title}" has been updated.`,
+          courseId: updatedCourse._id,
+          version: updatedCourse.version, // You can adjust if version is being tracked
+          read: false, // Mark as unread
+          timestamp: new Date(), // Add timestamp
+        };
+
+        // Send notification if room exists and has members
+        if (roomMembers) {
+          this.notificationGateway.server.to(roomName).emit('newNotification', notification);
+          console.log(`Notification sent to room: ${roomName}, notification:`, notification);
+        } else {
+          console.log(`Room ${roomName} does not exist or has no members.`);
+        }
+
+        // Save notification to the database
+        await this.notificationGateway.notificationService.createNotification(
+          studentId.toString(),
+          'course-update',
+          notification.content,
+          updatedCourse._id.toString(),
+        );
+        console.log(`Notification saved to the database for user: ${studentId}`);
+      }
+
+      // Return the updated course
+      return updatedCourse;
+
+    } catch (error) {
+      console.error('Error in updateCourse:', error.message);
+      throw new BadRequestException('Failed to update course.');
+    }
   }
 
-  return updatedCourse;
-}
 
 
   /**
    * Delete a course
    */
   async deleteCourse(id: string): Promise<void> {
-    try {
-      const deleted = await this.courseModel.findByIdAndDelete(id).exec();
-      if (!deleted) {
-        throw new NotFoundException('Course not found.');
-      }
-    } catch (error) {
-      throw new BadRequestException('Failed to delete course. Ensure the ID is valid.');
+    console.log('Deleting course with ID:', id); // Debugging log
+    const deletedCourse = await this.courseModel.findByIdAndDelete(id).exec();
+    if (!deletedCourse) {
+      console.error('No course found with ID:', id); // Debugging log
+      throw new NotFoundException('Course not found.');
     }
-  }   
+    console.log('Deleted Course:', deletedCourse); // Debugging log
+  }
 
   
   /**
@@ -117,8 +178,8 @@ async updateCourse(id: string, updateCourseDto: UpdateCourseDto): Promise<course
         'Failed to retrieve enrolled students. Ensure the course ID is valid.',
       );
     }
-  }  
-  
+  }
+
   /**
    * Rate a course
    */
@@ -136,7 +197,7 @@ async updateCourse(id: string, updateCourseDto: UpdateCourseDto): Promise<course
       // Calculate the average rating of the non-outdated modules
       const totalRatings = modules.reduce((sum, module) => sum + (module.module_rating || 0), 0);
       const averageRating = totalRatings / modules.length;
-  
+
       return {
         courseId,
         courseRating: averageRating || 0, // Return 0 if no ratings are available
