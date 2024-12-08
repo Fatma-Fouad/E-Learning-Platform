@@ -103,7 +103,7 @@ export class ChatService {
     }
 
 
-    async getChatById(chatId: string | mongoose.Types.ObjectId): Promise<Chat> {
+    async getChatById(chatId: string | mongoose.Types.ObjectId): Promise<ChatDocument> {
         const chat = await this.chatModel.findById(chatId).exec();
         if (!chat) {
             throw new Error('Chat not found');

@@ -11,6 +11,8 @@ import { ChatService } from './chats.service';
 import { NotificationGateway } from '../notifications/notificationGateway';
 import mongoose from 'mongoose';
 
+
+
 @WebSocketGateway({
     cors: {
         origin: '*', // Adjust for security in production
