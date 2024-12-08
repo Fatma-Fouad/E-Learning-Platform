@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Param, Body, Delete, Query, NotFoundException, BadRequestException } from '@nestjs/common';
+import { ChatSchema } from './chats.schema';
+import { Controller, Get, Post, Param, Body, Delete, Query, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { ChatService } from './chats.service';
 import mongoose from 'mongoose';
 
@@ -9,11 +10,13 @@ export class ChatController {
         console.log('ChatController initialized');
     }
 
+    // Get all chats (Access: Admin)
     @Get()
     async getAllChats() {
         return this.chatService.getAllChats();
     }
 
+    // Create a new chat (Access: Instructor, Admin, Student)
     @Post('create')
     async createChat(
         @Body() body: { chatName: string; participants: string[]; courseId: string }
@@ -28,10 +31,7 @@ export class ChatController {
         return this.chatService.createChat(chatName, participants, courseId);
     }
 
-
-
-
-    // Search chats by query
+    // Search chats by query (Access: Student, Instructor, Admin)
     @Get('search')
     async searchChats(@Query('q') searchTerm: string) {
         if (!searchTerm || searchTerm.trim() === '') {
@@ -40,6 +40,7 @@ export class ChatController {
         return this.chatService.searchChats(searchTerm);
     }
 
+    // Get chats by course ID (Access: Instructor, Admin)
     @Get('course/:courseId')
     async getChatsByCourse(@Param('courseId') courseId: string) {
         if (!mongoose.isValidObjectId(courseId)) {
@@ -49,18 +50,27 @@ export class ChatController {
         return this.chatService.getChatsByCourse(courseId);
     }
 
-
-
+    // Delete a chat (Access: Admin, User who created the chat)
     @Delete(':id')
-    async deleteChat(@Param('id') id: string) {
-        const chat = await this.chatService.deleteChat(id);
+    async deleteChat(@Param('id') id: string, @Query('userId') userId: string) {
+        // Fetch the chat by ID to verify if the user is the creator
+        const chat = await this.chatService.getChatById(id);
+
         if (!chat) {
             throw new NotFoundException(`Chat with ID ${id} not found`);
         }
-        return chat;
+
+        // Check if the current user is the creator of the chat
+        if (chat.creatorId.toString() !== userId) {
+            throw new ForbiddenException('You are not authorized to delete this chat');
+        }
+
+        // Proceed to delete the chat if the user is the creator
+        return this.chatService.deleteChat(id);
     }
 
 
+    // Add a message to a chat (Access: Student, Instructor, Admin)
     @Post('message/:id')
     async addMessage(
         @Param('id') chatId: string,
@@ -79,7 +89,7 @@ export class ChatController {
         return this.chatService.addMessage(chatId, messageData);
     }
 
-    //chat history
+    // Get chat history (Access: Student, Instructor, Admin)
     @Get(':chatId/messages')
     async getChatHistory(@Param('chatId') chatId: string) {
         console.log(`Fetching messages for chatId: ${chatId}`);
@@ -87,8 +97,4 @@ export class ChatController {
         console.log(`Fetched messages:`, messages);
         return messages;
     }
-
-
-
 }
-
