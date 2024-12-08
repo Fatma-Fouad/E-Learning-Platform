@@ -5,7 +5,7 @@ import { ModulesController } from './module.controller';
 import { ModulesService } from './module.service';
 import { CourseSchema } from '../courses/course.schema';
 import { courses } from '../courses/course.schema';
-import { ProgressSchema } from '../progress/progress.schema';
+import { ProgressSchema } from '../progress/models/progress.schema';
 import { CourseModule } from '../courses/course.module';
 import { QuestionBankModule } from '../questionbank/questionbank.module';
 import { QuizModule } from 'src/quizzes/quiz.module';
