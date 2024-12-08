@@ -16,6 +16,7 @@ import { AuthGuard } from './authentication/auth.guard';
 import { BackupService } from './backup/backup.service';
 import { BackupController } from './backup/backup.controller';
 import { NoteModule } from './notes/note.module';
+import { ResponseModule } from './responses/response.module';
 
 
 @Module({
@@ -31,7 +32,7 @@ import { NoteModule } from './notes/note.module';
     ForumModule, // Add ForumsModule here
     ChatModule,
     NotificationModule,
-
+    ResponseModule,
     MongooseModule.forRoot('mongodb+srv://softwareproject:sp123@clustersp.wvdbq.mongodb.net/EduLink') ],
     controllers: [AppController],
   providers: [AppService],
