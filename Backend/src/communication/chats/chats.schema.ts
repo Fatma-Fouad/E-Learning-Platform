@@ -16,11 +16,7 @@ export class Message {
 export const MessageSchema = SchemaFactory.createForClass(Message);
 
 @Schema()
-@Schema()
 export class Chat {
-    save() {
-        throw new Error('Method not implemented.');
-    }
     @Prop({ type: String, required: true })
     chatName: string;
 
@@ -30,14 +26,15 @@ export class Chat {
     @Prop({ type: [mongoose.Schema.Types.ObjectId], ref: 'users', required: true })
     participants: mongoose.Types.ObjectId[];
 
-
     @Prop({ type: String, enum: ['student', 'mixed'], default: 'student' })
     type: string;
 
     @Prop({ type: [Message], default: [] })
     messages: Message[];
+    // Add creatorId field to store the user who created the chat
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true })
+    creatorId: mongoose.Types.ObjectId;
 }
-
 
 export const ChatSchema = SchemaFactory.createForClass(Chat);
 
