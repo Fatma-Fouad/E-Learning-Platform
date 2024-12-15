@@ -106,6 +106,23 @@ export class ResponseService {
   
           course.completed_students = (course.completed_students || 0) + 1;
           await course.save();
+
+          const completedCoursesProgress = await this.progressModel.find({ user_id: userId });
+          const totalAvgScore = completedCoursesProgress.reduce((sum, courseProgress) => sum + courseProgress.avg_score, 0);
+          const completedCoursesCount = user.completed_courses.length;
+
+          if (completedCoursesCount > 0) {
+            const avgScore = totalAvgScore / completedCoursesCount;
+
+            // German GPA Formula
+            const maxGrade = 100; // Maximum possible grade
+            const minGrade = 50;  // Minimum passing grade
+            user.gpa = 1 + 3 * ((maxGrade - avgScore) / (maxGrade - minGrade));
+          } else {
+            user.gpa = 5.0; // Default to failing GPA if no completed courses
+          }
+
+          await user.save();
         }
       }
     }

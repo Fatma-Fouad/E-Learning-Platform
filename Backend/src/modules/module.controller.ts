@@ -251,8 +251,8 @@ async updateModuleWithVersionControl(
 }
 
 @Get(':id')
-@UseGuards(AuthGuard, RolesGuard) 
-  @Roles('instructor' as Role, 'admin' as Role)
+//@UseGuards(AuthGuard, RolesGuard) 
+  //@Roles('instructor' as Role, 'admin' as Role)
 async getModuleById(@Param('id') id: string) {
     if (!this.isValidObjectId(id)) {
         throw new BadRequestException('Invalid module ID format.');
