@@ -322,4 +322,19 @@ async uploadFileToModule(
     }
   }
 
+ // Retrieve modules by course ID, ordered by created_at date (newest to oldest)
+@Get('course/:courseId/ordered-by-date')
+@UseGuards(AuthGuard)
+async getModulesByCourseOrderedByDate(@Param('courseId') courseId: string) {
+  try {
+    const modules = await this.modulesService.getModulesByCourseOrderedByDate(courseId);
+    return {
+      message: `Modules for course ID: ${courseId} retrieved and ordered by creation date (newest to oldest) successfully.`,
+      data: modules,
+    };
+  } catch (error) {
+    throw new BadRequestException(error.message || 'Failed to retrieve ordered modules by date.');
+  }
+}
+
 }
