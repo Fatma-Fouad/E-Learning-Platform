@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model } from 'mongoose';
-import { courses } from './course.schema';
+import { courses, CourseDocument } from './course.schema';
 import { User } from 'src/users/user.schema';
 import { progress } from '../progress/models/progress.schema';
 import { CreateCourseDto } from './CreateCourseDto';
@@ -40,6 +40,9 @@ export class CoursesService {
       throw new BadRequestException('Failed to retrieve courses.');
     }
   }
+
+
+  
 
 
   /**

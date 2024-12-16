@@ -9,8 +9,11 @@ import 'reflect-metadata';
 async function bootstrap() {
   const logger = new Logger('MongoDB');
   const app = await NestFactory.create(AppModule);
-
-
+  app.enableCors({
+    origin: 'http://localhost:3000', // Allow frontend
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true,
+  });
   mongoose.connection.on('connected', () => {
     logger.log('Successfully connected to MongoDB');
   });
@@ -24,7 +27,7 @@ async function bootstrap() {
   });
 
   app.useGlobalPipes(new ValidationPipe());
-  await app.listen(process.env.PORT ?? 3000);
-  logger.log(`Application is running on: http://localhost:${process.env.PORT ?? 3000}`);
+  await app.listen(process.env.PORT ?? 3001);
+  logger.log(`Application is running on: http://localhost:${process.env.PORT ?? 3001}`);
 }
 bootstrap();

@@ -16,23 +16,31 @@ import { AuthGuard } from './authentication/auth.guard';
 import { BackupService } from './backup/backup.service';
 import { BackupController } from './backup/backup.controller';
 import { NoteModule } from './notes/note.module';
+import { ResponseModule } from './responses/response.module';
+import { JwtModule } from '@nestjs/jwt';
 
 
 @Module({
-  imports: [QuizModule,
+  imports:
+    
+    [JwtModule.register({
+      secret: process.env.JWT_SECRET,  // Ensure you are loading the correct secret from your .env file
+      signOptions: { expiresIn: '1h' },  // Optional: Set token expiration time
+    }),
+      QuizModule,
     QuestionBankModule,
     NoteModule,
     AuthModule,
     ModulesModule,
     CourseModule,
-    ModulesModule,
     ProgressModule,
     UserModule,
     ForumModule, // Add ForumsModule here
     ChatModule,
     NotificationModule,
-
-    MongooseModule.forRoot('mongodb+srv://softwareproject:sp123@clustersp.wvdbq.mongodb.net/EduLink') ],
+    ResponseModule,
+    MongooseModule.forRoot('mongodb+srv://softwareproject:sp123@clustersp.wvdbq.mongodb.net/EduLink')],
+  
     controllers: [AppController],
   providers: [AppService],
 }) 

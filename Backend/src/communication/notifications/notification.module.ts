@@ -14,16 +14,11 @@ import { UserModule } from 'src/users/user.module';
             { name: Notification.name, schema: NotificationSchema },
             { name: User.name, schema: UserSchema },
         ]),
-        forwardRef(() => ChatModule), // Avoid circular dependency
+        forwardRef(() => ChatModule), // Resolve circular dependency with ChatModule
+        forwardRef(() => UserModule), // Resolve circular dependency with UserModule
     ],
-    providers: [
-        NotificationService,
-        NotificationGateway, // Both services provided
-    ],
+    providers: [NotificationService, NotificationGateway],
     controllers: [NotificationController],
-    exports: [
-        NotificationService,
-        NotificationGateway, // Ensure they're exported
-    ],
+    exports: [NotificationService, NotificationGateway],
 })
 export class NotificationModule { }

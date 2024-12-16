@@ -7,7 +7,7 @@ import { Controller, Get, Post, Patch, Delete, Param, Body,Query,UploadedFile,Us
   import { Express } from 'express';
 //import { InstructorGuard } from './InstructorGuard'; 
 import { RateInstructorDto } from './RateInstructorDto';
-import { courses } from './course.schema';
+import { courses, CourseDocument } from './course.schema';
 import { AuthGuard } from 'src/authentication/auth.guard';
 import { Roles, Role } from 'src/authentication/roles.decorator';
 import { RolesGuard } from 'src/authentication/roles.guard';

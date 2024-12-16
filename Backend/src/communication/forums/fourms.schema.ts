@@ -9,7 +9,7 @@ export class Reply {
     @Prop({ type: mongoose.Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() })
     replyId: mongoose.Schema.Types.ObjectId; // Use replyId instead of _id
 
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true })
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
     userId: mongoose.Schema.Types.ObjectId; // Reference to the user who replied
 
     @Prop({ type: String, required: true })
@@ -35,7 +35,7 @@ export class Thread {
     @Prop({ type: String, required: true })
     description: string; // Thread description
 
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true })
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
     createdBy: mongoose.Schema.Types.ObjectId; // User who created the thread
 
     @Prop({ type: Date, default: Date.now })
@@ -57,7 +57,7 @@ export class Forum {
     @Prop({ type: String, required: true })
     courseName: string; // Course name
 
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true })
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
     createdBy: mongoose.Schema.Types.ObjectId; // User who created the thread
 
     @Prop({ type: [ThreadSchema], _id: false, default: [] }) // Disable _id for threads
