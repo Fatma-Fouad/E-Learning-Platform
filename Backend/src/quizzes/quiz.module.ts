@@ -6,7 +6,7 @@ import { QuizService } from './quiz.service';
 import { ProgressModule } from '../progress/progress.module';
 import { QuestionBankSchema } from '../questionbank/questionbank.schema';
 import { UserModule } from '../users/user.module';
-import { ProgressSchema } from '../progress/progress.schema';
+import { ProgressSchema } from '../progress/models/progress.schema';
 
 @Module({
   imports: [
