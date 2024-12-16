@@ -33,11 +33,8 @@ export class courses {
   @Prop({ type: Date, default: () => new Date() })
   created_at: Date;
 
-  @Prop({ default: false })
-  isOutdated: boolean; // Flag for version control
-
   @Prop({ default: 1 })
-  version: number; // Version of the course
+  version: number; // Version of the course 
 
   @Prop({ type: Number, default: 0, min: 0, max: 5, required: true })
   course_rating: number; // Overall course rating (1-5 stars)
@@ -65,6 +62,12 @@ export class courses {
 
   @Prop({ type: Number, default: 0, required:true})
   completed_students: number; 
+
+  @Prop({ type: Boolean, default: true }) // Default is true (available)
+  isAvailable: boolean;
+
+  @Prop({ type: [String], default: [], required: false }) 
+  keywords: string[]; // Keywords for course search
 
 }
 
