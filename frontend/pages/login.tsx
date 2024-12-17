@@ -64,11 +64,15 @@ const Login = () => {
     setFormData({ email: "", password: "" });
   };
 
+  const redirectToRegister = () => {
+    router.push("/register");
+  };
+
   return (
-    <div style={{ padding: "2rem" }}>
+    <div style={{ padding: "2rem", maxWidth: "400px", margin: "auto" }}>
       <h2>Login</h2>
       <form onSubmit={handleSubmit}>
-        <div>
+        <div style={{ marginBottom: "1rem" }}>
           <label htmlFor="email">Email:</label>
           <input
             type="email"
@@ -77,9 +81,10 @@ const Login = () => {
             placeholder="Enter your email"
             onChange={handleChange}
             required
+            style={{ width: "100%", padding: "8px", marginTop: "5px" }}
           />
         </div>
-        <div>
+        <div style={{ marginBottom: "1rem" }}>
           <label htmlFor="password">Password:</label>
           <input
             type="password"
@@ -88,12 +93,56 @@ const Login = () => {
             placeholder="Enter your password"
             onChange={handleChange}
             required
+            style={{ width: "100%", padding: "8px", marginTop: "5px" }}
           />
         </div>
-        <button type="submit">Login</button>
+        <button
+          type="submit"
+          style={{
+            backgroundColor: "#0070f3",
+            color: "white",
+            padding: "10px",
+            width: "100%",
+            border: "none",
+            cursor: "pointer",
+            fontSize: "1rem",
+            borderRadius: "5px",
+            marginBottom: "1rem"
+          }}
+        >
+          Login
+        </button>
       </form>
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      {success && <p style={{ color: "green" }}>{success}</p>}
+        <div style={{ marginBottom: "1rem" }}>
+          <label htmlFor="haveAccount">Do not have an account?</label>
+          <button
+          type="button"
+          onClick={redirectToRegister}
+          style={{
+            backgroundColor: "#0070f3",
+            color: "white",
+            padding: "10px",
+            width: "100%",
+            border: "none",
+            cursor: "pointer",
+            fontSize: "1rem",
+            borderRadius: "5px",
+            marginBottom: "1rem"
+          }}
+        >
+          Register
+        </button>
+        </div>
+
+      {/* Success Message */}
+      {success && (
+        <p style={{ color: "green", marginTop: "1rem", textAlign: "center" }}>{success}</p>
+      )}
+
+      {/* Error Message */}
+      {error && (
+        <p style={{ color: "red", marginTop: "1rem", textAlign: "center" }}>{error}</p>
+      )}
     </div>
   );
 };
