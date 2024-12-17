@@ -2,6 +2,7 @@ import { Body, Controller, HttpStatus, Post, HttpException, Res, Req } from '@ne
 import { AuthService } from './auth.service';
 import { RegisterUserDto } from '../users/registeruser.dto';
 import { LoginUserDto } from '../users/loginuser.dto';
+import { User } from 'src/users/user.schema';
 
 @Controller('auth')
 export class AuthController {
@@ -9,19 +10,20 @@ export class AuthController {
   @Post('login')
   async signIn(@Body() signInDto: LoginUserDto, @Res({ passthrough: true }) res) {
     try {
-      console.log('helllo')
+      // console.log('helllo')
       const result = await this.authService.signIn(signInDto.email, signInDto.password);
 
       res.cookie('token', result.access_token, {
         httpOnly: true, // Prevents client-side JavaScript access
-        secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+        secure: process.env.NODE_ENV === 'production' ? true : false, // Use secure cookies in production
+        sameSite: 'lax',
         maxAge: 3600 * 1000, // Cookie expiration time in milliseconds
       });
       // Return success response
       return {
         statusCode: HttpStatus.OK,
         message: 'Login successful',
-        user: result.payload,
+        user: result.payload, 
       };
     } catch (error) {
         console.log(error)

@@ -55,7 +55,7 @@ export class AuthService {
             throw new UnauthorizedException('Invalid credentials');
           }
 
-        const payload = { userid: user._id as Types.ObjectId, role: user.role };
+        const payload = { userid: user._id as Types.ObjectId, role: user.role, name: user.name, email: user.email };
 
         await this.LoginAttempt.create({
           email,
