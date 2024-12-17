@@ -2,7 +2,6 @@ import { Body, Controller, HttpStatus, Post, HttpException, Res, Req } from '@ne
 import { AuthService } from './auth.service';
 import { RegisterUserDto } from '../users/registeruser.dto';
 import { LoginUserDto } from '../users/loginuser.dto';
-import { User } from 'src/users/user.schema';
 
 @Controller('auth')
 export class AuthController {
