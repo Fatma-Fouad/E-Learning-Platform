@@ -9,19 +9,20 @@ export class AuthController {
   @Post('login')
   async signIn(@Body() signInDto: LoginUserDto, @Res({ passthrough: true }) res) {
     try {
-      console.log('helllo')
+      // console.log('helllo')
       const result = await this.authService.signIn(signInDto.email, signInDto.password);
 
       res.cookie('token', result.access_token, {
         httpOnly: true, // Prevents client-side JavaScript access
-        secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+        secure: process.env.NODE_ENV === 'production' ? true : false, // Use secure cookies in production
+        sameSite: 'lax',
         maxAge: 3600 * 1000, // Cookie expiration time in milliseconds
       });
       // Return success response
       return {
         statusCode: HttpStatus.OK,
         message: 'Login successful',
-        user: result.payload,
+        user: result.payload, 
       };
     } catch (error) {
         console.log(error)
