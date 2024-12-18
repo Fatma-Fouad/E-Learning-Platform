@@ -22,7 +22,6 @@ import { RolesGuard } from 'src/authentication/roles.guard';
      * Retrieve all courses for (all)  
      */
     @Get('available-courses')
-    @UseGuards(AuthGuard)
     async findAll() {
       return this.coursesService.findAll();
     }
@@ -32,9 +31,7 @@ import { RolesGuard } from 'src/authentication/roles.guard';
  * Search for courses by keyword (Instructor + Student)
  */
 @Get('search-by-keyword')
-@UseGuards(AuthGuard,RolesGuard)
-@Roles('student' as Role)
-@Roles('instructor' as Role)
+
 async searchCoursesByKeyword(@Query('keyword') keyword: string) {
   try {
     if (!keyword) {
@@ -63,7 +60,7 @@ async searchCoursesByKeyword(@Query('keyword') keyword: string) {
      * Retrieve course by id  (ALL)
      */
     @Get(':id')
-    @UseGuards(AuthGuard) 
+  
     async findCourseById(@Param('id') id: string) {
       try {
         return await this.coursesService.findCourseById(id);

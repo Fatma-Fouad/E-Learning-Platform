@@ -10,6 +10,7 @@
     "@nestjs/passport": "^10.0.3",
     "@nestjs/platform-express": "^10.4.15",
     "axios": "^1.7.9",
+    "lodash": "^4.17.21",
     "next": "^15.1.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
@@ -22,6 +23,8 @@
   },
   "devDependencies": {
     "@types/passport-jwt": "^4.0.1",
+    "@types/react": "19.0.1",
+    "typescript": "5.7.2",
     "webpack": "^5.97.1",
     "webpack-cli": "^5.1.4"
   }

@@ -153,11 +153,10 @@ export class ForumsController {
     }
 
     // Delete a forum
-    @Delete(':courseId')
-
+    @Delete(':forumId') // Maps to DELETE /forums/:forumId
     async deleteForum(
-        @Param('courseId') courseId: string,
-        @Query('userId') userId: string
+        @Param('forumId') forumId: string, // Extracts forumId from the route
+        @Query('userId') userId: string    // Extracts userId from the query
     ) {
         if (!userId) {
             throw new BadRequestException('User ID is required to delete a forum.');
@@ -166,6 +165,7 @@ export class ForumsController {
         console.log(`Deleting forum with forumId: ${forumId} by user ${userId}`);
         return this.forumsService.deleteForumById(forumId, userId);
     }
+
 
     // Delete a thread in a course
     @Delete(':courseId/threads/:threadId')

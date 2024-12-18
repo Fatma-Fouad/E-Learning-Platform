@@ -9,7 +9,7 @@ export class Reply {
     @Prop({ type: mongoose.Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() })
     replyId: mongoose.Schema.Types.ObjectId; // Use replyId instead of _id
 
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true ,})
     userId: mongoose.Schema.Types.ObjectId; // Reference to the user who replied
 
     @Prop({ type: String, required: true })
