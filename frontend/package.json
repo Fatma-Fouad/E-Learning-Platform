@@ -22,8 +22,11 @@
     "node": ">=18"
   },
   "devDependencies": {
+    "@types/axios": "^0.9.36",
+    "@types/node": "^22.10.2",
     "@types/passport-jwt": "^4.0.1",
-    "@types/react": "19.0.1",
+    "@types/react": "^19.0.1",
+    "@types/react-dom": "^19.0.2",
     "typescript": "5.7.2",
     "webpack": "^5.97.1",
     "webpack-cli": "^5.1.4"
