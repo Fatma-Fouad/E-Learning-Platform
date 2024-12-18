@@ -62,29 +62,65 @@ export class ForumsService {
     //add thread
     async addThread(courseId: string, thread: any): Promise<any> {
         try {
-            const objectId = new mongoose.Types.ObjectId(courseId); // Ensure courseId is an ObjectId
-            return await this.forumModel.findOneAndUpdate(
+            if (!mongoose.Types.ObjectId.isValid(courseId)) {
+                throw new BadRequestException(`Invalid courseId: ${courseId}`);
+            }
+
+            const objectId = new mongoose.Types.ObjectId(courseId);
+
+            // Ensure the thread has the required fields
+            if (!thread.title || !thread.description || !thread.createdBy) {
+                throw new BadRequestException('Thread title, description, and createdBy are required.');
+            }
+
+            // Add the new thread
+            const updatedForum = await this.forumModel.findOneAndUpdate(
                 { courseId: objectId },
                 { $push: { threads: thread } },
                 { new: true, useFindAndModify: false },
             ).exec();
+
+            if (!updatedForum) {
+                throw new NotFoundException(`Course with ID ${courseId} not found.`);
+            }
+
+            console.log('Thread added successfully:', thread);
+            return updatedForum;
         } catch (error) {
             console.error('Error adding thread:', error.message);
-            throw new Error('Unable to add thread');
+            throw new Error('Unable to add thread.');
         }
     }
 
+
     //add reply
     async addReply(courseId: string, threadId: string, reply: any): Promise<any> {
+        console.log('Received addReply request');
+        console.log('courseId:', courseId);
+        console.log('threadId:', threadId);
+        console.log('reply:', reply);
+
+        // Validate ObjectId formats
+        if (!mongoose.Types.ObjectId.isValid(courseId)) {
+            console.error(`Invalid courseId: ${courseId}`);
+            throw new BadRequestException(`Invalid courseId: ${courseId}`);
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(threadId)) {
+            console.error(`Invalid threadId: ${threadId}`);
+            throw new BadRequestException(`Invalid threadId: ${threadId}`);
+        }
+
+        const courseObjectId = new mongoose.Types.ObjectId(courseId);
+        const threadObjectId = new mongoose.Types.ObjectId(threadId);
+
+        const newReply = {
+            ...reply,
+            replyId: new mongoose.Types.ObjectId(), // Generate unique replyId
+            timestamp: new Date(),
+        };
+
         try {
-            const courseObjectId = new mongoose.Types.ObjectId(courseId);
-            const threadObjectId = new mongoose.Types.ObjectId(threadId);
-
-            const newReply = {
-                ...reply,
-                replyId: new mongoose.Types.ObjectId(),
-            };
-
             const updatedForum = await this.forumModel.findOneAndUpdate(
                 {
                     courseId: courseObjectId,
@@ -93,51 +129,24 @@ export class ForumsService {
                 {
                     $push: { "threads.$.replies": newReply },
                 },
-                { new: true, useFindAndModify: false }
+                { new: true, useFindAndModify: false },
             ).exec();
 
-            const thread = updatedForum?.threads.find((t) =>
-                t.threadId.toString() === threadObjectId.toString(),
-            );
-
-            if (!thread) {
-                throw new NotFoundException(`Thread with ID ${threadId} not found`);
+            if (!updatedForum) {
+                console.error(`Thread with ID ${threadId} not found in course ${courseId}`);
+                throw new NotFoundException(`Thread with ID ${threadId} not found in course ${courseId}`);
             }
 
-            const threadCreatorId = thread.createdBy.toString();
-
-            // Save notification to the database
-            await this.notificationGateway.notificationService.createNotification(
-                threadCreatorId,
-                'reply',
-                `New reply in your thread: ${thread.title}`,
-                threadId // Optional: Add threadId for context
-            );
-
-            console.log(`Notification saved to database for thread creator: ${threadCreatorId}`);
-
-            // Emit notification via WebSocket if the user is connected
-            const roomName = `user:${threadCreatorId}`;
-            const roomMembers = this.notificationGateway.server.sockets.adapter.rooms.get(roomName);
-
-            if (roomMembers) {
-                console.log(`Sending notification to room: ${roomName}`);
-                this.notificationGateway.server.to(roomName).emit('newNotification', {
-                    type: 'reply',
-                    content: `New reply in your thread: ${thread.title}`,
-                    threadId,
-                    reply: newReply,
-                });
-            } else {
-                console.log(`User ${threadCreatorId} has not joined room: ${roomName}`);
-            }
-
+            console.log('Reply added successfully:', newReply);
             return updatedForum;
         } catch (error) {
             console.error('Error adding reply:', error.message);
-            throw new Error('Unable to add reply.');
+            throw new InternalServerErrorException('Unable to add reply.');
         }
     }
+
+
+
 
     //searching for the course first 
     async searchCourses(searchTerm: string): Promise<any> {
@@ -183,31 +192,32 @@ export class ForumsService {
 
     async searchThreadsInCourse(courseId: string, searchTerm: string): Promise<any> {
         try {
-            const regex = new RegExp(searchTerm, 'i'); // Case-insensitive regex for matching
+            const regex = new RegExp(searchTerm, 'i'); // Case-insensitive regex
             console.log('Searching threads in courseId:', courseId, 'with searchTerm:', regex);
 
+            // Validate the courseId
             if (!mongoose.Types.ObjectId.isValid(courseId)) {
                 throw new Error('Invalid courseId format');
             }
 
-            // Query the database to find the specific course and filter threads
-            const results = await this.forumModel.findOne(
+            // Query for the forum with matching threads
+            const forum = await this.forumModel.findOne(
                 {
-                    courseId: new mongoose.Types.ObjectId(courseId), // Ensure courseId is valid
-                    'threads.title': { $regex: regex } // Match threads with title containing the searchTerm
+                    courseId: new mongoose.Types.ObjectId(courseId),
+                    'threads.title': { $regex: regex }, // Match threads with title containing searchTerm
                 },
                 {
-                    courseName: 1, // Include courseName in the result
-                    threads: { $elemMatch: { title: { $regex: regex } } } // Filter threads with $elemMatch
+                    courseName: 1,
+                    threads: { $elemMatch: { title: { $regex: regex } } }, // Return only matching threads
                 }
             ).exec();
 
-            if (!results) {
-                throw new NotFoundException(`No threads found matching '${searchTerm}' in course '${courseId}'`);
+            if (!forum) {
+                throw new NotFoundException(`No threads found for search term '${searchTerm}' in course '${courseId}'.`);
             }
 
-            console.log('Search Results:', results);
-            return results;
+            console.log('Search Results:', forum);
+            return forum;
         } catch (error) {
             console.error('Error during searchThreadsInCourse:', error.message);
             throw new Error('Unable to search threads in the specified course.');
@@ -218,45 +228,33 @@ export class ForumsService {
     
 
     //delete a forum (has to be an insturctor )
-    async deleteForum(courseId: string, userId: string): Promise<any> {
+    async deleteForumById(forumId: string, userId: string): Promise<any> {
         try {
-            if (!mongoose.Types.ObjectId.isValid(courseId)) {
-                throw new Error(`Invalid courseId: ${courseId}`);
+            if (!mongoose.Types.ObjectId.isValid(forumId)) {
+                throw new Error(`Invalid forumId: ${forumId}`);
             }
             if (!mongoose.Types.ObjectId.isValid(userId)) {
                 throw new Error(`Invalid userId: ${userId}`);
             }
 
-            const courseObjectId = new mongoose.Types.ObjectId(courseId);
-            const userObjectId = new mongoose.Types.ObjectId(userId);
-
-            console.log('Converted courseId to ObjectId:', courseObjectId);
-
-            // Find the forum to validate the instructor
-            const forum = await this.forumModel.findOne({ courseId: courseObjectId }).exec();
+            const forum = await this.forumModel.findById(forumId).exec();
 
             if (!forum) {
-                console.log(`Forum not found for courseId: ${courseId}`);
-                throw new NotFoundException(`Forum with courseId ${courseId} not found`);
+                throw new NotFoundException(`Forum with ID ${forumId} not found.`);
             }
 
-            console.log('Forum found:', forum);
-
-            // Check if the `createdBy` matches the provided userId
-            if (forum.createdBy.toString() !== userObjectId.toString()) {
-                throw new Error('Only the instructor who created the forum can delete it');
+            // Check if the forum was created by the same user
+            if (forum.createdBy.toString() !== userId) {
+                throw new Error('Only the instructor who created the forum can delete it.');
             }
 
-            // Delete the forum
-            const deletedForum = await this.forumModel.findOneAndDelete({ courseId: courseObjectId }).exec();
-
-            console.log('Deleted Forum:', deletedForum);
+            await this.forumModel.findByIdAndDelete(forumId).exec();
             return { success: true, message: 'Forum deleted successfully.' };
         } catch (error) {
             console.error('Error deleting forum:', error.message);
             throw new Error('Unable to delete forum.');
         }
-
+    
 
 
     }

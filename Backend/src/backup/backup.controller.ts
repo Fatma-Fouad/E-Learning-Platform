@@ -9,8 +9,7 @@ export class BackupController {
   constructor(private readonly backupService: BackupService) {}
 
   @Get('start')
-  @UseGuards(AuthGuard, RolesGuard) 
-  @Roles('admin' as Role)
+  @UseGuards(AuthGuard) 
   async startBackup() {
     await this.backupService.backupToAnotherDatabase();
     return { message: 'Backup started successfully!' };

@@ -1,6 +1,9 @@
 import { Controller, Get, Post, Param, Body, Query, NotFoundException, BadRequestException, Delete, Put } from '@nestjs/common';
 import { ForumsService } from './forums.service';
 import mongoose from 'mongoose';
+import { AuthGuard } from 'src/authentication/auth.guard';
+import { Roles, Role } from 'src/authentication/roles.decorator';
+import { RolesGuard } from 'src/authentication/roles.guard';
 
 @Controller('forums') // Maps to `/forums`
 export class ForumsController {
@@ -107,6 +110,14 @@ export class ForumsController {
         @Param('threadId') threadId: string,
         @Body() body: { userId: string; message: string },
     ) {
+        if (!mongoose.Types.ObjectId.isValid(courseId)) {
+            throw new BadRequestException('Invalid courseId format.');
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(threadId)) {
+            throw new BadRequestException('Invalid threadId format.');
+        }
+
         if (!body.userId || !body.message) {
             throw new BadRequestException('userId and message are required.');
         }
@@ -152,8 +163,8 @@ export class ForumsController {
             throw new BadRequestException('User ID is required to delete a forum.');
         }
 
-        console.log(`Deleting forum for courseId: ${courseId} by user ${userId}`);
-        return this.forumsService.deleteForum(courseId, userId);
+        console.log(`Deleting forum with forumId: ${forumId} by user ${userId}`);
+        return this.forumsService.deleteForumById(forumId, userId);
     }
 
     // Delete a thread in a course

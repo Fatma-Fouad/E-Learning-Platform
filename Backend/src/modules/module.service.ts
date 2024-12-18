@@ -402,4 +402,29 @@ async getModuleById(id: string): Promise<ModuleDocument> {
       );
   }
 }
+
+// Retrieve modules for a specific course, ordered by date (newest to oldest)
+async getModulesByCourseOrderedByDate(courseId: string): Promise<ModuleDocument[]> {
+  try {
+    if (!Types.ObjectId.isValid(courseId)) {
+      throw new BadRequestException('Invalid course ID format.');
+    }
+
+    const modules = await this.moduleModel
+      .find({ course_id: courseId })
+      .sort({ created_at: -1 }) // Descending order (newest to oldest)
+      .exec();
+
+    if (!modules || modules.length === 0) {
+      throw new NotFoundException(`No modules found for course ID ${courseId}.`);
+    }
+
+    return modules;
+  } catch (error) {
+    throw new BadRequestException(
+      error.message || `Error retrieving modules for course ID ${courseId}.`
+    );
+  }
+}
+
 }
