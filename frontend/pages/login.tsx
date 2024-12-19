@@ -81,7 +81,7 @@ const Login = () => {
             placeholder="Enter your email"
             onChange={handleChange}
             required
-            style={{ width: "100%", padding: "8px", marginTop: "5px" }}
+            style={{ width: "95%", padding: "8px", marginTop: "5px" }}
           />
         </div>
         <div style={{ marginBottom: "1rem" }}>
@@ -93,7 +93,7 @@ const Login = () => {
             placeholder="Enter your password"
             onChange={handleChange}
             required
-            style={{ width: "100%", padding: "8px", marginTop: "5px" }}
+            style={{ width: "95%", padding: "8px", marginTop: "5px" }}
           />
         </div>
         <button
