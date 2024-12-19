@@ -14,8 +14,6 @@ import { NotificationGateway } from '../communication/notifications/notification
 import { title } from 'process';
 
 
-//import { NotificationGateway } from '../communication/notifications/notificationGateway';
-
 
 @Injectable()
 export class CoursesService {
@@ -27,46 +25,67 @@ export class CoursesService {
     private readonly notificationGateway: NotificationGateway // Inject NotificationGateway
   ) { }
 
-  /**
-   * Retrieve all courses for students
-   */
-  async findAllForStudents(): Promise<courses[]> {
-    try {
-      // Fetch all courses where isOutdated is false, excluding previousVersions field
-      return await this.courseModel
-        .find({ isOutdated: false }, { previousVersions: 0 }) // Exclude previousVersions field
-        .exec();
-    } catch (error) {
-      throw new BadRequestException('Failed to retrieve courses.');
-    }
-  }
+  
 
 
   /**
    * Retrieve all courses for all
    */
-  async findAllForInstructors(): Promise<courses[]> {
+  async findAll(): Promise<courses[]> {
     try {
-      return await this.courseModel.find().exec();
+      // Only retrieve courses where isAvailable is true
+      return await this.courseModel.find({ isAvailable: true }).exec();
     } catch (error) {
-      throw new BadRequestException('Failed to retrieve courses.');
+      console.error('Error in findAll:', error.message);
+      throw new BadRequestException('Failed to retrieve available courses.');
     }
   }
+
+     /**
+   * Search for courses by keywords
+   */
+     async searchByKeyword(keyword: string): Promise<any> {
+      try {
+        console.log('Service: Searching for courses with keyword:', keyword);
+    
+        const courses = await this.courseModel
+          .find({ keywords: { $in: [keyword] }, isAvailable: true })
+          .exec();
+    
+        if (!courses || courses.length === 0) {
+          console.log('Service: No courses found for keyword:', keyword);
+          throw new NotFoundException(`No courses found for keyword: ${keyword}`);
+        }
+    
+        console.log('Service: Found courses:', courses);
+    
+        return {
+          courses: courses.map(course => ({
+            ...course.toObject(),
+            course_id: course._id.toString(), // Convert ObjectId to string
+          })),
+        };
+      } catch (error) {
+        console.error('Service: Error in searchByKeyword:', error.message);
+        throw new BadRequestException(
+          error.message || 'Failed to retrieve courses by keyword.',
+        );
+      }
+    }
 
   /**
    * Retrieve a course by its ID  for all
    */
   async findCourseById(id: string): Promise<courses> {
     try {
-      if (!mongoose.Types.ObjectId.isValid(id)) {
-        throw new BadRequestException('Invalid course ID.');
-      }
-      const course = await this.courseModel.findById(id).exec();
+      const course = await this.courseModel.findOne({ _id: id, isAvailable: true }).exec();
+  
       if (!course) {
-        throw new NotFoundException('Course not found.');
+        throw new NotFoundException('Course not found or is unavailable.');
       }
       return course;
     } catch (error) {
+      console.error('Error in findCourseById:', error.message);
       throw new BadRequestException('Invalid course ID.');
     }
   }
@@ -77,9 +96,11 @@ export class CoursesService {
    */
   async create(createCourseDto: CreateCourseDto): Promise<courses> {
     try {
+      console.log('Creating course with DTO:', createCourseDto); // Log the data before saving
       const newCourse = new this.courseModel(createCourseDto);
       return await newCourse.save();
     } catch (error) {
+      console.error('Error saving course:', error.message);
       throw new BadRequestException('Failed to create course.');
     }
   }
@@ -146,20 +167,19 @@ export class CoursesService {
     }
   }
 
-
-
-  /**
-   * Delete a course
-   */
-  async deleteCourse(id: string): Promise<void> {
-    console.log('Deleting course with ID:', id); // Debugging log
-    const deletedCourse = await this.courseModel.findByIdAndDelete(id).exec();
-    if (!deletedCourse) {
-      console.error('No course found with ID:', id); // Debugging log
-      throw new NotFoundException('Course not found.');
-    }
-    console.log('Deleted Course:', deletedCourse); // Debugging log
-  }
+  // /**
+  //  * Delete a course
+  //  */
+  // async deleteCourse(id: string): Promise<void> {
+  //   try {
+  //     const deleted = await this.courseModel.findByIdAndDelete(id).exec();
+  //     if (!deleted) {
+  //       throw new NotFoundException('Course not found.');
+  //     }
+  //   } catch (error) {
+  //     throw new BadRequestException('Failed to delete course. Ensure the ID is valid.');
+  //   }
+  // }   
 
   
   /**
@@ -296,76 +316,151 @@ export class CoursesService {
         }
       }
 
-
       /**
-   * Find Course deatils by Module title
-   */
+ * Find Course details by Module title
+ */
+async findCourseByModuleTitle(title: string): Promise<any> {
+  try {
+    const module = await this.moduleModel.findOne({ title }).exec();
 
-      async findCourseByModuleTitle(title: string): Promise<any> {
-        try {
-          const module = await this.moduleModel.findOne({ title }).exec();
-      
-          if (!module) {
-            throw new NotFoundException('Module with the specified title not found.');
-          }
-          let course = null;
+    if (!module) {
+      throw new NotFoundException('Module with the specified title not found.');
+    }
 
-          // Populate or fallback to a direct query
-          if (module.course_id) {
-            course = await this.courseModel.findById(module.course_id).exec();
-          }
-      
-          if (!course) {
-            throw new NotFoundException('Course related to the module not found.');
-          }
-          return {
-            course_details: course,
-            course_id: module.course_id.toString(),
-            // Convert ObjectId to string
-          };
-        } catch (error) {
-          throw new BadRequestException(
-            error.message || 'Failed to retrieve course by module title.',
-          );
-        }
-      }
+    let course = null;
+
+    // Populate or fallback to a direct query
+    if (module.course_id) {
+      course = await this.courseModel
+        .findOne({ _id: module.course_id, isAvailable: true }) // Check if isAvailable is true
+        .exec();
+    }
+
+    if (!course) {
+      throw new NotFoundException('Course related to the module is either unavailable or not found.');
+    }
+
+    return {
+      course_details: course,
+      course_id: module.course_id.toString(), // Convert ObjectId to string
+    };
+  } catch (error) {
+    console.error('Service: Error in findCourseByModuleTitle:', error.message);
+    throw new BadRequestException(
+      error.message || 'Failed to retrieve course by module title.',
+    );
+  }
+}
+
 
 
        /**
    * Find Course details By the created_by//instructor
    */
 
-       async findCourseByCreator(createdBy: string): Promise<any> {
+async findCourseByCreator(createdBy: string): Promise<any> {
+  try {
+    console.log('Service: Searching for courses created by:', createdBy);
+
+    // Fetch only courses where isAvailable is true
+    const courses = await this.courseModel
+      .find({ created_by: createdBy, isAvailable: true }) // Add isAvailable condition
+      .exec();
+
+    if (!courses || courses.length === 0) {
+      console.log('Service: No available courses found for created_by:', createdBy);
+      throw new NotFoundException(`No available courses found for creator: ${createdBy}`);
+    }
+
+    console.log('Service: Found courses:', courses);
+
+    // Return all courses matching the criteria
+    return {
+      courses: courses.map((course) => ({
+        ...course.toObject(),
+        course_id: course._id.toString(), // Convert ObjectId to string
+      })),
+    };
+  } catch (error) {
+    console.error('Service: Error in findCourseByCreator:', error.message);
+    throw new BadRequestException(
+      error.message || 'Failed to retrieve available courses by creator.',
+    );
+  }
+}
+
+
+    /**
+ * Find course details by name.
+ */
+async findCourseByName(Name: string): Promise<any> {
+  try {
+    console.log('Service: Searching for courses Name:', Name);
+
+    // Fetch courses where the title matches and isAvailable is true
+    const courses = await this.courseModel
+      .find({ title: Name, isAvailable: true }) // Added isAvailable condition
+      .exec();
+
+    if (!courses || courses.length === 0) {
+      console.log('Service: No available courses found for name:', Name);
+      throw new NotFoundException(`No available courses found for name: ${Name}`);
+    }
+
+    console.log('Service: Found courses:', courses);
+
+    // Return all matching courses
+    return {
+      courses: courses.map((course) => ({
+        ...course.toObject(),
+        course_id: course._id.toString(), // Convert ObjectId to string
+      })),
+    };
+  } catch (error) {
+    console.error('Service: Error in findCourseByName:', error.message);
+    throw new BadRequestException(
+      error.message || 'Failed to retrieve available courses by name.',
+    );
+  }
+}
+
+
+      /**
+    //  * Delete a course (instructors only)
+    //  */
+      async softDeleteCourseById(courseId: string): Promise<any> {
         try {
-          console.log('Service: Searching for courses created by:', createdBy);
+          console.log('Service: Soft deleting course with ID:', courseId);
       
-          // Use `find` instead of `findOne` to retrieve all courses if needed
-          const courses = await this.courseModel.find({ created_by: createdBy }).exec();
+          // Update the `isAvailable` property to false
+          const updatedCourse = await this.courseModel
+            .findByIdAndUpdate(
+              courseId,
+              { isAvailable: false },
+              { new: true } // Return the updated document
+            )
+            .exec();
       
-          if (!courses || courses.length === 0) {
-            console.log('Service: No courses found for created_by:', createdBy);
-            throw new NotFoundException(`No courses found for creator: ${createdBy}`);
+          if (!updatedCourse) {
+            throw new NotFoundException(`Course with ID ${courseId} not found.`);
           }
       
-          console.log('Service: Found courses:', courses);
+          console.log('Service: Updated course:', updatedCourse);
       
-          // Return the first course found (if applicable) or all
           return {
-            courses: courses.map(course => ({
-              ...course.toObject(),
-              course_id: course._id.toString(), // Convert ObjectId to string
-            })),
+            message: 'Course marked as unavailable successfully.',
+            course_details: updatedCourse,
           };
         } catch (error) {
-          console.error('Service: Error in findCourseByCreator:', error.message);
+          console.error('Service: Error in softDeleteCourseById:', error.message);
           throw new BadRequestException(
-            error.message || 'Failed to retrieve courses by creator.'
+            error.message || 'Failed to mark course as unavailable.'
           );
         }
       }
       
-    
-  }
       
+}
+    
 
     
