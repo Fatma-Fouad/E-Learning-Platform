@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, NotFoundException, BadRequestException, UseGuards} from '@nestjs/common';
+import { Controller, Post, Body, Get, Delete, Param ,NotFoundException, BadRequestException, UseGuards} from '@nestjs/common';
 import { QuizService } from './quiz.service';
 import { RolesGuard } from '../authentication/roles.guard';
 import { Role, Roles } from '../authentication/roles.decorator';
@@ -6,11 +6,11 @@ import { AuthGuard } from '../authentication/auth.guard';
 
 @Controller('quizzes')
 @UseGuards(AuthGuard, RolesGuard) 
-@Roles('admin' as Role, 'instructor' as Role)
 export class QuizController {
   constructor(private quizService: QuizService) {}
 
   @Post()
+  @Roles('admin' as Role, 'instructor' as Role)
   async generateQuiz(
     @Body('user_id') userId: string,
     @Body('module_id') moduleId: string,
@@ -31,7 +31,21 @@ export class QuizController {
     };
   }
 
+  @Delete(':id')
+  @Roles('admin' as Role, 'instructor' as Role)
+  async deleteQuizById(@Param('id') quizId: string) {
+    const deletedQuiz = await this.quizService.deleteQuizById(quizId);
+    if (!deletedQuiz) {
+      throw new NotFoundException(`Quiz with ID ${quizId} not found.`);
+    }
+    return {
+      message: `Quiz with ID ${quizId} successfully deleted.`,
+      deletedQuiz,
+    };
+  }
+
   @Get('student')
+  @Roles('student' as Role)
   async getStudentQuiz(
     @Body('user_id') userId: string,
     @Body('course_id') courseId: string,
