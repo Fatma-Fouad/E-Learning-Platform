@@ -9,7 +9,7 @@ const EffectivenessReport = () => {
 
   useEffect(() => {
     axios
-      .get(`/progress/effectiveness/${courseId}`)
+      .get(`http://localhost:3000/progress/effectiveness/${courseId}`)
       .then((response) => setEffectivenessData(response.data))
       .catch((error) => console.error("Error fetching effectiveness report:", error));
   }, [courseId]);

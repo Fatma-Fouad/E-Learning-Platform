@@ -12,7 +12,7 @@ const EngagementReport = () => {
   useEffect(() => {
     if (courseId) {
       axios
-        .get(`/progress/engagement/${courseId}`)
+        .get(`http://localhost:3000/progress/engagement/${courseId}`)
         .then((response) => {
           setEngagementData(response.data);
           setLoading(false);

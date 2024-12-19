@@ -52,7 +52,7 @@ const CoursePage = () => {
       <h1>{courseData?.title || "Course Page"}</h1>
       <p>Instructor: {courseData?.instructor_name || "Unknown"}</p>
       <p>Rating: {courseData?.course_rating || "No rating yet"} / 5</p>
-      <p>Total Modules: {courseData?.total_modules || 0}</p>
+      <p>Total Modules: {courseData?.nom_of_modules || 0}</p>
       <p>Enrolled Students: {courseData?.enrolled_students || 0}</p>
 
       <div>
@@ -60,17 +60,14 @@ const CoursePage = () => {
         {/* <button onClick={() => router.push(`/course/${courseId}/dashboard`)}>
           View Student Dashboard
         </button> */}
-        <button onClick={() => router.push(`/course/${courseId}/engagement-report`)}>
+        <button onClick={() => router.push(`/progress/engagement/${courseId}`)}>
           Engagement Report
         </button>
-        <button onClick={() => router.push(`/course/${courseId}/effectiveness-report`)}>
+        <button onClick={() => router.push(`/progress/effectiveness/${courseId}`)}>
           Content Effectiveness Report
         </button>
-        <button onClick={() => router.push(`/course/${courseId}/results-report`)}>
+        <button onClick={() => router.push(`/progress/quiz-results${courseId}`)}>
           Quiz Results Report
-        </button>
-        <button onClick={() => router.push(`/course/${courseId}/manage-modules`)}>
-          Manage Modules
         </button>
       </div>
     </div>
