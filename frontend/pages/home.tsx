@@ -30,8 +30,8 @@ const Home = () => {
       {/* Navbar */}
       <nav style={styles.navbar}>
         <h2 style={styles.logo}>E-Learning Platform</h2>
-        <button onClick={handleLogout} style={styles.logoutButton}>
-          Logout
+        <button style={styles.button} onClick={() => router.push(`/courses`)}>
+            Courses you Teach
         </button>
         <button onClick={handleLogout} style={styles.logoutButton}>
           Logout
@@ -95,5 +95,16 @@ const styles = {
   userInfo: {
     marginTop: "1rem",
     fontSize: "1.2rem",
+  },
+  button: {
+    padding: "15px 25px",
+    fontSize: "1.1rem",
+    backgroundColor: "#9fcdff", // Light pastel blue
+    color: "#ffffff",
+    border: "none",
+    borderRadius: "8px",
+    cursor: "pointer",
+    transition: "all 0.3s ease",
+    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
   },
 };
