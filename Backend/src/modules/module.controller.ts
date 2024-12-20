@@ -30,8 +30,8 @@ export class ModulesController {
 
   // Retrieve all modules for instructor
   @Get()
-  @UseGuards(AuthGuard, RolesGuard) 
-  @Roles('instructor' as Role, 'admin' as Role)
+  //@UseGuards(AuthGuard, RolesGuard) 
+  //@Roles('instructor' as Role, 'admin' as Role)
   async findAll() {
     try {
       return await this.modulesService.findAll();
@@ -44,8 +44,8 @@ export class ModulesController {
    * Retrieve all modules for students
    */
   @Get()
-  @UseGuards(AuthGuard, RolesGuard) 
-  @Roles('student' as Role, 'admin' as Role)
+  //@UseGuards(AuthGuard, RolesGuard) 
+  //@Roles('student' as Role, 'admin' as Role)
    async findAllModulesForStudents() {
      try {
        return await this.modulesService.findAllModulesForStudents();
@@ -85,8 +85,8 @@ export class ModulesController {
   // }
 
   @Get(':id/student')
-  @UseGuards(AuthGuard, RolesGuard) 
-  @Roles('student' as Role, 'admin' as Role)
+  //@UseGuards(AuthGuard, RolesGuard) 
+  //@Roles('student' as Role, 'admin' as Role)
   async getModuleByIdStudent(
     @Param('id') moduleId: string,
     @Body('user_id') userId: string,
@@ -107,8 +107,8 @@ export class ModulesController {
   }
 
   @Post()
-  @UseGuards(AuthGuard, RolesGuard) 
-  @Roles('instructor' as Role, 'admin' as Role)
+  //@UseGuards(AuthGuard, RolesGuard) 
+  //@Roles('instructor' as Role, 'admin' as Role)
   async create(@Body() createModuleDto: CreateModuleDto) {
     try {
       return await this.modulesService.create(createModuleDto);
@@ -146,8 +146,8 @@ export class ModulesController {
   // }
 
   @Patch(':id/rate')
-  @UseGuards(AuthGuard, RolesGuard) 
-  @Roles('student' as Role, 'admin' as Role)
+  //@UseGuards(AuthGuard, RolesGuard) 
+  //@Roles('student' as Role, 'admin' as Role)
   async rateModule(
     @Param('id') id: string,
     @Body() rateModuleDto: RateModuleDto,
@@ -175,7 +175,7 @@ export class ModulesController {
 
 
 @Get('course/:courseId')
-@UseGuards(AuthGuard) 
+//@UseGuards(AuthGuard) 
 async getModulesByCourseId(@Param('courseId') courseId: string) {
   if (!this.isValidObjectId(courseId)) {
     throw new BadRequestException('Invalid course ID format.');
@@ -193,7 +193,7 @@ async getModulesByCourseId(@Param('courseId') courseId: string) {
 
    // Retrieve all modules ordered by module_order
    @Get('ordered')
-   @UseGuards(AuthGuard) 
+  // @UseGuards(AuthGuard) 
    async findAllOrdered() {
      try {
        const modules = await this.modulesService.findAllOrdered();
@@ -208,7 +208,7 @@ async getModulesByCourseId(@Param('courseId') courseId: string) {
  
    // Retrieve modules by course ID, ordered by module_order
    @Get('course/:courseId/ordered')
-   @UseGuards(AuthGuard) 
+   //@UseGuards(AuthGuard) 
    async getModulesByCourseOrdered(@Param('courseId') courseId: string) {
      try {
        const modules = await this.modulesService.getModulesByCourseOrdered(courseId);
@@ -225,8 +225,8 @@ async getModulesByCourseId(@Param('courseId') courseId: string) {
  * Update a module with version control and update related references in questionBank and quizzes
  */
 @Patch(':id/version-control')
-@UseGuards(AuthGuard, RolesGuard) 
-  @Roles('instructor' as Role, 'admin' as Role)
+//@UseGuards(AuthGuard, RolesGuard) 
+ // @Roles('instructor' as Role, 'admin' as Role)
 async updateModuleWithVersionControl(
   @Param('id') id: string,
   @Body() updateModuleDto: UpdateModuleDto,
@@ -251,8 +251,8 @@ async updateModuleWithVersionControl(
 }
 
 @Get(':id')
-@UseGuards(AuthGuard, RolesGuard) 
-  @Roles('instructor' as Role, 'admin' as Role)
+//@UseGuards(AuthGuard, RolesGuard) 
+ // @Roles('instructor' as Role, 'admin' as Role)
 async getModuleById(@Param('id') id: string) {
     if (!this.isValidObjectId(id)) {
         throw new BadRequestException('Invalid module ID format.');
@@ -275,8 +275,8 @@ async getModuleById(@Param('id') id: string) {
 // *upload media
 //
 @Patch(':moduleId/upload')
-@UseGuards(AuthGuard, RolesGuard) 
-  @Roles('instructor' as Role, 'admin' as Role)
+//@UseGuards(AuthGuard, RolesGuard) 
+  //@Roles('instructor' as Role, 'admin' as Role)
 @UseInterceptors(FileInterceptor('file'))
 async uploadFileToModule(
   @Param('moduleId') moduleId: string,
@@ -296,7 +296,7 @@ async uploadFileToModule(
 // *download media
 //
 @Get(':moduleId/download/:filename')
-@UseGuards(AuthGuard) 
+//@UseGuards(AuthGuard) 
   async downloadFile(
     @Param('moduleId') moduleId: string,
     @Param('filename') filename: string,
@@ -324,7 +324,7 @@ async uploadFileToModule(
 
  // Retrieve modules by course ID, ordered by created_at date (newest to oldest)
 @Get('course/:courseId/ordered-by-date')
-@UseGuards(AuthGuard)
+//@UseGuards(AuthGuard)
 async getModulesByCourseOrderedByDate(@Param('courseId') courseId: string) {
   try {
     const modules = await this.modulesService.getModulesByCourseOrderedByDate(courseId);
