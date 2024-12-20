@@ -1,8 +1,8 @@
 
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model } from 'mongoose';
-import { Chat, ChatDocument, Message } from './chats.schema';
+import { Chat, ChatDocument } from './chats.schema';
 import { User, UserDocument } from './../../users/user.schema';
 
 @Injectable()
@@ -12,36 +12,81 @@ export class ChatService {
         @InjectModel(User.name) private userModel: Model<UserDocument>
     ) { }
 
+    async getUserFromDatabase(userId: string): Promise<UserDocument> {
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            throw new BadRequestException('Invalid user ID');
+        }
+
+        const user = await this.userModel.findById(userId).exec();
+        if (!user) {
+            throw new NotFoundException(`User with ID ${userId} not found`);
+        }
+
+        return user;
+    }
+
+
     async getAllChats(): Promise<Chat[]> {
         return this.chatModel.find().exec();
     }
 
-    async createChat(chatName: string, participantIds: string[], courseId: string): Promise<Chat> {
-        console.log('Creating chat with:', { chatName, participantIds, courseId });
+    async createChat(
+        chatName: string,
+        participantIds: string[],
+        courseId: string,
+        userId: string
+    ): Promise<Chat> {
+        console.log('Creating chat with:', { chatName, participantIds, courseId, userId });
 
-        if (!chatName || !participantIds || !courseId) {
-            throw new Error('Missing required fields: chatName, participantIds, or courseId.');
+        if (!chatName || !participantIds || !courseId || !userId) {
+            throw new BadRequestException('Missing required fields: chatName, participantIds, courseId, or userId.');
         }
 
+        // Validate creator's existence
+        const creator = await this.userModel.findById(userId);
+        if (!creator) {
+            throw new NotFoundException(`User with ID ${userId} not found.`);
+        }
+
+        // Validate participant IDs
         const participants = await this.userModel
             .find({ _id: { $in: participantIds } }, 'role')
             .exec();
 
-        const type = participants.some(participant => participant.role === 'instructor')
-            ? 'mixed'
-            : 'student';
+        if (!participants || participants.length !== participantIds.length) {
+            throw new BadRequestException('One or more participant IDs are invalid.');
+        }
 
+        // Determine the type of chat
+        let type: string;
+
+        if (participants.some(participant => participant.role === 'instructor')) {
+            if (creator.role !== 'instructor') {
+                throw new ForbiddenException('Only instructors can create mixed chats.');
+            }
+            type = 'mixed';
+        } else if (participants.every(participant => participant.role === 'student')) {
+            type = participantIds.length > 1 ? 'group' : 'student';
+        } else {
+            throw new BadRequestException('Invalid combination of participant roles.');
+        }
+
+        // For group chats, ensure the creator is included in participants
+        if (type === 'group' && !participantIds.includes(userId)) {
+            participantIds.push(userId);
+        }
+
+        // Create the chat
         const newChat = new this.chatModel({
             chatName,
-            participants: participantIds,
-            type,
+            participants: participantIds.map(id => new mongoose.Types.ObjectId(id)),
             courseId: new mongoose.Types.ObjectId(courseId),
+            type,
+            creatorId: new mongoose.Types.ObjectId(userId),
         });
 
         return newChat.save();
     }
-
-
 
 
     async getChatsByCourse(courseId: string): Promise<Chat[]> {

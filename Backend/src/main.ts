@@ -10,7 +10,7 @@ async function bootstrap() {
   const logger = new Logger('MongoDB');
   const app = await NestFactory.create(AppModule);
   app.enableCors({
-    origin: 'http://localhost:3002', // Allow frontend
+    origin: 'http://localhost:3000', // Allow frontend
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
   });

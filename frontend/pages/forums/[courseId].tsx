@@ -7,14 +7,16 @@ import {
     deleteThread,
     deleteReply,
     editThread,
+    addForum,
+    deleteForum,
 } from '../../utils/api';
-
-const TEMP_USER_ID = '6746676e0e44216ab25adb75'; // Replace with a real ObjectId
 
 const CourseForumsPage = () => {
     const router = useRouter();
     const { courseId } = router.query;
 
+    const [userId, setUserId] = useState<string | null>(null);
+    const [userRole, setUserRole] = useState<string | null>(null);
     const [forums, setForums] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -22,8 +24,17 @@ const CourseForumsPage = () => {
     const [newThread, setNewThread] = useState({ title: '', description: '' });
     const [newReply, setNewReply] = useState({ message: '', threadId: '' });
     const [editThreadData, setEditThreadData] = useState({ threadId: '', title: '', description: '' });
+    const [newForumName, setNewForumName] = useState<string>('');
+    const [showNewForumForm, setShowNewForumForm] = useState<boolean>(false);
 
-    // Load forums
+    // Load userId and role from localStorage
+    useEffect(() => {
+        const storedUserId = localStorage.getItem('userId');
+        const storedRole = localStorage.getItem('role');
+        setUserId(storedUserId);
+        setUserRole(storedRole);
+    }, []);
+
     const loadForums = async () => {
         setLoading(true);
         try {
@@ -43,25 +54,51 @@ const CourseForumsPage = () => {
     }, [courseId]);
 
     // Add new thread
+    // Add new thread
     const handleAddThread = async () => {
-        if (!newThread.title.trim() || !newThread.description.trim()) {
-            setError('Please provide both a title and description for the thread.');
+        if (!userId) {
+            setError('User ID is missing. Please log in.');
+            return;
+        }
+        if (!newThread.title.trim()) { // Only validate title
+            setError('Please provide a title for the thread.');
             return;
         }
 
         try {
-            await addThread(courseId as string, newThread.title, newThread.description, TEMP_USER_ID);
+            console.log('Adding thread with:', {
+                courseId,
+                title: newThread.title,
+                description: newThread.description || 'No description provided',
+                userId,
+            });
+
+            // Pass description only if provided
+            await addThread(
+                courseId as string,
+                newThread.title,
+                newThread.description || '', // Send empty string if no description is provided
+                userId
+            );
+
             setNewThread({ title: '', description: '' });
             setError(null);
-            loadForums();
+            loadForums(); // Reload the forums
             alert('Thread added successfully!');
-        } catch {
+        } catch (error) {
+            console.error('Error adding thread:', error);
             setError('Failed to add thread.');
         }
     };
 
+
+
     // Add reply
     const handleAddReply = async (threadId: string) => {
+        if (!userId) {
+            setError('User ID is missing. Please log in.');
+            return;
+        }
         const replyMessage = newReply.threadId === threadId ? newReply.message.trim() : '';
         if (!replyMessage) {
             setError('Please enter a reply message.');
@@ -69,7 +106,7 @@ const CourseForumsPage = () => {
         }
 
         try {
-            await addReply(courseId as string, threadId, TEMP_USER_ID, replyMessage);
+            await addReply(courseId as string, threadId, userId, replyMessage);
             setNewReply({ message: '', threadId: '' });
             setError(null);
             loadForums();
@@ -82,8 +119,7 @@ const CourseForumsPage = () => {
     // Delete thread
     const handleDeleteThread = async (threadId: string) => {
         try {
-            await deleteThread(courseId as string, threadId, TEMP_USER_ID);
-            setError(null);
+            await deleteThread(courseId as string, threadId, userId!);
             loadForums();
             alert('Thread deleted successfully!');
         } catch {
@@ -94,7 +130,7 @@ const CourseForumsPage = () => {
     // Delete reply
     const handleDeleteReply = async (threadId: string, replyId: string) => {
         try {
-            await deleteReply(courseId as string, threadId, replyId, TEMP_USER_ID);
+            await deleteReply(courseId as string, threadId, replyId, userId!);
             setError(null);
             loadForums();
             alert('Reply deleted successfully!');
@@ -114,15 +150,52 @@ const CourseForumsPage = () => {
             await editThread(
                 courseId as string,
                 editThreadData.threadId,
-                TEMP_USER_ID,
+                userId!,
                 { title: editThreadData.title, description: editThreadData.description }
             );
             setEditThreadData({ threadId: '', title: '', description: '' });
-            setError(null);
             loadForums();
             alert('Thread updated successfully!');
         } catch {
             setError('Failed to update thread.');
+        }
+    };
+
+    // Add forum (only for instructors)
+    const handleAddForum = async () => {
+        if (userRole !== 'instructor') {
+            setError('Only instructors can add forums.');
+            return;
+        }
+        if (!newForumName.trim()) {
+            setError('Forum name is required.');
+            return;
+        }
+
+        try {
+            await addForum(courseId as string, newForumName, userId!);
+            alert('Forum created successfully!');
+            setNewForumName('');
+            setShowNewForumForm(false);
+            loadForums();
+        } catch {
+            setError('Failed to create forum.');
+        }
+    };
+
+    // Delete forum (only for instructors)
+    const handleDeleteForum = async (forumId: string) => {
+        if (userRole !== 'instructor') {
+            setError('Only instructors can delete forums.');
+            return;
+        }
+
+        try {
+            await deleteForum(forumId, userId!);
+            alert('Forum deleted successfully!');
+            loadForums();
+        } catch {
+            setError('Failed to delete forum.');
         }
     };
 
@@ -131,7 +204,8 @@ const CourseForumsPage = () => {
 
     return (
         <div style={{ padding: '20px' }}>
-            <h1>Forums for Course</h1>
+            {/* Display course name in the main header */}
+            <h1>Forums for Course: {forums.length > 0 && forums[0].courseName}</h1>
 
             {/* Add New Thread */}
             <div style={{ marginBottom: '20px' }}>
@@ -156,7 +230,11 @@ const CourseForumsPage = () => {
             {/* Display Forums */}
             {forums.map((forum) => (
                 <div key={forum._id} style={{ marginBottom: '20px' }}>
-                    <h3>{forum.courseName}</h3>
+                    {userRole === 'instructor' && (
+                        <button onClick={() => handleDeleteForum(forum._id)} style={{ color: 'red' }}>
+                            Delete Forum
+                        </button>
+                    )}
                     <ul>
                         {forum.threads.map((thread) => (
                             <li key={thread.threadId}>
@@ -208,9 +286,7 @@ const CourseForumsPage = () => {
                                 <ul>
                                     {thread.replies.map((reply) => (
                                         <li key={reply.replyId}>
-                                            <strong>
-                                                {typeof reply.userId === 'object' ? reply.userId.name : reply.userId}
-                                            </strong>
+                                            <strong>{reply.userId.name}</strong> {/* Display user's name */}
                                             : {reply.message} ({new Date(reply.timestamp).toLocaleString()})
                                             <button
                                                 onClick={() => handleDeleteReply(thread.threadId, reply.replyId)}
@@ -228,6 +304,7 @@ const CourseForumsPage = () => {
             ))}
         </div>
     );
-};
+
+}
 
 export default CourseForumsPage;

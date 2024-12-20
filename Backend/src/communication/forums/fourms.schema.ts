@@ -32,7 +32,7 @@ export class Thread {
     @Prop({ type: String, required: true })
     title: string; // Thread title
 
-    @Prop({ type: String, required: true })
+    @Prop({ type: String, required: false })
     description: string; // Thread description
 
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })

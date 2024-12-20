@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Param, Body, Query, NotFoundException, BadRequestException, Delete, Put } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Query, NotFoundException, BadRequestException, Delete, Put, UseGuards } from '@nestjs/common';
 import { ForumsService } from './forums.service';
 import mongoose from 'mongoose';
 import { AuthGuard } from 'src/authentication/auth.guard';
 import { Roles, Role } from 'src/authentication/roles.decorator';
 import { RolesGuard } from 'src/authentication/roles.guard';
+
 
 @Controller('forums') // Maps to `/forums`
 export class ForumsController {

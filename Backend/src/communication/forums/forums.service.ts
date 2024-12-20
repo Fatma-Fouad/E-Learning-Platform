@@ -20,9 +20,22 @@ export class ForumsService {
     async getAllForums(): Promise<Forum[]> {
         return this.forumModel.find().exec();
     }
-   async getForumsByCourse(courseId: string): Promise<Forum[]> {
-    return this.forumModel.find({ courseId }).exec();
-  }
+    async getForumsByCourse(courseId: string): Promise<any> {
+        return this.forumModel
+            .find({ courseId })
+            .populate('courseId', 'courseName')
+            .populate({
+                path: 'threads.createdBy', // Populate thread creator
+                select: 'name', // Only fetch the name field
+            })
+            .populate({
+                path: 'threads.replies.userId', // Populate reply authors
+                select: 'name', // Only fetch the name field
+            })
+            .exec();
+    }
+
+
     //adding a new forum 
     async addForum(courseId: string, courseName: string, createdBy: string): Promise<any> {
         try {
@@ -60,6 +73,7 @@ export class ForumsService {
 
 
     //add thread
+    // Add Thread
     async addThread(courseId: string, thread: any): Promise<any> {
         try {
             if (!mongoose.Types.ObjectId.isValid(courseId)) {
@@ -69,14 +83,23 @@ export class ForumsService {
             const objectId = new mongoose.Types.ObjectId(courseId);
 
             // Ensure the thread has the required fields
-            if (!thread.title || !thread.description || !thread.createdBy) {
-                throw new BadRequestException('Thread title, description, and createdBy are required.');
+            if (!thread.title || !thread.createdBy) { // Description is now optional
+                throw new BadRequestException('Thread title and createdBy are required.');
+            }
+
+            // Build the thread object dynamically, excluding undefined fields
+            const threadData: any = {
+                title: thread.title,
+                createdBy: thread.createdBy,
+            };
+            if (thread.description) {
+                threadData.description = thread.description; // Only include description if provided
             }
 
             // Add the new thread
             const updatedForum = await this.forumModel.findOneAndUpdate(
                 { courseId: objectId },
-                { $push: { threads: thread } },
+                { $push: { threads: threadData } },
                 { new: true, useFindAndModify: false },
             ).exec();
 
@@ -84,13 +107,14 @@ export class ForumsService {
                 throw new NotFoundException(`Course with ID ${courseId} not found.`);
             }
 
-            console.log('Thread added successfully:', thread);
+            console.log('Thread added successfully:', threadData);
             return updatedForum;
         } catch (error) {
             console.error('Error adding thread:', error.message);
             throw new Error('Unable to add thread.');
         }
     }
+
 
 
     //add reply
@@ -258,7 +282,12 @@ export class ForumsService {
 
 
     }
-    async editThread(courseId: string, threadId: string, userId: string, updateData: any): Promise<any> {
+    async editThread(
+        courseId: string,
+        threadId: string,
+        userId: string,
+        updateData: any
+    ): Promise<any> {
         try {
             // Validate ObjectId formats
             if (!mongoose.Types.ObjectId.isValid(courseId)) {
@@ -287,20 +316,17 @@ export class ForumsService {
                 throw new NotFoundException(`Thread with threadId ${threadId} not found`);
             }
 
-            // Find the user who is trying to edit the thread
+            // Validate user permissions
             const user = await this.userModel.findById(userId).exec();
             if (!user) {
                 throw new NotFoundException(`User with userId ${userId} not found`);
             }
 
-            // Check permissions
-            if (user.role === 'student') {
-                // Students can only edit threads they created
-                if (thread.createdBy.toString() !== userObjectId.toString()) {
-                    throw new ForbiddenException('You do not have permission to edit this thread');
-                }
-            } else if (user.role === 'instructor') {
-                // Instructors can edit threads they created or threads created by students
+            if (user.role === 'student' && thread.createdBy.toString() !== userObjectId.toString()) {
+                throw new ForbiddenException('Students can only edit their own threads.');
+            }
+
+            if (user.role === 'instructor') {
                 const threadCreator = await this.userModel.findById(thread.createdBy).exec();
                 if (!threadCreator) {
                     throw new NotFoundException(`Thread creator with userId ${thread.createdBy} not found`);
@@ -308,16 +334,14 @@ export class ForumsService {
 
                 if (threadCreator.role === 'instructor' && thread.createdBy.toString() !== userObjectId.toString()) {
                     throw new ForbiddenException(
-                        'Instructors can only edit threads they created or threads created by students'
+                        'Instructors can only edit their own threads or threads created by students.'
                     );
                 }
-            } else {
-                // Other roles (e.g., admin) may not have edit permissions
-                throw new ForbiddenException('You do not have permission to edit this thread');
             }
 
-            // Update the thread
-            Object.assign(thread, updateData);
+            // Update the thread with only provided fields
+            if (updateData.title) thread.title = updateData.title;
+            if (updateData.description) thread.description = updateData.description;
 
             // Save the updated forum document
             const updatedForum = await forum.save();
@@ -329,6 +353,7 @@ export class ForumsService {
             throw new Error('Unable to edit thread.');
         }
     }
+
 
 
 
@@ -406,7 +431,12 @@ export class ForumsService {
     }
 
     // Delete a reply
-    async deleteReply(courseId: string, threadId: string, replyId: string, userId: string): Promise<any> {
+    async deleteReply(
+        courseId: string,
+        threadId: string,
+        replyId: string,
+        userId: string
+    ): Promise<any> {
         try {
             console.log('Deleting reply:', { courseId, threadId, replyId, userId });
 
@@ -435,23 +465,33 @@ export class ForumsService {
                 throw new NotFoundException(`Reply with replyId ${replyId} not found`);
             }
 
-            // Check if the user trying to delete the reply is the creator of the reply
-            if (reply.userId.toString() !== userId) {
-                throw new Error('Only the creator of the reply can delete it');
+            // Fetch the roles of the reply creator and the user trying to delete the reply
+            const replyCreator = await this.userModel.findById(reply.userId).exec();
+            const deletingUser = await this.userModel.findById(userId).exec();
+
+            if (!replyCreator || !deletingUser) {
+                throw new NotFoundException('User not found.');
             }
 
-            // Remove the reply from the replies array
-            thread.replies = thread.replies.filter((r) => r.replyId.toString() !== replyObjectId.toString());
-            console.log('Replies after deletion:', thread.replies);
+            // Check deletion permissions
+            if (
+                reply.userId.toString() === userId || // The creator of the reply can delete it
+                (deletingUser.role === 'instructor' && replyCreator.role === 'student') // Instructors can delete student replies
+            ) {
+                // Remove the reply from the replies array
+                thread.replies = thread.replies.filter((r) => r.replyId.toString() !== replyObjectId.toString());
+                console.log('Replies after deletion:', thread.replies);
 
-            // Save the forum document after deletion
-            return forum.save();
+                // Save the forum document after deletion
+                return forum.save();
+            } else {
+                throw new ForbiddenException('You do not have permission to delete this reply.');
+            }
         } catch (error) {
             console.error('Error deleting reply:', error.message);
             throw new Error('Unable to delete reply.');
         }
     }
-
 
 }
 

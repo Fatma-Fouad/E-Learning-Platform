@@ -182,48 +182,48 @@ export class ChatGateway implements OnModuleInit {
         }
     }
 
-
     @SubscribeMessage('createChat')
     async handleCreateChat(
-        @MessageBody() payload: any, // Accept any payload format for debugging
+        @MessageBody() payload: any,
         @ConnectedSocket() client: Socket
     ) {
         try {
             console.log('Raw payload received:', payload);
 
-            // Extract data from the payload, including senderId
-            const { chatName, participantIds, courseId, senderId } = payload.data || {};
+            const chatName = payload.data?.chatName;
+            const courseId = Array.isArray(payload.data?.courseId)
+                ? payload.data.courseId[0]
+                : payload.data?.courseId;
+            const participantIds = Array.isArray(payload.data?.participantIds)
+                ? payload.data.participantIds
+                : [payload.data?.participantIds];
+            const senderId = payload.data?.senderId;
 
             console.log('Parsed chatName:', chatName);
             console.log('Parsed participantIds:', participantIds);
             console.log('Parsed courseId:', courseId);
             console.log('Parsed senderId:', senderId);
 
-            // Validate the required fields
             if (!chatName || !participantIds || !courseId || !senderId) {
                 throw new Error('Missing required fields: chatName, participantIds, courseId, or senderId.');
             }
 
-            // Create the chat
-            const newChat = await this.chatService.createChat(chatName, participantIds, courseId);
+            const newChat = await this.chatService.createChat(chatName, participantIds, courseId, senderId);
             console.log('New chat created:', newChat);
 
-            // Emit the newly created chat ID back to the client
             client.emit('chatCreated', { chatId: newChat.courseId });
 
-            // Add the client to the new chat room
             const roomName = `chat:${newChat.courseId}`;
             client.join(roomName);
             console.log(`Client ${client.id} joined new room: ${roomName}`);
 
-            // Notify all participants about the new chat, excluding the sender
             const notificationContent = `New chat created: ${chatName}`;
             for (const participantId of participantIds) {
                 await this.notificationGateway.sendNotification(
-                    [participantId], // Wrap participantId in an array
-                    'chat', // Notification type
-                    notificationContent, // Notification content
-                    senderId // Pass the sender's ID to exclude them
+                    [participantId],
+                    'chat',
+                    notificationContent,
+                    senderId
                 );
             }
 
@@ -233,5 +233,4 @@ export class ChatGateway implements OnModuleInit {
             return { error: error.message };
         }
     }
-
 }

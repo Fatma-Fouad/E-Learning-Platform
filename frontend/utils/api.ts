@@ -155,3 +155,84 @@ export const deleteForum = async (forumId: string, userId: string) => {
 };
 
 
+//chats
+
+export const createChat = async (type, payload) => {
+    console.log('API Payload:', payload);
+    const response = await fetch(`http://localhost:3001/chat/${type}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        console.error('API Error:', error);
+        throw new Error(error.message || 'Failed to create chat');
+    }
+
+    return response.json();
+};
+
+
+
+export const fetchChatMessages = async (courseId: string) => {
+    const response = await fetch(`http://localhost:3001/chat/${courseId}`);
+    if (!response.ok) throw new Error('Failed to fetch chat messages');
+    return response.json();
+};
+
+export const sendChatMessage = async (courseId: string, message: string) => {
+    const response = await fetch(`http://localhost:3001/chat/${courseId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message }),
+    });
+    if (!response.ok) throw new Error('Failed to send message');
+    return response.json();
+};
+export const fetchChatsByCourse = async (courseId: string, userId: string) => {
+    try {
+        console.log('Fetching chats for courseId:', courseId, 'and userId:', userId);
+
+        const response = await fetch(
+            `http://localhost:3001/chat/course/${courseId}?userId=${userId}`
+        );
+
+        if (!response.ok) {
+            console.error('Fetch response not OK:', response.status, response.statusText);
+            throw new Error('Failed to fetch chats');
+        }
+
+        return response.json();
+    } catch (error) {
+        console.error('Error in fetchChatsByCourse:', error.message);
+        throw error;
+    }
+};
+
+
+
+export const fetchChatHistory = async (chatId: string) => {
+    const response = await fetch(`http://localhost:3001/chat/${chatId}/messages`);
+    if (!response.ok) throw new Error('Failed to fetch chat history');
+    return response.json();
+};
+
+export const addMessageToChat = async (chatId: string, payload: { sender: string; content: string }) => {
+    const response = await fetch(`http://localhost:3001/chat/message/${chatId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        console.error('Server Error:', error); // Log server error
+        throw new Error('Failed to add message to the chat');
+    }
+
+    return response.json();
+};
+
+

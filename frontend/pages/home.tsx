@@ -12,9 +12,8 @@ const Home = () => {
     const email = localStorage.getItem("email");
 
     if (name || role) {
-      setUser({ name, role , email});
+      setUser({ name, role, email });
     } else {
-      // Redirect to login if no user info exists
       router.push("/login");
     }
   }, [router]);
@@ -33,28 +32,39 @@ const Home = () => {
         <button onClick={handleLogout} style={styles.logoutButton}>
           Logout
         </button>
-        <button onClick={handleLogout} style={styles.logoutButton}>
-          Logout
-        </button>
-        <button onClick={handleLogout} style={styles.logoutButton}>
-          Logout
-        </button>
-        <button onClick={handleLogout} style={styles.logoutButton}>
-          Logout
-        </button>
-        <button onClick={handleLogout} style={styles.logoutButton}>
-          Logout
-        </button>
       </nav>
 
       {/* Content */}
-      <div>
+      <div style={{ padding: "20px" }}>
         <h1>Welcome to the Home Page!</h1>
         {user ? (
           <div style={styles.userInfo}>
-            <p><strong>Name:</strong> {user.name}</p>
-            <p><strong>Email:</strong> {user.email}</p>
-            <p><strong>Role:</strong> {user.role}</p>
+            <p>
+              <strong>Name:</strong> {user.name}
+            </p>
+            <p>
+              <strong>Email:</strong> {user.email}
+            </p>
+            <p>
+              <strong>Role:</strong> {user.role}
+            </p>
+
+            {/* New Button to Navigate to Courses Page */}
+            <button
+              onClick={() => router.push("/courses")}
+              style={{
+                backgroundColor: "#0070f3",
+                color: "white",
+                padding: "10px",
+                border: "none",
+                borderRadius: "5px",
+                cursor: "pointer",
+                fontSize: "1rem",
+                marginTop: "20px",
+              }}
+            >
+              View Available Courses
+            </button>
           </div>
         ) : (
           <p>Loading user information...</p>
@@ -66,7 +76,6 @@ const Home = () => {
 
 export default Home;
 
-// Inline styles for simplicity
 const styles = {
   navbar: {
     display: "flex",
@@ -87,10 +96,6 @@ const styles = {
     cursor: "pointer",
     fontSize: "1rem",
     borderRadius: "5px",
-  },
-  content: {
-    padding: "2rem",
-    textAlign: "center",
   },
   userInfo: {
     marginTop: "1rem",

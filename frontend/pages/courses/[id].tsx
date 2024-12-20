@@ -58,6 +58,13 @@ const CourseDetailPage = () => {
             >
                 Go to Course Forums
             </button>
+            <button
+                onClick={() => router.push(`/chats/${id}`)} // Ensure `id` is passed correctly
+                style={{ marginLeft: '10px', padding: '10px', backgroundColor: '#0070f3', color: '#fff' }}
+            >
+                Go to Course Chats
+            </button>
+
 
             <button
                 onClick={() => router.push('/courses')}
