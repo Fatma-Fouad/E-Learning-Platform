@@ -57,7 +57,7 @@ const CoursePage = () => {
 
       <div>
         <h2>Manage Course: {courseId}</h2>
-        {/* <button onClick={() => router.push(`/course/${courseId}/dashboard`)}>
+        {/* <button onClick={() => router.push(`/courses/${courseId}/dashboard`)}>
           View Student Dashboard
         </button> */}
         <button onClick={() => router.push(`/progress/engagement/${courseId}`)}>
@@ -68,6 +68,9 @@ const CoursePage = () => {
         </button>
         <button onClick={() => router.push(`/progress/quiz-results${courseId}`)}>
           Quiz Results Report
+        </button>
+        <button onClick={() => router.push(`/courses/${courseId}/modules`)}>
+          Manage Modules
         </button>
       </div>
     </div>
