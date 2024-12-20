@@ -5,15 +5,14 @@ import mongoose from 'mongoose';
 import { Logger } from '@nestjs/common';
 import 'reflect-metadata';
 
-
 async function bootstrap() {
   const logger = new Logger('MongoDB');
   const app = await NestFactory.create(AppModule);
 
-  // Enable CORS for requests from the frontend
   app.enableCors({
     origin: 'http://localhost:3001', // Allow requests from the frontend
-    credentials: true, // Allow cookies to be sent/received
+    methods: 'GET,POST,PUT,DELETE,PATCH',
+    credentials: true,
   });
 
   mongoose.connection.on('connected', () => {

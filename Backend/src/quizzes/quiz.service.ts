@@ -58,6 +58,18 @@ export class QuizService {
     };
   }
 
+  async deleteQuizById(quizId: string): Promise<QuizDocument | null> {
+    // Validate if the quiz exists
+    const quiz = await this.quizModel.findById(quizId);
+    if (!quiz) {
+      throw new NotFoundException(`Quiz with ID ${quizId} not found.`);
+    }
+
+    // Delete the quiz
+    const deletedQuiz = await this.quizModel.findByIdAndDelete(quizId);
+    return deletedQuiz;
+  }
+
   async getQuizForStudent(userId: string,courseId: string, moduleId: string): Promise<QuizDocument> {
     //making sure student has a progress documented
     const progress = await this.progressModel.findOne({ user_id: userId, course_id: courseId  });
