@@ -60,14 +60,20 @@ const CoursePage = () => {
         {/* <button onClick={() => router.push(`/course/${courseId}/dashboard`)}>
           View Student Dashboard
         </button> */}
-        <button onClick={() => router.push(`/progress/engagement/${courseId}`)}>
+        {/* <button onClick={() => router.push(`/progress/engagement/${courseId}`)}>
+          Engagement Report
+        </button> */}
+        <button onClick={() => router.push(`/courses/${courseId}/engagement`)}>
           Engagement Report
         </button>
-        <button onClick={() => router.push(`/progress/effectiveness/${courseId}`)}>
+        <button onClick={() => router.push(`/courses/${courseId}/effectiveness`)}>
           Content Effectiveness Report
         </button>
-        <button onClick={() => router.push(`/progress/quiz-results${courseId}`)}>
+        <button onClick={() => router.push(`/courses/${courseId}/quiz-results`)}>
           Quiz Results Report
+        </button>
+        <button onClick={() => router.push(`/courses/${courseId}/modules`)}>
+          Manage Modules
         </button>
       </div>
     </div>
