@@ -35,11 +35,7 @@ export class QuestionBankService {
     if (!questionBank) {
       throw new NotFoundException(`Question bank for module ID ${moduleId} not found.`);
     }
-
-    if (!newQuestions || !Array.isArray(newQuestions) || newQuestions.length === 0) {
-      throw new BadRequestException('New questions array is invalid or empty.');
-    }
-
+    
     questionBank.questions.push(...newQuestions);
 
     return await questionBank.save();
