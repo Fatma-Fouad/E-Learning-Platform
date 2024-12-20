@@ -7,7 +7,7 @@ export class CreateNoteDto {
 
   @IsNotEmpty()
   @IsString()
-  coursetitle: string;
+  module_id: string;
 
   @IsNotEmpty()
   @IsString()

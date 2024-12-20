@@ -1,12 +1,19 @@
-import { IsOptional, IsString, MinLength } from 'class-validator';
+
+import { IsOptional, IsString } from 'class-validator';
+import { Types } from 'mongoose';
 
 export class UpdateNoteDto {
   @IsOptional()
   @IsString()
-  @MinLength(1, { message: 'Content cannot be empty.' }) // Ensure non-empty content
-  content?: string;
+  noteTitle?: string;
 
   @IsOptional()
   @IsString()
-  coursetitle?: string; // Course title will be validated in the service
+  content?: string;
+
+  @IsOptional()
+  last_updated?: Date;
+
+  @IsOptional()
+  module_id?: Types.ObjectId;
 }

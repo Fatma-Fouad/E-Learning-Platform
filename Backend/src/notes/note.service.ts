@@ -2,33 +2,36 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { NotFoundException } from '@nestjs/common';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { notes, NoteDocument } from './note.schema';
 import { courses, CourseDocument } from '../courses/course.schema'; // Import the course schema
+import { modules, ModuleDocument } from '../modules/module.schema';
 import { CreateNoteDto } from './createnote.dto';
+import { UpdateNoteDto } from './updatenote.dto';
 
 @Injectable()
 export class NoteService {
   constructor(@InjectModel(notes.name) private noteModel: Model<NoteDocument>,
-  @InjectModel(courses.name) private courseModel: Model<CourseDocument>,) {}
+  @InjectModel(courses.name) private courseModel: Model<CourseDocument>,
+  @InjectModel(modules.name) private moduleModel: Model<ModuleDocument>,) {}
 
   // Create a new note
   async create(createNoteDto: CreateNoteDto): Promise<notes> {
-    // Check if the course exists using the title
-    const courseExists = await this.courseModel.findOne({ title: createNoteDto.coursetitle }).exec();
-    
-    if (!courseExists) {
-      // Throw an error if the course does not exist
-      throw new NotFoundException(`Course with title "${createNoteDto.coursetitle}" does not exist`);
+    // Check if the module exists
+    const moduleExists = await this.moduleModel.findById(createNoteDto.module_id).exec();
+
+    if (!moduleExists) {
+      // Throw an error if the module does not exist
+      throw new NotFoundException(`Module with ID "${createNoteDto.module_id}" does not exist`);
     }
-  
-    // Create the note if the course exists
+
+    // Create the note
     const newNote = new this.noteModel({
       ...createNoteDto,
       created_at: new Date(),
       last_updated: new Date(),
     });
-  
+
     return newNote.save();
   }
 
@@ -38,15 +41,12 @@ export class NoteService {
   }
 
   // Method to retrieve notes by course title
-async findAllNotesByCourse(coursetitle: string): Promise<NoteDocument[]> {
-  const notes = await this.noteModel.find({ coursetitle }).exec(); // Use correct field name
-  
-  if (notes.length === 0) { // Check if no notes were found
-    throw new NotFoundException(`No notes found for course title: ${coursetitle}`);
-  }
-
-  return notes; // Return the list of notes
+// Method to retrieve notes by course ID
+async findByModuleId(moduleId: string): Promise<NoteDocument[]> {
+  return this.noteModel.find({ moduleId }).exec();
 }
+
+
 
 
 // Method to retrieve a single note by its title
@@ -64,31 +64,37 @@ async findNoteByTitle(noteTitle: string): Promise<NoteDocument> {
 
 
 // Method to update a note by its title
-async updateNoteByTitle(noteTitle: string, updateData: Partial<notes>): Promise<NoteDocument> {
+async updateNoteByModuleAndTitle(
+  moduleId: string,
+  noteTitle: string,
+  updateData: UpdateNoteDto,
+): Promise<NoteDocument> {
+  // Ensure module_id is valid
+  const moduleObjectId = new Types.ObjectId(moduleId);
+
   // Ensure content is not empty if provided
   if (updateData.content !== undefined && !updateData.content.trim()) {
     throw new Error('Content cannot be empty.');
   }
-  // Check if the provided course title exists, if being updated
-  if (updateData.coursetitle) {
-    const courseExists = await this.courseModel.findOne({ title: updateData.coursetitle }).exec();
-    if (!courseExists) {
-      throw new NotFoundException(`Course with title "${updateData.coursetitle}" does not exist.`);
-    }
-  }
+
   // Update the last_updated timestamp
   updateData.last_updated = new Date();
-  // Perform the update
+
+  // Find and update the note
   const updatedNote = await this.noteModel
     .findOneAndUpdate(
-      { noteTitle: { $regex: new RegExp(`^${noteTitle}$`, 'i') } }, // Case-insensitive match
+      { module_id: moduleObjectId, noteTitle: { $regex: new RegExp(`^${noteTitle}$`, 'i') } }, // Case-insensitive match
       updateData,
-      { new: true }
+      { new: true },
     )
     .exec();
+
   if (!updatedNote) {
-    throw new NotFoundException(`Note with title "${noteTitle}" not found.`);
+    throw new NotFoundException(
+      `Note with title "${noteTitle}" not found for module ID "${moduleId}".`,
+    );
   }
+
   return updatedNote;
 }
 
@@ -106,6 +112,4 @@ async deleteNoteByTitle(noteTitle: string): Promise<NoteDocument> {
 
   return deletedNote;
 }
-
-
 }
