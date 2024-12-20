@@ -23,6 +23,7 @@ export class AuthController {
         statusCode: HttpStatus.OK,
         message: 'Login successful',
         user: result.payload, 
+        token: result.access_token
       };
     } catch (error) {
         console.log(error)

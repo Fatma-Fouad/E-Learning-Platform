@@ -32,10 +32,10 @@ const Login = () => {
     try {
       // Send login request to backend
       const response = await axios.post(
-        `${backend_url}/login`, // Backend endpoint
+        `${backend_url}/login`,
         { email: formData.email, password: formData.password },
         {
-          withCredentials: true, // Allow cookies to be sent
+          withCredentials: true,
           headers: {
             "Content-Type": "application/json",
           },
@@ -44,7 +44,10 @@ const Login = () => {
 
       // Successful login
       if (response.status === 200 || response.status === 201) {
-        localStorage.setItem("userId",response.data.user._id)
+        console.log("xxxxxxxxxx",response)
+        localStorage.setItem("token", response.data.token);
+        localStorage.setItem("userData", JSON.stringify(response.data.user));
+        localStorage.setItem("userId",response.data.user.userid)
         localStorage.setItem("role",response.data.user.role)
         localStorage.setItem("name",response.data.user.name)
         localStorage.setItem("email",response.data.user.email)
