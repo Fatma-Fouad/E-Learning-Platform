@@ -25,6 +25,22 @@ const Home = () => {
     router.push("/login");
   };
 
+  // Handle Courses
+  const Courses = () => {
+    router.push("/courses");
+  };
+
+  // Handle Find-Course
+  const Find_Course = () => {
+    router.push("courses/FindCourse");
+  };
+
+  // Handle Student courses
+  const StudentCourses = () => {
+    router.push("courses/MyCourses_st");
+  };
+
+
   return (
     <div>
       {/* Navbar */}
@@ -39,11 +55,15 @@ const Home = () => {
         <button onClick={handleLogout} style={styles.logoutButton}>
           Logout
         </button>
-        <button onClick={handleLogout} style={styles.logoutButton}>
-          Logout
+        <button onClick={Find_Course} style={styles.logoutButton}>
+          Find a course
         </button>
-        <button onClick={handleLogout} style={styles.logoutButton}>
-          Logout
+        <button onClick={Courses} style={styles.logoutButton}>
+          AllCourses
+        </button>
+
+        <button onClick={StudentCourses} style={styles.logoutButton}>
+          MyCourses
         </button>
       </nav>
 

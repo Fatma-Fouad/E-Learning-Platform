@@ -16,11 +16,23 @@ const QuestionBankPage = () => {
     difficulty: 'easy',
     type: 'mcq',
   });
-
+  
+  const token = localStorage.getItem("token");
+  console.log("Retrieved Token:", token);
+  if (!token) {
+    setError("Unauthorized access. Redirecting to login...");
+    router.push("/login");
+    return;
+  }
+  
   useEffect(() => {
     const fetchQuestionBank = async () => {
         try {
-          const response = await axios.get(`http://localhost:3000/questionbank/${moduleId}`);
+          const response = await axios.get(`http://localhost:3000/questionbank/${moduleId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },});
           
           // Check if the response contains a valid question bank
           if (!response.data.questionBank || response.data.questionBank.questions.length === 0) {
@@ -51,7 +63,11 @@ const QuestionBankPage = () => {
   // Handle delete question
   const handleDeleteQuestion = async (questionId: string) => {
     try {
-      await axios.delete(`http://localhost:3000/questionbank/${moduleId}/questions/${questionId}`);
+      await axios.delete(`http://localhost:3000/questionbank/${moduleId}/questions/${questionId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },});
       setQuestionBank((prev) => ({
         ...prev,
         questions: prev.questions.filter((q: any) => q.question_id !== questionId),
@@ -98,7 +114,13 @@ const QuestionBankPage = () => {
   
       const response = await axios.patch(
         `http://localhost:3000/questionbank/${moduleId}`,
-        payload
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Include token
+            'Content-Type': 'application/json',
+          },
+        }
       );
   
       console.log('Response from backend:', response.data);
