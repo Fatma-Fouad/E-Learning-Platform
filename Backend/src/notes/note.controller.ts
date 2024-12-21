@@ -27,9 +27,14 @@ export class NoteController {
 }
 
 @Get('module/:moduleId')
-  async getNotesByModuleId(@Param('moduleId') moduleId: string): Promise<NoteDocument[]> {
+  async getNotesByModuleId(@Param('moduleId') moduleId: string): Promise<{ message: string; data: NoteDocument[] }> {
     console.log(`Fetching notes for moduleId: ${moduleId}`);
-    return this.noteService.findByModuleId(moduleId);
+    const notes = await this.noteService.findByModuleId(moduleId);
+
+    return {
+      message: notes.length > 0 ? 'Notes retrieved successfully.' : 'No notes found for this module.',
+      data: notes,
+    };
   }
 
 

@@ -15,8 +15,9 @@ const NotesPage = () => {
       try {
         const response = await axios.get(`http://localhost:3000/notes/module/${moduleId}`);
         console.log('API Response:', response.data);
-        if (Array.isArray(response.data)) {
-          setNotes(response.data);
+
+        if (Array.isArray(response.data.data)) {
+          setNotes(response.data.data);
         } else {
           setNotes([]);
         }
@@ -37,28 +38,37 @@ const NotesPage = () => {
     router.push(`/modules/${moduleId}/notes/note-title/${encodeURIComponent(noteTitle)}`);
   };
 
+  const handleCreateNote = () => {
+    router.push(`/modules/${moduleId}/notes/createnote`);
+  };
+
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error}</p>;
 
   return (
     <div>
       <h1>Notes for Module {moduleId}</h1>
-      <button onClick={() => router.push(`/modules/${moduleId}/notes/createnote`)}>Create Note</button>
-      {Array.isArray(notes) && notes.length > 0 ? (
-        <ul>
-          {notes.map((note: any) => (
-            <li key={note._id || note.id}>
-              <a
-                onClick={() => handleNoteClick(note.noteTitle)}
-                style={{ cursor: 'pointer', color: 'blue' }}
-              >
-                {note.noteTitle}
-              </a>
-            </li>
-          ))}
-        </ul>
+      {notes.length > 0 ? (
+        <>
+          <button onClick={handleCreateNote}>Create Note</button>
+          <ul>
+            {notes.map((note: any) => (
+              <li key={note._id || note.id}>
+                <a
+                  onClick={() => handleNoteClick(note.noteTitle)}
+                  style={{ cursor: 'pointer', color: 'blue' }}
+                >
+                  {note.noteTitle}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </>
       ) : (
-        <p>No notes available for this module.</p>
+        <div style={{ marginTop: '20px', textAlign: 'center' }}>
+          <p>No notes available for this module.</p>
+          <button onClick={handleCreateNote}>Create the First Note</button>
+        </div>
       )}
     </div>
   );

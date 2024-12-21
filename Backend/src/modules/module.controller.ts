@@ -337,4 +337,25 @@ async getModulesByCourseOrderedByDate(@Param('courseId') courseId: string) {
   }
 }
 
+@Patch(':id/notes-toggle')
+async toggleNotes(
+  @Param('id') moduleId: string,
+  @Body('enabled') enabled: boolean
+) {
+  if (!Types.ObjectId.isValid(moduleId)) {
+    throw new BadRequestException('Invalid module ID format.');
+  }
+
+  if (typeof enabled !== 'boolean') {
+    throw new BadRequestException('Enabled flag must be a boolean.');
+  }
+
+  const updatedModule = await this.modulesService.toggleNotes(moduleId, enabled);
+
+  return {
+    message: `Notes have been ${enabled ? 'enabled' : 'disabled'} successfully.`,
+    data: updatedModule,
+  };
+}
+
 }

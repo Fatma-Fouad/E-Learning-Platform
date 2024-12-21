@@ -46,10 +46,8 @@ export class NoteService {
 async findByModuleId(moduleId: string): Promise<NoteDocument[]> {
   try {
     const notes = await this.noteModel.find({ module_id: moduleId }).exec();
-    if (!notes || notes.length === 0) {
-      throw new NotFoundException(`No notes found for module ID "${moduleId}"`);
-    }
-    return notes;
+    // Return an empty array instead of throwing an exception
+    return notes || [];
   } catch (error) {
     console.error('Error fetching notes by module ID:', error.message);
     throw new NotFoundException(`Failed to fetch notes for module ID "${moduleId}"`);

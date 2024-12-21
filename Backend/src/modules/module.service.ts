@@ -427,4 +427,22 @@ async getModulesByCourseOrderedByDate(courseId: string): Promise<ModuleDocument[
   }
 }
 
+async toggleNotes(moduleId: string, enabled: boolean): Promise<modules> {
+  if (!Types.ObjectId.isValid(moduleId)) {
+    throw new BadRequestException('Invalid module ID format.');
+  }
+
+  const module = await this.moduleModel.findByIdAndUpdate(
+    moduleId,
+    { notesEnabled: enabled },
+    { new: true }
+  ).exec();
+
+  if (!module) {
+    throw new NotFoundException(`Module with ID ${moduleId} not found.`);
+  }
+
+  return module;
+}
+
 }
