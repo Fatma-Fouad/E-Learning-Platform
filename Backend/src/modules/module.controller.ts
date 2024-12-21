@@ -106,16 +106,16 @@ export class ModulesController {
     };
   }
 
-  @Post()
-  // @UseGuards(AuthGuard, RolesGuard) 
-  // @Roles('instructor' as Role, 'admin' as Role)
-  async create(@Body() createModuleDto: CreateModuleDto) {
+   @Post()
+  // // @UseGuards(AuthGuard, RolesGuard) 
+  // // @Roles('instructor' as Role, 'admin' as Role)
+   async create(@Body() createModuleDto: CreateModuleDto) {
     try {
-      return await this.modulesService.create(createModuleDto);
-    } catch (error) {
-      throw new BadRequestException('Failed to create module.');
+       return await this.modulesService.create(createModuleDto);
+     } catch (error) {
+       throw new BadRequestException('Failed to create module.');
     }
-  }
+   }
 
 
   // /**
@@ -206,20 +206,20 @@ async getModulesByCourseId(@Param('courseId') courseId: string) {
      }
    }
  
-   // Retrieve modules by course ID, ordered by module_order
-   @Get('course/:courseId/ordered')
-  //  @UseGuards(AuthGuard) 
-   async getModulesByCourseOrdered(@Param('courseId') courseId: string) {
-     try {
-       const modules = await this.modulesService.getModulesByCourseOrdered(courseId);
-       return {
-         message: `Modules for course ID: ${courseId} retrieved and ordered by module_order successfully.`,
-         data: modules,
-       };
-     } catch (error) {
-       throw new BadRequestException(error.message || 'Failed to retrieve ordered modules.');
-     }
-   }
+  //  // Retrieve modules by course ID, ordered by module_order
+  //  @Get('course/:courseId/ordered')
+  // //  @UseGuards(AuthGuard) 
+  //  async getModulesByCourseOrdered(@Param('courseId') courseId: string) {
+  //    try {
+  //      const modules = await this.modulesService.getModulesByCourseOrdered(courseId);
+  //      return {
+  //        message: `Modules for course ID: ${courseId} retrieved and ordered by module_order successfully.`,
+  //        data: modules,
+  //      };
+  //    } catch (error) {
+  //      throw new BadRequestException(error.message || 'Failed to retrieve ordered modules.');
+  //    }
+  //  }
  
 /**
  * Update a module with version control and update related references in questionBank and quizzes

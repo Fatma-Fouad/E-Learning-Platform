@@ -19,7 +19,16 @@ const ModulesPage = () => {
       try {
         const response = await axios.get(`http://localhost:3000/modules/course/${courseId}/ordered-by-date`);
         console.log('API Response:', response.data); // Debug the response structure
-        setModules(response.data?.data || []); // Handle data correctly
+        const modulesData = response.data?.data || [];
+
+        // Sort modules by creation date and module order
+        const sortedModules = modulesData.sort((a, b) => {
+          if (new Date(a.created_at) < new Date(b.created_at)) return -1;
+          if (new Date(a.created_at) > new Date(b.created_at)) return 1;
+          return a.module_order - b.module_order;
+        });
+
+        setModules(sortedModules);
       } catch (err) {
         console.error('Error fetching modules:', err);
         setError(err.response?.data?.message || 'Failed to fetch modules.');
@@ -34,15 +43,24 @@ const ModulesPage = () => {
   if (loading) return <p>Loading modules...</p>;
   if (error) return <p style={{ color: 'red' }}>{error}</p>;
 
+  // Separate active and outdated modules
+  const activeModules = modules.filter((module) => !module.isModuleOutdated);
+  const outdatedModules = modules.filter((module) => module.isModuleOutdated);
+
   return (
     <div>
+      <button onClick={() => router.push(`/courses/${courseId}`)}>Back to the Course</button>
       <h1>Modules for Course ID: {courseId}</h1>
-      {modules.length > 0 ? (
+
+      <h2>Active Modules</h2>
+      {activeModules.length > 0 ? (
         <ul>
-          {modules.map((module) => (
+          {activeModules.map((module) => (
             <li key={module._id}>
-              <h3>{module.title}</h3>
+              <h3>Module Number : {module.module_order}</h3>
               <p>Created At: {new Date(module.created_at).toLocaleDateString()}</p>
+              <p>Title: {module.title}</p>
+              <p>Module Version: {module.module_version}</p>
               <button onClick={() => router.push(`/modules/${module._id}`)}>
                 View Module
               </button>
@@ -50,8 +68,29 @@ const ModulesPage = () => {
           ))}
         </ul>
       ) : (
-        <p>No modules found for this course.</p>
+        <p>No active modules found for this course.</p>
       )}
+
+      <h2>Outdated Modules</h2>
+      {outdatedModules.length > 0 ? (
+        <ul>
+          {outdatedModules.map((module) => (
+            <li key={module._id}>
+              <h3>Module Number : {module.module_order}</h3>
+              <p>Created At: {new Date(module.created_at).toLocaleDateString()}</p>
+              <p>Title: {module.title}</p>
+              <p>Module Version: {module.module_version}</p>
+              <button onClick={() => router.push(`/modules/${module._id}`)}>
+                View Module
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>No outdated modules found for this course.</p>
+      )}
+
+      <button onClick={() => router.push(`/courses/createmodule`)}>Create new Module</button>
     </div>
   );
 };
