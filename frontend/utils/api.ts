@@ -156,24 +156,27 @@ export const deleteForum = async (forumId: string, userId: string) => {
 
 
 //chats
-
 export const createChat = async (type, payload) => {
-    console.log('API Payload:', payload);
-    const response = await fetch(`http://localhost:3001/chat/${type}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-    });
+    try {
+        console.log("Sending Payload:", payload);
+        const response = await fetch(`http://localhost:3001/chat/${type}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
 
-    if (!response.ok) {
-        const error = await response.json();
-        console.error('API Error:', error);
-        throw new Error(error.message || 'Failed to create chat');
+        if (!response.ok) {
+            const error = await response.json();
+            console.error("API Error:", error);
+            throw new Error(error.message || "Failed to create chat");
+        }
+
+        return response.json();
+    } catch (error) {
+        console.error("Error in createChat API call:", error.message);
+        throw error;
     }
-
-    return response.json();
 };
-
 
 
 export const fetchChatMessages = async (courseId: string) => {
@@ -193,23 +196,30 @@ export const sendChatMessage = async (courseId: string, message: string) => {
 };
 export const fetchChatsByCourse = async (courseId: string, userId: string) => {
     try {
-        console.log('Fetching chats for courseId:', courseId, 'and userId:', userId);
+        console.log('Fetching chats with:', {
+            courseId,
+            userId,
+            endpoint: `http://localhost:3001/chat/course/${courseId}?userId=${userId}`,
+        });
 
         const response = await fetch(
             `http://localhost:3001/chat/course/${courseId}?userId=${userId}`
         );
 
         if (!response.ok) {
-            console.error('Fetch response not OK:', response.status, response.statusText);
+            console.error('Fetch failed:', response.status, response.statusText);
+            const errorDetails = await response.json();
+            console.error('Error details from backend:', errorDetails);
             throw new Error('Failed to fetch chats');
         }
 
-        return response.json();
+        return await response.json();
     } catch (error) {
         console.error('Error in fetchChatsByCourse:', error.message);
         throw error;
     }
 };
+
 
 
 

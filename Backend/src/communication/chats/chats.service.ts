@@ -34,12 +34,13 @@ export class ChatService {
         chatName: string,
         participantIds: string[],
         courseId: string,
-        userId: string
+        userId: string,
+        type: 'student' | 'group' | 'mixed'
     ): Promise<Chat> {
-        console.log('Creating chat with:', { chatName, participantIds, courseId, userId });
+        console.log('Creating chat with:', { chatName, participantIds, courseId, userId, type });
 
-        if (!chatName || !participantIds || !courseId || !userId) {
-            throw new BadRequestException('Missing required fields: chatName, participantIds, courseId, or userId.');
+        if (!chatName || !participantIds || !courseId || !userId || !type) {
+            throw new BadRequestException('Missing required fields: chatName, participantIds, courseId, userId, or type.');
         }
 
         // Validate creator's existence
@@ -57,31 +58,15 @@ export class ChatService {
             throw new BadRequestException('One or more participant IDs are invalid.');
         }
 
-        // Determine the type of chat
-        let type: string;
-
-        if (participants.some(participant => participant.role === 'instructor')) {
-            if (creator.role !== 'instructor') {
-                throw new ForbiddenException('Only instructors can create mixed chats.');
-            }
-            type = 'mixed';
-        } else if (participants.every(participant => participant.role === 'student')) {
-            type = participantIds.length > 1 ? 'group' : 'student';
-        } else {
-            throw new BadRequestException('Invalid combination of participant roles.');
-        }
-
-        // For group chats, ensure the creator is included in participants
-        if (type === 'group' && !participantIds.includes(userId)) {
-            participantIds.push(userId);
-        }
+        // Explicitly use the passed type
+        const chatType = type;
 
         // Create the chat
         const newChat = new this.chatModel({
             chatName,
             participants: participantIds.map(id => new mongoose.Types.ObjectId(id)),
             courseId: new mongoose.Types.ObjectId(courseId),
-            type,
+            type: chatType,
             creatorId: new mongoose.Types.ObjectId(userId),
         });
 

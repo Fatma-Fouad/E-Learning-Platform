@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import {
@@ -6,6 +7,10 @@ import {
     addMessageToChat,
     createChat,
 } from '../../utils/api';
+import { getSocket } from '../../utils/socket';
+import { toast } from 'react-toastify';
+import { useNotificationSocket } from '../notifications/useNotificationSocket';
+
 
 const ChatsPage = () => {
     const router = useRouter();
@@ -18,34 +23,95 @@ const ChatsPage = () => {
     const [error, setError] = useState('');
     const [userRole, setUserRole] = useState('');
     const [userId, setUserId] = useState('');
+    const [selectedParticipantId, setSelectedParticipantId] = useState('');
     const [groupParticipants, setGroupParticipants] = useState<string[]>([]);
+    const [isUserIdReady, setIsUserIdReady] = useState(false);
 
-    // Load user information
+    useNotificationSocket(userId);
+//load user info
     useEffect(() => {
         const role = localStorage.getItem('role');
         const user = localStorage.getItem('userId');
         setUserRole(role || '');
         setUserId(user || '');
+        setIsUserIdReady(true);
     }, []);
 
-    // Fetch chats for the course
+    // ✅ Fetch Chats
     useEffect(() => {
         const loadChats = async () => {
+            if (!router.isReady) {
+                console.log('Router not ready, waiting...');
+                return;
+            }
+
             if (!courseId || Array.isArray(courseId)) {
                 setError('Invalid course ID.');
                 return;
             }
+            if (!userId) {
+                console.warn('User ID is not ready yet. Skipping chat fetch.');
+                return;
+            }
 
             try {
+                console.log('Fetching chats:', { courseId, userId });
                 const data = await fetchChatsByCourse(courseId as string, userId);
                 setChats(data);
+                console.log('✅ Chats loaded successfully:', data);
             } catch (err) {
+                console.error('Failed to load chats:', err);
                 setError('Failed to load chats.');
             }
         };
 
-        loadChats();
-    }, [courseId, userId]);
+        if (isUserIdReady && userId) {
+            loadChats();
+        }
+    }, [courseId, userId, isUserIdReady, router.isReady]);
+
+    useEffect(() => {
+        if (!userId || !selectedChat) return;
+
+        const socket = getSocket(userId);
+
+        // ✅ Join Chat Room
+        socket.emit('joinChat', { chatId: selectedChat, userId });
+        console.log(`🟢 Joined chat room: chat:${selectedChat}`);
+
+        // ✅ Handle Real-Time Messages
+        const handleNewMessage = (message) => {
+            console.log('💬 Real-Time Message Received:', message);
+
+            setMessages((prevMessages) => [
+                ...prevMessages,
+                {
+                    sender: message.sender,
+                    content: message.content,
+                    timestamp: message.timestamp || new Date().toISOString(),
+                },
+            ]);
+        };
+
+        // ✅ Prevent Duplicate Listeners
+        socket.off('OnMessage'); // Clear previous listeners
+        socket.on('OnMessage', handleNewMessage);
+
+        // ✅ Handle Errors
+        socket.off('error'); // Clear any previous error listener
+        socket.on('error', (error) => {
+            console.error('❌ Socket Error:', error);
+        });
+
+        // ✅ Cleanup on Unmount
+        return () => {
+            socket.off('OnMessage', handleNewMessage);
+            socket.off('error');
+            socket.emit('leaveChat', { chatId: selectedChat, userId });
+            console.log(`🛑 Left chat room: chat:${selectedChat}`);
+        };
+    }, [userId, selectedChat]);
+
 
     // Fetch chat history
     const loadChatHistory = async (chatId: string) => {
@@ -53,24 +119,61 @@ const ChatsPage = () => {
             const data = await fetchChatHistory(chatId);
             setMessages(data);
             setSelectedChat(chatId);
+
+            //  Join chat room
+            const socket = getSocket(userId);
+            socket.emit('joinChat', { chatId, userId });
+
+            socket.on('joinedChat', (response) => {
+                console.log('✅ Successfully joined chat:', response);
+            });
+
+            socket.on('error', (error) => {
+                console.error('❌ Error joining chat:', error);
+            });
         } catch (err) {
+            console.error('❌ Failed to load chat history:', err);
             setError('Failed to load chat history.');
         }
     };
 
+
     // Send a message
+    // Initialize socket
+   
     const handleSendMessage = async () => {
         if (!newMessage.trim() || !selectedChat) return;
-
+        const socket = getSocket(userId);
         try {
             const payload = { sender: userId, content: newMessage.trim() };
+
+            // ✅ Save message in the database
             await addMessageToChat(selectedChat, payload);
-            setMessages((prev) => [...prev, { sender: 'You', content: newMessage }]);
+
+            // ✅ Update local state immediately for the sender
+            setMessages((prev) => [
+                ...prev,
+                { sender: 'You', content: newMessage, timestamp: new Date().toISOString() },
+            ]);
             setNewMessage('');
+
+            // ✅ Emit Real-Time Event
+            if (socket) {
+                socket.emit('sendMessage', {
+                    chatId: selectedChat,
+                    sender: userId,
+                    content: newMessage,
+                    timestamp: new Date().toISOString(),
+                });
+                console.log('📤 Real-time message sent:', newMessage);
+            }
         } catch (err) {
+            console.error('❌ Error sending message:', err);
             setError('Failed to send message.');
         }
     };
+
+
 
     // Add a participant for group chat
     const handleAddParticipant = (participantId: string) => {
@@ -104,22 +207,41 @@ const ChatsPage = () => {
         }
 
         if (!userId) {
-            setError('User ID is missing.');
+            setError('User ID is not set. Please refresh the page or log in again.');
             return;
         }
 
-        const participantIds =
-            type === 'group' ? [...new Set([...groupParticipants, userId])] : [userId]; // Ensure no duplicates
+        let participantIds: string[] = [];
 
-        const payload = { chatName, participantIds, courseId: courseId as string, userId };
+        if (type === 'group') {
+            participantIds = [...new Set([...groupParticipants, userId])];
+        } else if (type === 'student') {
+            if (!selectedParticipantId.trim()) {
+                setError('Participant ID is required for One-to-One chat.');
+                return;
+            }
+            participantIds = [selectedParticipantId, userId];
+        } else {
+            participantIds = [userId];
+        }
+
+        const payload = {
+            chatName,
+            participantId: selectedParticipantId, // Ensure this is correctly set for one-to-one
+            participantIds,
+            courseId: courseId as string,
+            userId,
+        };
+
+        console.log('🚀 Payload for chat creation:', payload);
 
         try {
-            console.log('Payload for chat creation:', payload);
             await createChat(type, payload);
             const updatedChats = await fetchChatsByCourse(courseId as string, userId);
             setChats(updatedChats);
             setChatName('');
             setGroupParticipants([]);
+            setSelectedParticipantId('');
             alert(
                 `${type === 'mixed'
                     ? 'Mixed'
@@ -128,10 +250,12 @@ const ChatsPage = () => {
                         : 'One-to-One'} chat created successfully!`
             );
         } catch (err) {
-            console.error('Error creating chat:', err);
+            console.error('❌ Error creating chat:', err);
             setError('Failed to create chat.');
         }
     };
+
+
 
     return (
         <div style={{ padding: '20px' }}>
@@ -163,6 +287,23 @@ const ChatsPage = () => {
                     onChange={(e) => setChatName(e.target.value)}
                     style={{ marginRight: '10px', padding: '5px' }}
                 />
+                {/* One-to-One Chat (Only for Students) */}
+                {/* Create One-to-One Chat */}
+                {userRole === 'student' && (
+                    <div>
+                        <h4>Create One-to-One Chat</h4>
+                        <input
+                            type="text"
+                            placeholder="Enter participant ID"
+                            value={selectedParticipantId}
+                            onChange={(e) => setSelectedParticipantId(e.target.value)}
+                        />
+                        <button onClick={() => handleCreateChat('student')}>
+                            Create One-to-One Chat
+                        </button>
+                    </div>
+                )}
+
                 {userRole === 'student' && (
                     <div>
                         <h4>Group Chat Participants</h4>
@@ -199,9 +340,7 @@ const ChatsPage = () => {
                 )}
                 {userRole === 'student' && (
                     <>
-                        <button onClick={() => handleCreateChat('student')}>
-                            Create One-to-One Chat
-                        </button>
+                        
                         <button onClick={() => handleCreateChat('group')}>
                             Create Group Chat
                         </button>
@@ -223,7 +362,7 @@ const ChatsPage = () => {
                     >
                         {messages.map((msg, index) => (
                             <p key={index}>
-                                <strong>{msg.sender}:</strong> {msg.content}
+                                <strong>{msg.sender === userId ? 'You' : msg.sender}:</strong> {msg.content}
                             </p>
                         ))}
                     </div>
@@ -236,6 +375,7 @@ const ChatsPage = () => {
                     />
                     <button onClick={handleSendMessage}>Send</button>
                 </div>
+
             )}
         </div>
     );

@@ -1,7 +1,7 @@
 import { Chat, ChatDocument, Message } from './chats.schema';
 import { Controller, Get, Post, Param, Body, Delete, Query, NotFoundException, BadRequestException, ForbiddenException, UseGuards, Req } from '@nestjs/common';
 import { ChatService } from './chats.service';
-import mongoose from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import { AuthGuard } from 'src/authentication/auth.guard';
 import { Roles, Role } from 'src/authentication/roles.decorator';
 import { RolesGuard } from 'src/authentication/roles.guard';
@@ -39,7 +39,7 @@ export class ChatController {
             throw new ForbiddenException('Only instructors can create mixed chats.');
         }
 
-        return this.chatService.createChat(chatName, participantIds, courseId, userId);
+        return this.chatService.createChat(chatName, participantIds, courseId, userId,'mixed');
     }
 
 
@@ -75,9 +75,10 @@ export class ChatController {
         console.log('Creating a one-to-one student-only chat...');
 
         // Create the chat
-        return this.chatService.createChat(chatName, participantIds, courseId, userId);
+        return this.chatService.createChat(chatName, participantIds, courseId, userId,'student');
     }
 
+    // Create a group chat
     // Create a group chat
     @Post('group')
     async createGroupChat(
@@ -115,8 +116,7 @@ export class ChatController {
         const allParticipantIds = [...new Set([userId, ...participantIds])];
         console.log('Creating a group chat with participants:', allParticipantIds);
 
-        // Create the chat
-        return this.chatService.createChat(chatName, allParticipantIds, courseId, userId);
+        return this.chatService.createChat(chatName, allParticipantIds, courseId, userId, 'group');
     }
 
 
@@ -132,11 +132,9 @@ export class ChatController {
     }
 
   
-
-
     @Get('course/:courseId')
-        //@UseGuards(AuthGuard, RolesGuard)
-        //@Roles('instructor' as Role, 'admin' as Role)
+    //@UseGuards(AuthGuard, RolesGuard)
+    //@Roles('instructor' as Role, 'admin' as Role)
     async getChatsByCourse(
         @Param('courseId') courseId: string,
         @Query('userId') userId: string
@@ -155,14 +153,26 @@ export class ChatController {
             throw new NotFoundException(`User with ID ${userId} not found.`);
         }
 
+        // Fetch all chats for the course
         const chats = await this.chatService.getChatsByCourse(courseId);
 
         // Filter chats based on user role
         if (user.role === 'instructor') {
-            return chats.filter(chat => chat.type === 'mixed'); // Instructors see only mixed chats
+            // Instructors only see mixed chats
+            return chats.filter(chat => chat.type === 'mixed');
         }
-        return chats; // Students see all chats
+
+        if (user.role === 'student') {
+            // Cast userId to ObjectId for comparison
+            const userObjectId = new Types.ObjectId(userId);
+            return chats.filter(chat => chat.participants.some(id => id.equals(userObjectId)));
+        }
+
+        // Fallback: If role is unrecognized, return an empty array
+        return [];
     }
+
+
 
 
 
