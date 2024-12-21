@@ -33,12 +33,6 @@ export class QuizService {
       throw new NotFoundException(`Question bank for module ID ${moduleId} not found.`);
     }
 
-    //check if quiz for this module exists
-    const existingQuiz = await this.quizModel.findOne({ module_id: moduleId, user_id: userId });
-    if (existingQuiz) {
-      await this.quizModel.deleteOne({ module_id: moduleId, user_id: userId });
-    }
-
     const newQuiz = new this.quizModel({
       user_id: userId,
       module_id: moduleId,
@@ -51,11 +45,32 @@ export class QuizService {
     await newQuiz.save();
 
     return {
-      message: existingQuiz
-        ? 'Old quiz deleted. New quiz generated successfully.'
-        : 'Quiz generated successfully.',
+      message: 'Quiz created successfully.', // Include the message here
       quiz: newQuiz,
     };
+  }
+
+  // Update an existing quiz
+  async updateQuiz(
+    quizId: string,
+    questionCount?: number,
+    type?: string,
+  ): Promise<QuizDocument> {
+    const updatedFields: Partial<QuizDocument> = {};
+    if (questionCount) updatedFields.question_count = questionCount;
+    if (type) updatedFields.type = type;
+
+    const updatedQuiz = await this.quizModel.findByIdAndUpdate(
+      quizId,
+      { $set: updatedFields },
+      { new: true }, // Return the updated document
+    );
+
+    if (!updatedQuiz) {
+      throw new NotFoundException(`Quiz with ID ${quizId} not found.`);
+    }
+
+    return updatedQuiz;
   }
 
   async deleteQuizById(quizId: string): Promise<QuizDocument | null> {
@@ -68,6 +83,12 @@ export class QuizService {
     // Delete the quiz
     const deletedQuiz = await this.quizModel.findByIdAndDelete(quizId);
     return deletedQuiz;
+  }
+
+  async getQuizByModule(moduleId: string): Promise<QuizDocument | null> {
+    return await this.quizModel
+      .findOne({ module_id: moduleId })
+      .select('-user_id'); // Excludes the `user_id` field
   }
 
   async getQuizForStudent(userId: string,courseId: string, moduleId: string): Promise<QuizDocument> {
