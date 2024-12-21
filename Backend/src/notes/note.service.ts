@@ -102,10 +102,14 @@ async updateNoteByModuleAndTitle(
       throw new BadRequestException('Content cannot be empty.');
     }
 
+    // Validate noteTitle
+    if (updateData.noteTitle !== undefined && updateData.noteTitle.trim() === '') {
+      throw new BadRequestException('Note title cannot be empty.');
+    }
+
     // Set last_updated field
     updateData.last_updated = new Date();
 
-    // Search and Update
     console.log(`🔄 Updating note for moduleId: ${moduleId}, noteTitle: ${noteTitle}`);
 
     const updatedNote = await this.noteModel.findOneAndUpdate(
