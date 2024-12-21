@@ -14,10 +14,18 @@ user_id: mongoose.Schema.Types.ObjectId;
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'quizzes', required: true })
   quiz_id: mongoose.Schema.Types.ObjectId;
 
-  @Prop({ type: [{ question_id: String, selected_option: String }], required: true })
+  @Prop({
+    type: [
+      {
+        question_id: { type: mongoose.Schema.Types.ObjectId, required: true },
+        selected_option: { type: String, required: true },
+      },
+    ],
+    _id: false,
+  })
   answers: {
-    question_id: String;
-    selected_option: String;
+    question_id: mongoose.Schema.Types.ObjectId;
+    selected_option: string;
   }[];
 
   @Prop({ type: Number, required: true })

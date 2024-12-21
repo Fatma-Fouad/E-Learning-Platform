@@ -5,6 +5,7 @@ import { QuizDocument } from './quiz.schema';
 import { QuestionBankDocument } from '../questionbank/questionbank.schema';
 import { UserDocument } from '../users/user.schema';
 import { ProgressDocument } from '../progress/models/progress.schema';
+import { ModuleDocument } from 'src/modules/module.schema';
 
 @Injectable()
 export class QuizService {
@@ -13,6 +14,7 @@ export class QuizService {
     @InjectModel('questionbank') private questionBankModel: Model<QuestionBankDocument>,
     @InjectModel('User') private userModel: Model<UserDocument>,
     @InjectModel('progress') private progressModel: Model<ProgressDocument>,
+    @InjectModel('modules') private moduleModel: Model<ModuleDocument>,
   ) {}
 
   async generateQuiz(
@@ -91,8 +93,16 @@ export class QuizService {
       .select('-user_id'); // Excludes the `user_id` field
   }
 
-  async getQuizForStudent(userId: string,courseId: string, moduleId: string): Promise<QuizDocument> {
+  async getQuizForStudent(userId: string, moduleId: string): Promise<QuizDocument> {
     //making sure student has a progress documented
+
+    const module = (await this.moduleModel.findById(moduleId)) as ModuleDocument;
+    if (!module || !module.course_id) {
+      throw new NotFoundException(`Module with ID ${moduleId} not found.`);
+    }
+
+    const courseId = module.course_id.toString();
+
     const progress = await this.progressModel.findOne({ user_id: userId, course_id: courseId  });
     if (!progress) {
       throw new NotFoundException(`No progress found for user ID ${userId} and course ID ${courseId}`);

@@ -37,6 +37,7 @@ export class QuizController {
   }
 
   @Patch(':quiz_id')
+  //@Roles('admin' as Role, 'instructor' as Role)
   async updateQuiz(
     @Param('quiz_id') quizId: string,
     @Body('question_count') questionCount?: number,
@@ -78,19 +79,18 @@ export class QuizController {
     return { quiz };
   }
 
-  @Get('student')
+  @Post('student/:module_id')
   //@Roles('student' as Role)
   async getStudentQuiz(
     @Body('user_id') userId: string,
-    @Body('course_id') courseId: string,
-    @Body('module_id') moduleId: string,
+    @Param('module_id') moduleId: string,
   ) {
 
-    if (!userId || !courseId || !moduleId) {
-      throw new NotFoundException('user_id, course_id, and module_id must be provided.');
+    if (!userId || !moduleId) {
+      throw new NotFoundException('user_id, and module_id must be provided.');
     }
 
-    const quiz = await this.quizService.getQuizForStudent(userId, courseId, moduleId);
+    const quiz = await this.quizService.getQuizForStudent(userId, moduleId);
 
     if (!quiz) {
       throw new NotFoundException(`No quizzes available for module ID ${moduleId}`);
