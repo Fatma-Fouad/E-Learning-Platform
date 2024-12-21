@@ -22,7 +22,7 @@ import { RolesGuard } from 'src/authentication/roles.guard';
      * Retrieve all courses for (all)  
      */
     @Get('available-courses')
-    //@UseGuards(AuthGuard)
+    @UseGuards(AuthGuard)
     async findAll() {
       return this.coursesService.findAll();
     }
@@ -63,7 +63,7 @@ async searchCoursesByKeyword(@Query('keyword') keyword: string) {
      * Retrieve course by id  (ALL)
      */
     @Get(':id')
-  //  @UseGuards(AuthGuard) 
+    @UseGuards(AuthGuard) 
     async findCourseById(@Param('id') id: string) {
       try {
         return await this.coursesService.findCourseById(id);
@@ -134,7 +134,7 @@ async searchCoursesByKeyword(@Query('keyword') keyword: string) {
      * Retrieve number of enrolled students in a specific course (ALL)
      */
     @Get(':id/enrolled-students')
-  //  @UseGuards(AuthGuard) 
+    @UseGuards(AuthGuard) 
     async getEnrolledStudents(@Param('id') id: string) {
       return this.coursesService.getEnrolledStudents(id);
     }
@@ -252,9 +252,9 @@ async rateInstructor(
 
 
    @Get('course-by-creator/:created_by')
-  // @UseGuards(AuthGuard,RolesGuard)
-   //@Roles('student' as Role)
-   //@Roles('instructor' as Role)
+   @UseGuards(AuthGuard,RolesGuard)
+   @Roles('student' as Role)
+   @Roles('instructor' as Role)
 async findCourseByCreator(@Param('created_by') createdBy: string) {
   try {
     if (!createdBy) {
@@ -284,9 +284,9 @@ async findCourseByCreator(@Param('created_by') createdBy: string) {
    * Find Course details By the course name (Student and instructor)
    */
       @Get('course-by-Name/:title') // Route with :title as parameter
-     // @Roles('student' as Role)
-      //@Roles('instructor' as Role)
-      //@UseGuards(AuthGuard,RolesGuard)
+      @Roles('student' as Role)
+      @Roles('instructor' as Role)
+      @UseGuards(AuthGuard,RolesGuard)
       async findCourseByName(@Param('title') Name: string) {
         try {
           if (!Name) {

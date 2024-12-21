@@ -1,6 +1,6 @@
 
 // note.controller.ts
-import { Body, Controller, Post, Get, Param, Put, Delete, UseGuards, NotFoundException  } from '@nestjs/common';
+import { Body, Controller, Post, Get, Param, Put, Delete, UseGuards, NotFoundException , BadRequestException } from '@nestjs/common';
 import { NoteService } from './note.service';
 import { CreateNoteDto } from './createnote.dto';
 import {UpdateNoteDto} from './updatenote.dto';
@@ -26,28 +26,43 @@ export class NoteController {
     return this.noteService.findAll(userId);
 }
 
-@Get('module/:moduleId') // Fetch notes by module ID
-async getNotesByModuleId(@Param('moduleId') moduleId: string): Promise<NoteDocument[]> {
-  return this.noteService.findByModuleId(moduleId);
-}
+@Get('module/:moduleId')
+  async getNotesByModuleId(@Param('moduleId') moduleId: string): Promise<NoteDocument[]> {
+    console.log(`Fetching notes for moduleId: ${moduleId}`);
+    return this.noteService.findByModuleId(moduleId);
+  }
 
 
-@Get('note-title/:noteTitle') // Fetch by note title
-async getNoteByTitle(@Param('noteTitle') noteTitle: string): Promise<NoteDocument> {
-  return this.noteService.findNoteByTitle(noteTitle);
-}
+
+  @Get('module/:moduleId/notes/note-title/:noteTitle')
+  async getNoteByModuleIdAndTitle(
+    @Param('moduleId') moduleId: string,
+    @Param('noteTitle') noteTitle: string,
+  ): Promise<NoteDocument> {
+    console.log(`Fetching note for moduleId: ${moduleId}, noteTitle: ${decodeURIComponent(noteTitle)}`);
+    return this.noteService.findNoteByModuleIdAndTitle(
+      moduleId,
+      decodeURIComponent(noteTitle.trim())
+    );
+  }
+  
 
   // Endpoint to update a note by its title
-  @Put('module/:moduleId/title/:noteTitle') // Update note tied to a module
+  @Put('module/:moduleId/title/:noteTitle') // ✅ Update Note by Module ID and Title
   async updateNoteByModuleAndTitle(
     @Param('moduleId') moduleId: string,
     @Param('noteTitle') noteTitle: string,
     @Body() updateData: UpdateNoteDto,
   ): Promise<NoteDocument> {
-    return this.noteService.updateNoteByModuleAndTitle(moduleId, noteTitle, updateData);
+    console.log(
+      `🔄 Received update request for moduleId: ${moduleId}, noteTitle: ${noteTitle}, updateData: ${JSON.stringify(updateData)}`
+    );
+    return this.noteService.updateNoteByModuleAndTitle(
+      moduleId,
+      decodeURIComponent(noteTitle.trim()),
+      updateData
+    );
   }
-
-  
   
   @Delete('title/:noteTitle') // Delete by note title
   async deleteNoteByTitle(@Param('noteTitle') noteTitle: string): Promise<NoteDocument> {

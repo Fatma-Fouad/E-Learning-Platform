@@ -39,7 +39,8 @@ const ModulePage = () => {
       <p>Difficulty Level: {moduleData.module_difficultyLevel}</p>
       <p>Rating: {moduleData.module_rating} / 5</p>
       <button onClick={() => router.push(`/modules/${moduleId}/manage-quizzes`)}>Manage Quizzes</button>
-    </div>
+      <button onClick={() => router.push(`/modules/${moduleId}/notes`)}>Notes</button>
+      </div>
   );
 };
 

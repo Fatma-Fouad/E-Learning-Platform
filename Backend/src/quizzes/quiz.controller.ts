@@ -5,12 +5,12 @@ import { Role, Roles } from '../authentication/roles.decorator';
 import { AuthGuard } from '../authentication/auth.guard';
 
 @Controller('quizzes')
-@UseGuards(AuthGuard, RolesGuard) 
+//@UseGuards(AuthGuard, RolesGuard) 
 export class QuizController {
   constructor(private quizService: QuizService) {}
 
   @Post()
-  @Roles('admin' as Role, 'instructor' as Role)
+  //@Roles('admin' as Role, 'instructor' as Role)
   async generateQuiz(
     @Body('user_id') userId: string,
     @Body('module_id') moduleId: string,
@@ -32,7 +32,7 @@ export class QuizController {
   }
 
   @Delete(':id')
-  @Roles('admin' as Role, 'instructor' as Role)
+  //@Roles('admin' as Role, 'instructor' as Role)
   async deleteQuizById(@Param('id') quizId: string) {
     const deletedQuiz = await this.quizService.deleteQuizById(quizId);
     if (!deletedQuiz) {
@@ -45,7 +45,7 @@ export class QuizController {
   }
 
   @Get('student')
-  @Roles('student' as Role)
+  //@Roles('student' as Role)
   async getStudentQuiz(
     @Body('user_id') userId: string,
     @Body('course_id') courseId: string,

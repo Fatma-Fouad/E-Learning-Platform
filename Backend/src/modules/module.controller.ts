@@ -15,9 +15,9 @@ import * as fs from 'fs';
 import { CoursesService } from 'src/courses/course.service';
 import { QuestionBankDocument } from '../questionbank/questionbank.schema';
 import { QuizDocument } from '../quizzes/quiz.schema';
-import { AuthGuard } from 'src/authentication/auth.guard';
-import { Roles, Role } from 'src/authentication/roles.decorator';
-import { RolesGuard } from 'src/authentication/roles.guard';
+//import { AuthGuard } from 'src/authentication/auth.guard';
+//import { Roles, Role } from 'src/authentication/roles.decorator';
+//import { RolesGuard } from 'src/authentication/roles.guard';
 
 
 
@@ -193,7 +193,7 @@ async getModulesByCourseId(@Param('courseId') courseId: string) {
 
    // Retrieve all modules ordered by module_order
    @Get('ordered')
-  // @UseGuards(AuthGuard) 
+   //@UseGuards(AuthGuard) 
    async findAllOrdered() {
      try {
        const modules = await this.modulesService.findAllOrdered();
@@ -226,7 +226,7 @@ async getModulesByCourseId(@Param('courseId') courseId: string) {
  */
 @Patch(':id/version-control')
 //@UseGuards(AuthGuard, RolesGuard) 
- // @Roles('instructor' as Role, 'admin' as Role)
+  //@Roles('instructor' as Role, 'admin' as Role)
 async updateModuleWithVersionControl(
   @Param('id') id: string,
   @Body() updateModuleDto: UpdateModuleDto,
@@ -252,7 +252,7 @@ async updateModuleWithVersionControl(
 
 @Get(':id')
 //@UseGuards(AuthGuard, RolesGuard) 
- // @Roles('instructor' as Role, 'admin' as Role)
+  //@Roles('instructor' as Role, 'admin' as Role)
 async getModuleById(@Param('id') id: string) {
     if (!this.isValidObjectId(id)) {
         throw new BadRequestException('Invalid module ID format.');
