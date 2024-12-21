@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import axios from "axios";
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
 import {
   Chart as ChartJS,
   BarElement,
@@ -40,6 +42,21 @@ const QuizResultsReport = () => {
 
     fetchQuizResults();
   }, [courseId]);
+
+  const generatePDF = () => {
+    const reportElement = document.getElementById("report"); // ID of the report container
+    if (!reportElement) return;
+
+    html2canvas(reportElement, { scale: 2 }).then((canvas) => {
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save("QuizResultsReport.pdf");
+    });
+  };
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p style={{ color: "red" }}>{error}</p>;
@@ -84,24 +101,34 @@ const QuizResultsReport = () => {
   };
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-      <h1>Quiz Results Report</h1>
-      <button
-        style={{
+    <div>
+      <button style={{
           display: "block",
           margin: "10px auto 20px auto",
           padding: "10px 20px",
           backgroundColor: "#9fcdff", // Light pastel blue
-          color: "white",
+          color: "black",
           border: "none",
           borderRadius: "5px",
           cursor: "pointer",
-        }}
-        onClick={() => router.push(`/courses/${courseId}`)}
-      >
+        }} onClick={generatePDF}>
+        Download as PDF
+      </button>
+      <button style={{
+          display: "block",
+          margin: "10px auto 20px auto",
+          padding: "10px 20px",
+          backgroundColor: "#9fcdff", // Light pastel blue
+          color: "black",
+          border: "none",
+          borderRadius: "5px",
+          cursor: "pointer",
+        }} onClick={() => router.push(`/courses/${courseId}`)}>
         Return to Course
       </button>
 
+    <div id="report" style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
+      <h1>Quiz Results Report</h1>
       <div style={{ marginBottom: "20px" }}>
         <h2>Participants per Quiz</h2>
         <div style={{ maxWidth: "600px", margin: "0 auto" }}>
@@ -167,6 +194,7 @@ const QuizResultsReport = () => {
           </div>
         ))}
       </div>
+    </div>
     </div>
   );
 };
