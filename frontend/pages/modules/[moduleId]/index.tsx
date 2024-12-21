@@ -38,7 +38,25 @@ const ModulePage = () => {
       <p>Version: {moduleData.module_version}</p>
       <p>Difficulty Level: {moduleData.module_difficultyLevel}</p>
       <p>Rating: {moduleData.module_rating} / 5</p>
+      <p>Order: {moduleData.module_order}</p>
+      <p>Uploaded Content:</p>
+      {moduleData.content && moduleData.content.length > 0 ? (
+        <ul>
+          {moduleData.content.map((filePath, index) => (
+            <li key={index}>
+              <a href={`http://localhost:3000/${filePath}`} target="_blank" rel="noopener noreferrer">
+                {filePath.split('/').pop()}
+              </a>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>No content uploaded yet.</p>
+      )}
       <button onClick={() => router.push(`/modules/${moduleId}/manage-quizzes`)}>Manage Quizzes</button>
+      <button onClick={() => router.push(`/modules/${moduleId}/update`)}>Update Module</button>
+      <button onClick={() => router.push(`/modules/${moduleId}/upload`)}>Upload Media</button>
+      <button onClick={() => router.push(`/courses/${moduleData.course_id}/modules`)}>Back to Modules</button>
     </div>
   );
 };
