@@ -46,8 +46,8 @@ const Home = () => {
       {/* Navbar */}
       <nav style={styles.navbar}>
         <h2 style={styles.logo}>E-Learning Platform</h2>
-        <button style={styles.button} onClick={() => router.push(`/courses`)}>
-            Courses you Teach
+        <button onClick={handleLogout} style={styles.logoutButton}>
+          Logout
         </button>
         <button onClick={handleLogout} style={styles.logoutButton}>
           Logout
@@ -58,12 +58,12 @@ const Home = () => {
         <button onClick={Find_Course} style={styles.logoutButton}>
           Find a course
         </button>
-        <button onClick={Courses} style={styles.logoutButton}>
-          AllCourses
+        <button style={styles.logoutButton} onClick={() => router.push(`/courses/MyCourses_in`)}>
+          My Courses (inst)
         </button>
 
-        <button onClick={StudentCourses} style={styles.logoutButton}>
-          MyCourses
+        <button style={styles.logoutButton} onClick={() => router.push(`/courses/MyCourses_st`)}>
+          My Courses (stud)
         </button>
       </nav>
 

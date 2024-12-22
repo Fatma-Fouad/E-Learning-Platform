@@ -131,7 +131,7 @@ const AllCoursesPage = () => {
 
   return (
     <div>
-      <h1>All Courses</h1>
+      <h1>All Courses for: ${instructorId}</h1>
 
       <div>
         <h2>Search by Instructor ID</h2>
