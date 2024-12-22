@@ -188,7 +188,7 @@ const RateModulePage = () => {
           <button onClick={handleRateModule}>Submit Rating</button>
         </div>
       )}
-      <button onClick={() => router.push(`/modules/${moduleId}/all-modules`)}>Go to All Modules</button>
+      <button onClick={() => router.push(`/courses/${courseId}/modules_st`)}>Go to All Modules</button>
     </div>
   );
 };

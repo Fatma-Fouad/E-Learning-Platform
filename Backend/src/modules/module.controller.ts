@@ -1,4 +1,4 @@
-import {Controller,Get,Post,Patch,Delete,Param,Body,Res,BadRequestException,NotFoundException,UploadedFile,UseInterceptors, UseGuards} from '@nestjs/common';
+import {Controller,Get,Post,Patch,Delete,Param,Body,Query,Res,BadRequestException,NotFoundException,UploadedFile,UseInterceptors, UseGuards} from '@nestjs/common';
 import { ModulesService } from './module.service';
 import { CreateModuleDto } from './createmoduleDto';
 import { UpdateModuleDto } from './updatemoduleDto';
@@ -43,8 +43,8 @@ export class ModulesController {
    * Retrieve all modules for students
    */
   @Get()
-  // @UseGuards(AuthGuard, RolesGuard) 
-  // @Roles('student' as Role, 'admin' as Role)
+   @UseGuards(AuthGuard, RolesGuard) 
+    @Roles('student' as Role, 'admin' as Role)
    async findAllModulesForStudents() {
      try {
        return await this.modulesService.findAllModulesForStudents();
@@ -84,11 +84,11 @@ export class ModulesController {
   // }
 
   @Get(':id/student')
-  // @UseGuards(AuthGuard, RolesGuard) 
-  // @Roles('student' as Role, 'admin' as Role)
+  @UseGuards(AuthGuard, RolesGuard) 
+  @Roles('student' as Role, 'admin' as Role)
   async getModuleByIdStudent(
     @Param('id') moduleId: string,
-    @Body('user_id') userId: string,
+    @Query('user_id') userId: string,
   ) {
     if (!userId) {
       throw new BadRequestException('user_id is required.');
@@ -145,8 +145,8 @@ export class ModulesController {
   // }
 
    @Patch(':id/rate')
-  // @UseGuards(AuthGuard, RolesGuard) 
-  //@Roles('student' as Role, 'admin' as Role)
+   @UseGuards(AuthGuard, RolesGuard) 
+   @Roles('student' as Role, 'admin' as Role)
   async rateModule(
     @Param('id') id: string,
     @Body() rateModuleDto: RateModuleDto,
@@ -333,6 +333,20 @@ async getModulesByCourseOrderedByDate(@Param('courseId') courseId: string) {
     };
   } catch (error) {
     throw new BadRequestException(error.message || 'Failed to retrieve ordered modules by date.');
+  }
+}
+
+@Get('course/:courseId/for-student')
+//@UseGuards(AuthGuard) // Optional: Ensure only authenticated users can access this API
+async findModulesForStudents(@Param('courseId') courseId: string) {
+  try {
+    const modules = await this.modulesService.findModulesForStudents(courseId);
+    return {
+      message: `Modules for course ID: ${courseId} retrieved successfully.`,
+      data: modules,
+    };
+  } catch (error) {
+    throw new BadRequestException(error.message || 'Failed to retrieve modules for the course.');
   }
 }
 

@@ -63,22 +63,34 @@ export class ModulesService {
   // }    //DONE
 
   async getModuleByIdStudent(userId: string, moduleId: string): Promise<{ module: ModuleDocument | null; message?: string }> {
-    // Fetch student progress
-
+    // Fetch the module by ID
     const module = await this.moduleModel.findById(moduleId);
+  
+    console.log('Module Retrieved:', module);
     if (!module) {
-    throw new NotFoundException(`Module with ID ${moduleId} not found.`);
+      throw new NotFoundException(`Module with ID ${moduleId} not found.`);
     }
-
-    const progress = await this.progressModel.findOne({ user_id: userId , course_id: module.course_id});
+  
+    // Extract difficulty level, handling both correctly named and incorrectly spaced keys
+    const moduleDifficulty = module.module_difficultyLevel?.trim() || module[' module_difficultyLevel']?.trim();
+    console.log('Module Difficulty Level:', moduleDifficulty);
+  
+    if (!moduleDifficulty) {
+      throw new BadRequestException(`Module difficulty level is missing for module ID ${moduleId}.`);
+    }
+  
+    // Fetch student progress
+    const progress = await this.progressModel.findOne({ user_id: userId, course_id: module.course_id });
+    console.log('Progress Retrieved:', progress);
     if (!progress) {
       throw new NotFoundException(`Progress for user ID ${userId} not found.`);
     }
   
     // Determine accessible difficulty levels based on avg_score
     const avgScore = progress.avg_score || 0;
-    let accessibleLevels: string[] = [];
+    console.log('User Average Score:', avgScore);
   
+    let accessibleLevels: string[] = [];
     if (avgScore <= 50) {
       accessibleLevels = ['Easy'];
     } else if (avgScore <= 75) {
@@ -86,19 +98,20 @@ export class ModulesService {
     } else {
       accessibleLevels = ['Easy', 'Medium', 'Hard'];
     }
-
-    if (!module) {
-      return { module: null };
-    }
+    console.log('Accessible Levels:', accessibleLevels);
   
     // Check if the module's difficulty is accessible
-    if (!accessibleLevels.includes(module.module_difficultyLevel)) {
-      const message = `You cannot access the ${module.module_difficultyLevel} module yet because your average score (${avgScore}) is not sufficient. Retake quizzes to improve your score.`;
+    if (!accessibleLevels.includes(moduleDifficulty)) {
+      const message = `You cannot access the ${moduleDifficulty} module yet because your average score (${avgScore}) is not sufficient. Retake quizzes to improve your score.`;
+      console.log('Access Denied Message:', message);
       return { module: null, message };
     }
   
     return { module };
   }
+  
+  
+  
   
 
 
@@ -635,6 +648,27 @@ async create(createModuleDto: CreateModuleDto): Promise<modules> {
     throw new BadRequestException('Failed to create module.');
   }
 }
+
+async findModulesForStudents(courseId: string): Promise<modules[]> {
+  try {
+    if (!Types.ObjectId.isValid(courseId)) {
+      throw new BadRequestException('Invalid course ID format.');
+    }
+
+    // Fetch all modules for the specific course where isModuleOutdated is false
+    return await this.moduleModel
+      .find(
+        { course_id: courseId, isModuleOutdated: false }, // Filter by courseId and isModuleOutdated
+        { modules_previousVersions: 0 } // Exclude the modules_previousVersions field
+      )
+      .exec();
+  } catch (error) {
+    throw new BadRequestException(
+      error.message || 'Failed to retrieve modules for the specified course.'
+    );
+  }
+}
+
 
 }
 
