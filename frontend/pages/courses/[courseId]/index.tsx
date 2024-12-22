@@ -33,6 +33,27 @@ const CoursePage = () => {
   if (loading) return <p>Loading...</p>;
   if (error) return <p style={{ color: "red" }}>{error}</p>;
 
+   // Handle Update
+   const Update = () => {
+    const courseId = localStorage.getItem("courseId");
+    if (courseId) {
+      router.push(`/courses/${courseId}/update`);
+    } else {
+      alert("Course ID not found!");
+    }
+  };
+
+  // Handle Delete
+  const Delete = () => {
+    const courseId = localStorage.getItem("courseId");
+    if (courseId) {
+      router.push(`/courses/${courseId}/delete`);
+    } else {
+      alert("Course ID not found!");
+    }
+  };
+  
+  
   return (
     <div style={styles.page}>
       <div style={styles.header}>
@@ -57,10 +78,10 @@ const CoursePage = () => {
           <button style={styles.button} onClick={() => router.push(`/courses/${courseId}/modules`)}>
             Manage Modules
           </button>
-          <button style={styles.button} onClick={() => router.push(`/courses/${courseId}/update`)}>
+          <button style={styles.button} onClick={Update}>
             Update Course
           </button>
-          <button style={styles.button} onClick={() => router.push(`/courses/${courseId}/delete`)}>
+          <button style={styles.button} onClick={Delete}>
             Delete Course
           </button>
         </div>

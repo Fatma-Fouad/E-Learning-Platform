@@ -24,6 +24,7 @@ export class ModulesService {
   @InjectModel('progress') private progressModel: Model<ProgressDocument>,
   @InjectModel('questionbank') private questionBankModel: Model<QuestionBankDocument>,
   @InjectModel('quizzes') private quizModel: Model<QuizDocument>,
+  @InjectModel('courses') private readonly courseModel: Model<courses>,
 ) {
   this.uploadDir = './uploads'; // Define the directory here
 }
@@ -101,15 +102,15 @@ export class ModulesService {
   
 
 
-  // Create a new module
-  async create(createModuleDto: CreateModuleDto): Promise<modules> {
-    try {
-      const newModule = new this.moduleModel(createModuleDto);
-      return await newModule.save();
-    } catch (error) {
-      throw new BadRequestException("Invalid data provided for creating a module");
-    }
-  }  
+  // // Create a new module
+  // async create(createModuleDto: CreateModuleDto): Promise<modules> {
+  //   try {
+  //     const newModule = new this.moduleModel(createModuleDto);
+  //     return await newModule.save();
+  //   } catch (error) {
+  //     throw new BadRequestException("Invalid data provided for creating a module");
+  //   }
+  // }  
 
   // Update a module by ID
   async update(id: string, updateModuleDto: UpdateModuleDto): Promise<modules> {
@@ -310,28 +311,83 @@ async getFilePathFromModule(moduleId: string, filename: string): Promise<string>
   }
 
   // Retrieve modules for a specific course, ordered by module_order in ascending order
-  async getModulesByCourseOrdered(courseId: string): Promise<ModuleDocument[]> {
-    try {
-      if (!Types.ObjectId.isValid(courseId)) {
-        throw new BadRequestException('Invalid course ID format.');
-      }
+  // async getModulesByCourseOrdered(courseId: string): Promise<ModuleDocument[]> {
+  //   try {
+  //     if (!Types.ObjectId.isValid(courseId)) {
+  //       throw new BadRequestException('Invalid course ID format.');
+  //     }
 
-      const modules = await this.moduleModel
-        .find({ course_id: courseId })
-        .sort({ module_order: 1 }) // Ascending order
-        .exec();
+  //     const modules = await this.moduleModel
+  //       .find({ course_id: courseId })
+  //       .sort({ module_order: 1 }) // Ascending order
+  //       .exec();
 
-      if (!modules || modules.length === 0) {
-        throw new NotFoundException(`No modules found for course ID ${courseId}.`);
-      }
+  //     if (!modules || modules.length === 0) {
+  //       throw new NotFoundException(`No modules found for course ID ${courseId}.`);
+  //     }
 
-      return modules;
-    } catch (error) {
-      throw new BadRequestException(
-        error.message || `Error retrieving modules for course ID ${courseId}.`
-      );
-    }
-  }
+  //     return modules;
+  //   } catch (error) {
+  //     throw new BadRequestException(
+  //       error.message || `Error retrieving modules for course ID ${courseId}.`
+  //     );
+  //   }
+  // }
+
+// async updateModuleWithVersionControl(
+//   id: string,
+//   updateModuleDto: UpdateModuleDto,
+// ): Promise<modules> {
+//   try {
+//     // Find the existing module by ID
+//     const existingModule = await this.moduleModel.findById(id).exec();
+//     if (!existingModule) {
+//       throw new NotFoundException('Module not found.');
+//     }
+
+//     // Mark the existing module as outdated
+//     existingModule.isModuleOutdated = true;
+//     await existingModule.save();
+
+//     // Prepare new module data
+//     const newModuleData = {
+//       ...existingModule.toObject(),
+//       ...updateModuleDto,
+//       module_version: existingModule.module_version + 1,
+//       previousVersion: existingModule._id, // Reference to the previous module
+//       isModuleOutdated: false, // New module is not outdated
+//     };
+
+//     delete newModuleData._id; // Ensure MongoDB generates a new ID
+
+//     // Create and save the new module
+//     const newModule = new this.moduleModel(newModuleData);
+//     const savedModule = await newModule.save();
+
+//     // Update question banks with the new module ID
+//     const questionBankUpdateResult = await this.questionBankModel.updateMany(
+//       { module_id: id }, // Match the old module ID
+//       { $set: { module_id: savedModule._id } }, // Replace with the new module ID
+//     );
+//     console.log(
+//       `Updated ${questionBankUpdateResult.modifiedCount} question banks to new module ID.`,
+//     );
+
+//     // Update quizzes with the new module ID
+//     const quizzesUpdateResult = await this.quizModel.updateMany(
+//       { module_id: id }, // Match the old module ID
+//       { $set: { module_id: savedModule._id } }, // Replace with the new module ID
+//     );
+//     console.log(
+//       `Updated ${quizzesUpdateResult.modifiedCount} quizzes to new module ID.`,
+//     );
+     
+//     return savedModule;
+//   } catch (error) {
+//     console.error('Error:', error);
+//     throw new BadRequestException('Failed to update module with version control.');
+//   }
+// }
 
 async updateModuleWithVersionControl(
   id: string,
@@ -381,12 +437,41 @@ async updateModuleWithVersionControl(
       `Updated ${quizzesUpdateResult.modifiedCount} quizzes to new module ID.`,
     );
 
+      // Step 7: Update the keywords array in the corresponding course
+    try {
+      const course = await this.courseModel.findById(existingModule.course_id).exec();
+      if (!course) {
+        throw new NotFoundException(`Course with ID ${existingModule.course_id} not found.`);
+      }
+
+      // Step 7.1: Modify the keywords array programmatically
+      const updatedKeywords = course.keywords.filter(
+        (keyword) => keyword !== existingModule.title,
+      );
+      updatedKeywords.push(savedModule.title);
+
+      // Step 7.2: Save the updated keywords array
+      course.keywords = Array.from(new Set(updatedKeywords)); // Ensure no duplicates
+      await course.save();
+
+      console.log(
+        `Successfully updated keywords in the course with ID: ${existingModule.course_id}`,
+      );
+    } catch (error) {
+      console.error(
+        `Error updating keywords for course with ID: ${existingModule.course_id}. Error: ${error.message}`,
+      );
+      throw new BadRequestException('Failed to update keywords in the course.');
+    }
+
+
     return savedModule;
   } catch (error) {
     console.error('Error:', error);
     throw new BadRequestException('Failed to update module with version control.');
   }
 }
+
 
 
 async getModuleById(id: string): Promise<ModuleDocument> {
@@ -445,4 +530,131 @@ async toggleNotes(moduleId: string, enabled: boolean): Promise<modules> {
   return module;
 }
 
+//   // Create a new module
+//   async create(createModuleDto: CreateModuleDto): Promise<modules> {
+//     try {
+//       // Step 1: Find the highest module_order for the same course
+//       const highestOrderModule = await this.moduleModel
+//         .findOne({ course_id: createModuleDto.course_id })
+//         .sort({ module_order: -1 }) // Sort in descending order by module_order
+//         .exec();
+
+//       const nextModuleOrder = highestOrderModule
+//         ? highestOrderModule.module_order + 1
+//         : 1; // Default to 1 if no modules exist
+
+//       // Step 2: Set the module_order in the createModuleDto
+//       createModuleDto.module_order = nextModuleOrder;
+
+//       // Step 3: Create the new module
+//       const newModule = new this.moduleModel(createModuleDto);
+//       const savedModule = await newModule.save();
+
+//       // Step 4: Increment the nom_of_modules in the corresponding course
+//       const courseId = createModuleDto.course_id;
+//       const updatedCourse = await this.courseModel.findByIdAndUpdate(
+//         courseId,
+//         { $inc: { nom_of_modules: 1 } }, // Increment nom_of_modules by 1
+//         { new: true }, // Return the updated document
+//       );
+
+//       if (!updatedCourse) {
+//         throw new NotFoundException('Course not found for the provided module');
+//       }
+//  // Step 3: Update the progress records
+//  const progressRecords = await this.progressModel.find({ course_id: courseId });
+
+//  if (progressRecords.length > 0) {
+//    await Promise.all(
+//      progressRecords.map(async (record) => {
+//        // Extend the quiz_grades array to match the number of modules (quizzes)
+//        const updatedQuizGrades = [...record.quiz_grades];
+//        updatedQuizGrades.push(null); // Add a placeholder value (e.g., null for no grade yet)
+
+//        // Update the progress record
+//        await this.progressModel.findByIdAndUpdate(record._id, {
+//          quiz_grades: updatedQuizGrades,
+//        });
+//      })
+//    );
+//  }
+//       // Return the created module
+//       return savedModule;
+//     } catch (error) {
+//       console.error('Error creating module:', error);
+//       throw new BadRequestException('Failed to create module.');
+//     }
+//   }
+// Create a new module
+async create(createModuleDto: CreateModuleDto): Promise<modules> {
+  try {
+    // Step 1: Find the highest module_order for the same course
+    const highestOrderModule = await this.moduleModel
+      .findOne({ course_id: createModuleDto.course_id })
+      .sort({ module_order: -1 }) // Sort in descending order by module_order
+      .exec();
+
+    const nextModuleOrder = highestOrderModule
+      ? highestOrderModule.module_order + 1
+      : 1; // Default to 1 if no modules exist
+
+    // Step 2: Set the module_order in the createModuleDto
+    createModuleDto.module_order = nextModuleOrder;
+
+    // Step 3: Create the new module
+    const newModule = new this.moduleModel(createModuleDto);
+    const savedModule = await newModule.save();
+
+    // Step 4: Increment the nom_of_modules in the corresponding course
+    const courseId = createModuleDto.course_id;
+    const updatedCourse = await this.courseModel.findByIdAndUpdate(
+      courseId,
+      { 
+        $inc: { nom_of_modules: 1 }, // Increment nom_of_modules by 1
+      },
+      { new: true } // Return the updated document
+    );
+
+    if (!updatedCourse) {
+      throw new NotFoundException('Course not found for the provided module');
+    }
+
+    // Step 5: Add the module title to the keywords array in the course
+    await this.courseModel.findByIdAndUpdate(
+      courseId,
+      {
+        $addToSet: { keywords: createModuleDto.title }, // Add module title to keywords array
+      },
+      { new: true } // Return the updated document
+    );
+
+    // Step 6: Update the progress records
+    const progressRecords = await this.progressModel.find({ course_id: courseId });
+
+    if (progressRecords.length > 0) {
+      await Promise.all(
+        progressRecords.map(async (record) => {
+          // Extend the quiz_grades array to match the number of modules (quizzes)
+          const updatedQuizGrades = [...record.quiz_grades];
+          updatedQuizGrades.push(null); // Add a placeholder value (e.g., null for no grade yet)
+
+          // Update the progress record
+          await this.progressModel.findByIdAndUpdate(record._id, {
+            quiz_grades: updatedQuizGrades,
+          });
+        })
+      );
+    }
+
+    // Return the created module
+    return savedModule;
+  } catch (error) {
+    console.error('Error creating module:', error);
+    throw new BadRequestException('Failed to create module.');
+  }
 }
+
+}
+
+
+

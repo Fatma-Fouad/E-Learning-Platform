@@ -3,4 +3,5 @@ export class CreateModuleDto {
   title: string;
   content: string;
   module_difficultyLevel: string;
+  module_order: number;
 }

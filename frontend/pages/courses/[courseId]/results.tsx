@@ -14,6 +14,7 @@ import {
 } from "chart.js";
 import { Bar, Pie } from "react-chartjs-2";
 
+
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend, ArcElement);
 
 const QuizResultsReport = () => {

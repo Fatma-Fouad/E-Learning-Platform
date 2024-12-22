@@ -12,10 +12,21 @@ const ModulePage = () => {
 
   useEffect(() => {
     const fetchModule = async () => {
+      const token = localStorage.getItem("token");
+      console.log("Retrieved Token:", token);
+      if (!token) {
+        setError("Unauthorized access. Redirecting to login...");
+        router.push("/login");
+        return;
+      }
       if (moduleId) {
         try {
-          const response = await axios.get(`http://localhost:3000/modules/${moduleId}`);
-          console.log(response.data); // Log the response
+          const response = await axios.get(`http://localhost:3000/modules/${moduleId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },})
+          console.log("Response data:",response.data); // Log the response
           setModuleData(response.data.data);
         } catch (err) {
           console.error('Error fetching module:', err);
@@ -34,30 +45,30 @@ const ModulePage = () => {
   if (!moduleData) return <p>No module data available.</p>;
 
   return (
-    <div style={containerStyle}>
-      <h1 style={headerStyle}>{moduleData.title || 'Module Page'}</h1>
-      <p><strong>Version:</strong> {moduleData.module_version}</p>
-      <p><strong>Difficulty Level:</strong> {moduleData.module_difficultyLevel}</p>
-      <p><strong>Rating:</strong> {moduleData.module_rating} / 5</p>
-
-      <div style={buttonContainerStyle}>
-        <button
-          style={buttonStyle}
-          onClick={() => router.push(`/modules/${moduleId}/manage-quizzes`)}
-        >
-          Manage Quizzes
-        </button>
-        
-        {/* Conditionally render Notes button based on notesEnabled */}
-        {moduleData.notesEnabled && (
-          <button
-            style={buttonStyle}
-            onClick={() => router.push(`/modules/${moduleId}/notes`)}
-          >
-            Notes
-          </button>
-        )}
-      </div>
+    <div>
+      <h1>{moduleData.title || 'Module Page'}</h1>
+      <p>Version: {moduleData.module_version}</p>
+      <p>Difficulty Level: {moduleData.module_difficultyLevel}</p>
+      <p>Rating: {moduleData.module_rating} / 5</p>
+      <p>Order: {moduleData.module_order}</p>
+      <p>Uploaded Content:</p>
+      {moduleData.content && moduleData.content.length > 0 ? (
+        <ul>
+          {moduleData.content.map((filePath, index) => (
+            <li key={index}>
+              <a href={`http://localhost:3000/${filePath}`} target="_blank" rel="noopener noreferrer">
+                {filePath.split('/').pop()}
+              </a>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>No content uploaded yet.</p>
+      )}
+      <button onClick={() => router.push(`/modules/${moduleId}/manage-quizzes`)}>Manage Quizzes</button>
+      <button onClick={() => router.push(`/modules/${moduleId}/update`)}>Update Module</button>
+      <button onClick={() => router.push(`/modules/${moduleId}/upload`)}>Upload Media</button>
+      <button onClick={() => router.push(`/courses/${moduleData.course_id}/modules`)}>Back to Modules</button>
     </div>
   );
 };

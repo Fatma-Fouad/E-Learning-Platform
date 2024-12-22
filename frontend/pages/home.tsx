@@ -58,11 +58,11 @@ const Home = () => {
         <button onClick={Find_Course} style={styles.logoutButton}>
           Find a course
         </button>
-        <button style={styles.logoutButton} onClick={() => router.push('/courses/MyCourses_in')}>
+        <button style={styles.logoutButton} onClick={() => router.push(`/courses/MyCourses_in`)}>
           My Courses (inst)
         </button>
 
-        <button style={styles.logoutButton} onClick={() => router.push('/courses/MyCourses_st')}>
+        <button style={styles.logoutButton} onClick={() => router.push(`/courses/MyCourses_st`)}>
           My Courses (stud)
         </button>
       </nav>
