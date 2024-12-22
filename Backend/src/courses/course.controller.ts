@@ -22,7 +22,7 @@ import { RolesGuard } from 'src/authentication/roles.guard';
      * Retrieve all courses for (all)  
      */
     @Get('available-courses')
-    @UseGuards(AuthGuard)
+    // @UseGuards(AuthGuard)
     async findAll() {
       return this.coursesService.findAll();
     }
