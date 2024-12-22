@@ -54,7 +54,7 @@ const MyCoursesPage = () => {
   }, [router]);
 
   const handleViewModules = (courseId: string) => {
-    router.push(`/courses/${courseId}/modules`);
+    router.push(`/courses/${courseId}/modules_st`);
   };
 
   if (loading) return <p>Loading...</p>;
