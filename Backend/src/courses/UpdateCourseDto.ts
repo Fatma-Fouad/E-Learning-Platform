@@ -24,5 +24,6 @@
     enrolled_students?: number;
     nom_of_modules?: number;
     completed_students?: number;
+    keywords: string[];
   }
   
