@@ -6,7 +6,6 @@ const RateModulePage = () => {
   const router = useRouter();
   const { moduleId } = router.query;
 
-  const [userId, setUserId] = useState('');
   const [courseId, setCourseId] = useState('');
   const [isCourseCompleted, setIsCourseCompleted] = useState(false);
   const [moduleRating, setModuleRating] = useState(1);
@@ -14,21 +13,35 @@ const RateModulePage = () => {
   const [comment, setComment] = useState('');
   const [error, setError] = useState('');
 
+  // Retrieve `token` and `userId` from `localStorage`
+  const token = localStorage.getItem('token');
+  const userId = localStorage.getItem('userId');
+
   useEffect(() => {
+    if (!token || !userId) {
+      setError('Unauthorized access. Redirecting to login...');
+      router.push('/login');
+      return;
+    }
     if (moduleId) fetchCourseId();
-  }, [moduleId]);
+  }, [moduleId, token, userId, router]);
 
   const fetchCourseId = async () => {
     try {
       setError('');
       console.log('Fetching course ID for module:', moduleId);
 
-      const moduleResponse = await axios.get(`http://localhost:3000/modules/${moduleId}`);
+      const moduleResponse = await axios.get(`http://localhost:3000/modules/${moduleId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       const fetchedCourseId = moduleResponse.data?.data?.course_id;
 
       if (fetchedCourseId) {
         setCourseId(fetchedCourseId.toString());
         console.log('Fetched Course ID:', fetchedCourseId.toString());
+        await checkCourseCompletion(fetchedCourseId);
       } else {
         console.error('Course ID is missing in the module response.');
         setError('Failed to fetch course ID. Please try again.');
@@ -39,29 +52,22 @@ const RateModulePage = () => {
     }
   };
 
-  const checkCourseCompletion = async () => {
+  const checkCourseCompletion = async (courseIdToCheck) => {
     try {
-      if (!userId) {
-        setError('User ID is required.');
-        return;
-      }
-      if (!courseId) {
-        setError('Course ID is not available. Please refresh the page.');
-        return;
-      }
-
-      setError('');
-      const userResponse = await axios.get(`http://localhost:3000/user/${userId}/profile`);
+      const userResponse = await axios.get(`http://localhost:3000/user/${userId}/profile`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       const completedCourses = userResponse.data.completed_courses || [];
 
       console.log('Completed Courses:', completedCourses);
-      console.log('Course ID to Check:', courseId);
+      console.log('Course ID to Check:', courseIdToCheck);
 
-      const isCompleted = completedCourses.includes(courseId);
+      const isCompleted = completedCourses.includes(courseIdToCheck);
       console.log('Is Course Completed:', isCompleted);
 
       setIsCourseCompleted(isCompleted);
-      if (!isCompleted) alert('Course is not completed. Only module rating is available.');
     } catch (err) {
       console.error('Error fetching user data:', err.response?.data || err.message);
       setError('Failed to fetch user data. Please try again.');
@@ -70,9 +76,15 @@ const RateModulePage = () => {
 
   const handleRateModule = async () => {
     try {
-      await axios.patch(`http://localhost:3000/modules/${moduleId}/rate`, {
-        module_rating: moduleRating,
-      });
+      await axios.patch(
+        `http://localhost:3000/modules/${moduleId}/rate`,
+        { module_rating: moduleRating },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       alert('Module rating submitted successfully.');
     } catch (err) {
       console.error('Error rating module:', err.response?.data || err.message);
@@ -82,9 +94,15 @@ const RateModulePage = () => {
 
   const handleRateInstructor = async () => {
     try {
-      await axios.patch(`http://localhost:3000/courses/${courseId}/rate-instructor`, {
-        rating: instructorRating,
-      });
+      await axios.patch(
+        `http://localhost:3000/courses/${courseId}/rate-instructor`,
+        { rating: instructorRating },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       alert('Instructor rating submitted successfully.');
     } catch (err) {
       console.error('Error rating instructor:', err.response?.data || err.message);
@@ -94,9 +112,15 @@ const RateModulePage = () => {
 
   const handleAddComment = async () => {
     try {
-      await axios.post(`http://localhost:3000/courses/${courseId}/comments`, {
-        comment,
-      });
+      await axios.post(
+        `http://localhost:3000/courses/${courseId}/comments`,
+        { comment },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       alert('Comment added successfully.');
     } catch (err) {
       console.error('Error adding comment:', err.response?.data || err.message);
@@ -107,18 +131,6 @@ const RateModulePage = () => {
   return (
     <div>
       <h1>Rate Module</h1>
-      <label>
-        User ID:
-        <input
-          type="text"
-          value={userId}
-          onChange={(e) => setUserId(e.target.value)}
-          placeholder="Enter your User ID"
-        />
-      </label>
-      <button onClick={checkCourseCompletion}>
-        Check Completion
-      </button>
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
       {isCourseCompleted ? (

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect,useState } from 'react';
 import { useRouter } from 'next/router';
 import axios from 'axios';
 
@@ -8,22 +8,33 @@ const TakeQuizPage = () => {
 
   const [quiz, setQuiz] = useState(null);
   const [answers, setAnswers] = useState({});
-  const [userId, setUserId] = useState('');
   const [error, setError] = useState('');
   const [feedback, setFeedback] = useState(null);
+
+  const token = localStorage.getItem('token');
+  const userId = localStorage.getItem('userId');
+
+  useEffect(() => {
+    if (!token || !userId) {
+      setError('Unauthorized access. Redirecting to login...');
+      router.push('/login');
+      return;
+    }
+    console.log('Retrieved Token:', token);
+    console.log('Retrieved User ID:', userId);
+  }, [router, token, userId]);
 
   // Fetch the quiz for the student
   const fetchQuiz = async () => {
     setError('');
     setFeedback(null);
     try {
-      if (!userId) {
-        alert('Please enter your User ID.');
-        return;
-      }
-
-      const response = await axios.post(`http://localhost:3000/quizzes/student/${moduleId}`, {
-        user_id: userId,
+      const response = await axios.post(`http://localhost:3000/quizzes/student/${moduleId}`, 
+        {user_id: userId},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
       });
       setQuiz(response.data.quiz); // Store the fetched quiz
       console.log('Fetched Quiz:', response.data.quiz); // Debugging log
@@ -71,7 +82,12 @@ const TakeQuizPage = () => {
         user_id: userId,
         quiz_id: quiz._id,
         answers: answersArray,
-      });
+      },{
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
 
       console.log('Backend Response:', response.data);
 
@@ -86,16 +102,7 @@ const TakeQuizPage = () => {
   return (
     <div>
       <h1>Take Quiz for Module: {moduleId}</h1>
-      <label>
-        User ID:
-        <input
-          type="text"
-          value={userId}
-          onChange={(e) => setUserId(e.target.value)}
-          placeholder="Enter your User ID"
-        />
-      </label>
-      <button onClick={fetchQuiz} disabled={!userId}>
+      <button onClick={fetchQuiz} disabled={!token || !userId}>
         Take Quiz
       </button>
       {error && <p style={{ color: 'red' }}>{error}</p>}
