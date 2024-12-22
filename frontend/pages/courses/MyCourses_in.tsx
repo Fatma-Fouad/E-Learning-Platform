@@ -138,7 +138,7 @@ const AllCoursesPage = () => {
 
   return (
     <div>
-      <h1>All Courses for: ${instructorId}</h1>
+      <h1>All Courses for: ${storedUserId}</h1>
 
       {courses.length > 0 ? (
         <ul>
