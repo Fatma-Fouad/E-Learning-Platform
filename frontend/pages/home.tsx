@@ -25,6 +25,22 @@ const Home = () => {
     router.push("/login");
   };
 
+  // Handle Courses
+  const Courses = () => {
+    router.push("/courses");
+  };
+
+  // Handle Find-Course
+  const Find_Course = () => {
+    router.push("courses/FindCourse");
+  };
+
+  // Handle Student courses
+  const StudentCourses = () => {
+    router.push("courses/MyCourses_st");
+  };
+
+
   return (
     <div>
       {/* Navbar */}
@@ -39,11 +55,15 @@ const Home = () => {
         <button onClick={handleLogout} style={styles.logoutButton}>
           Logout
         </button>
-        <button onClick={handleLogout} style={styles.logoutButton}>
-          Logout
+        <button onClick={Find_Course} style={styles.logoutButton}>
+          Find a course
         </button>
-        <button onClick={handleLogout} style={styles.logoutButton}>
-          Logout
+        <button style={styles.logoutButton} onClick={() => router.push(`/courses/MyCourses_in`)}>
+          My Courses (inst)
+        </button>
+
+        <button style={styles.logoutButton} onClick={() => router.push(`/courses/MyCourses_st`)}>
+          My Courses (stud)
         </button>
       </nav>
 
@@ -95,5 +115,16 @@ const styles = {
   userInfo: {
     marginTop: "1rem",
     fontSize: "1.2rem",
+  },
+  button: {
+    padding: "15px 25px",
+    fontSize: "1.1rem",
+    backgroundColor: "#9fcdff", // Light pastel blue
+    color: "#ffffff",
+    border: "none",
+    borderRadius: "8px",
+    cursor: "pointer",
+    transition: "all 0.3s ease",
+    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
   },
 };

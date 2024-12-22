@@ -26,7 +26,8 @@ export class CoursesService {
   ) { }
 
   
-
+//RETRIEVE ALL STUDENT COURSES FOR SPECIFIC STUDENT BY ID
+//RETRIEVE ALL INSTRUCTOR COURSES FOR SPECIFIC INSTRUCTOR BY ID
 
   /**
    * Retrieve all courses for all
@@ -40,38 +41,124 @@ export class CoursesService {
       throw new BadRequestException('Failed to retrieve available courses.');
     }
   }
-
-     /**
-   * Search for courses by keywords
-   */
-     async searchByKeyword(keyword: string): Promise<any> {
-      try {
-        console.log('Service: Searching for courses with keyword:', keyword);
-    
-        const courses = await this.courseModel
-          .find({ keywords: { $in: [keyword] }, isAvailable: true })
-          .exec();
-    
-        if (!courses || courses.length === 0) {
-          console.log('Service: No courses found for keyword:', keyword);
-          throw new NotFoundException(`No courses found for keyword: ${keyword}`);
-        }
-    
-        console.log('Service: Found courses:', courses);
-    
-        return {
-          courses: courses.map(course => ({
-            ...course.toObject(),
-            course_id: course._id.toString(), // Convert ObjectId to string
-          })),
-        };
-      } catch (error) {
-        console.error('Service: Error in searchByKeyword:', error.message);
-        throw new BadRequestException(
-          error.message || 'Failed to retrieve courses by keyword.',
-        );
+  async findCoursesByStudent(studentId: string): Promise<any> {
+    try {
+      console.log('Service: Searching for courses enrolled by student:', studentId);
+  
+      // Convert studentId to ObjectId
+      const objectId = new mongoose.Types.ObjectId(studentId);
+  
+      // Find courses where the student is in the enrolled_student_ids array
+      const courses = await this.courseModel
+        .find({ enrolled_student_ids: objectId, isAvailable: true })
+        .exec();
+  
+      if (!courses || courses.length === 0) {
+        console.log('Service: No courses found for student:', studentId);
+        throw new NotFoundException(`No courses found for student: ${studentId}`);
       }
+  
+      console.log('Service: Found courses:', courses);
+  
+      // Map the courses to the expected format
+      return {
+        message: 'Courses retrieved successfully for the student.',
+        courses: courses.map((course) => ({
+          ...course.toObject(),
+          course_id: course._id.toString(),
+          enrolled_student_ids: course.enrolled_student_ids.map((student) => student.toString()),
+        })),
+      };
+    } catch (error) {
+      console.error('Service: Error in findCoursesByStudent:', error.message);
+      throw new BadRequestException(error.message || 'Failed to retrieve courses by student ID.');
     }
+  }
+
+  
+  /**
+ * Retrieve all courses of a specific instructor by instructor_id
+ */
+async findCoursesByInstructor(instructorId: string): Promise<any> {
+  try {
+    console.log('Service: Searching for courses by instructor:', instructorId);
+
+    const courses = await this.courseModel
+      .find({ instructor_id: instructorId, isAvailable: true }) // Find courses with the given instructor_id and availability
+      .exec();
+
+    if (!courses || courses.length === 0) {
+      console.log('Service: No courses found for instructor:', instructorId);
+      throw new NotFoundException(`No courses found for instructor: ${instructorId}`);
+    }
+
+    console.log('Service: Found courses:', courses);
+
+    return {
+      message: 'Courses retrieved successfully for the instructor.',
+      courses: courses.map((course) => ({
+        ...course.toObject(),
+        course_id: course._id.toString(), // Convert ObjectId to string
+        enrolled_students: course.enrolled_student_ids.map((student) =>
+          student.toString()
+        ), // Convert enrolled student ObjectIds to strings
+      })),
+    };
+  } catch (error) {
+    console.error('Service: Error in findCoursesByInstructor:', error.message);
+    throw new BadRequestException(
+      error.message || 'Failed to retrieve courses by instructor.'
+    );
+  }
+}
+
+
+
+  
+
+
+  /**
+ * Search for courses by keywords with suggestions
+ */
+async searchByKeyword(keyword: string): Promise<any> {
+  try {
+    console.log('Service: Searching for courses with keyword:', keyword);
+
+    if (!keyword || keyword.trim() === "") {
+      throw new BadRequestException('Keyword is required.');
+    }
+
+    // Fetch exact matches or partial matches
+    const courses = await this.courseModel
+      .find({
+        keywords: { $regex: keyword, $options: "i" }, // Match both exact and partial keywords
+        isAvailable: true,
+      })
+      .exec();
+
+    if (!courses || courses.length === 0) {
+      console.log('Service: No courses found for keyword:', keyword);
+      throw new NotFoundException(`No courses found for keyword: ${keyword}`);
+    }
+
+    console.log('Service: Found courses:', courses);
+
+    // Return the matching courses
+    return {
+      message: 'Courses retrieved successfully.',
+      courses: courses.map(course => ({
+        ...course.toObject(),
+        course_id: course._id.toString(), // Convert ObjectId to string
+      })),
+    };
+  } catch (error) {
+    console.error('Service: Error in searchByKeyword:', error.message);
+    throw new BadRequestException(
+      error.message || 'Failed to retrieve courses by keyword.'
+    );
+  }
+}
+
 
   /**
    * Retrieve a course by its ID  for all
@@ -358,13 +445,23 @@ async findCourseByModuleTitle(title: string): Promise<any> {
    * Find Course details By the created_by//instructor
    */
 
+/**
+ * Find Course details by the created_by (instructor) with partial match
+ */
 async findCourseByCreator(createdBy: string): Promise<any> {
   try {
     console.log('Service: Searching for courses created by:', createdBy);
 
-    // Fetch only courses where isAvailable is true
+    if (!createdBy || createdBy.trim() === "") {
+      throw new BadRequestException('The "created_by" parameter is required.');
+    }
+
+    // Fetch courses where `created_by` partially or exactly matches the input and `isAvailable` is true
     const courses = await this.courseModel
-      .find({ created_by: createdBy, isAvailable: true }) // Add isAvailable condition
+      .find({
+        created_by: { $regex: createdBy, $options: "i" }, // Match both exact and partial creators
+        isAvailable: true,
+      })
       .exec();
 
     if (!courses || courses.length === 0) {
@@ -376,6 +473,7 @@ async findCourseByCreator(createdBy: string): Promise<any> {
 
     // Return all courses matching the criteria
     return {
+      message: 'Courses retrieved successfully.',
       courses: courses.map((course) => ({
         ...course.toObject(),
         course_id: course._id.toString(), // Convert ObjectId to string
@@ -384,22 +482,29 @@ async findCourseByCreator(createdBy: string): Promise<any> {
   } catch (error) {
     console.error('Service: Error in findCourseByCreator:', error.message);
     throw new BadRequestException(
-      error.message || 'Failed to retrieve available courses by creator.',
+      error.message || 'Failed to retrieve available courses by creator.'
     );
   }
 }
 
 
-    /**
- * Find course details by name.
+ /**
+ * Find course details by name with partial match.
  */
 async findCourseByName(Name: string): Promise<any> {
   try {
-    console.log('Service: Searching for courses Name:', Name);
+    console.log('Service: Searching for courses with Name:', Name);
 
-    // Fetch courses where the title matches and isAvailable is true
+    if (!Name || Name.trim() === "") {
+      throw new BadRequestException('The "Name" parameter is required.');
+    }
+
+    // Fetch courses where the title partially or exactly matches and isAvailable is true
     const courses = await this.courseModel
-      .find({ title: Name, isAvailable: true }) // Added isAvailable condition
+      .find({
+        title: { $regex: Name, $options: "i" }, // Match both exact and partial names (case-insensitive)
+        isAvailable: true,
+      })
       .exec();
 
     if (!courses || courses.length === 0) {
@@ -411,6 +516,7 @@ async findCourseByName(Name: string): Promise<any> {
 
     // Return all matching courses
     return {
+      message: 'Courses retrieved successfully.',
       courses: courses.map((course) => ({
         ...course.toObject(),
         course_id: course._id.toString(), // Convert ObjectId to string
@@ -419,10 +525,11 @@ async findCourseByName(Name: string): Promise<any> {
   } catch (error) {
     console.error('Service: Error in findCourseByName:', error.message);
     throw new BadRequestException(
-      error.message || 'Failed to retrieve available courses by name.',
+      error.message || 'Failed to retrieve available courses by name.'
     );
   }
 }
+
 
 
       /**

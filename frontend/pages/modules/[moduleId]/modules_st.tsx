@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import axios from 'axios';
 
-const ModulePage = () => {
+const ViewModuleForStudentPage = () => {
   const router = useRouter();
   const { moduleId } = router.query; // Fetch moduleId from the URL
   const [moduleData, setModuleData] = useState(null);
@@ -11,22 +11,13 @@ const ModulePage = () => {
 
   useEffect(() => {
     const fetchModule = async () => {
-      const token = localStorage.getItem("token");
-      console.log("Retrieved Token:", token);
-      if (!token) {
-        setError("Unauthorized access. Redirecting to login...");
-        router.push("/login");
-        return;
-      }
       if (moduleId) {
         try {
-          const response = await axios.get(`http://localhost:3000/modules/${moduleId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },})
-          console.log("Response data:",response.data); // Log the response
-          setModuleData(response.data.data);
+          const response = await axios.get(`http://localhost:3000/modules/${moduleId}/student`, {
+            data: { user_id: '12345' }, // Simulating a user ID, replace with dynamic fetching if needed
+          });
+          console.log(response.data); // Log the response
+          setModuleData(response.data.module);
         } catch (err) {
           console.error('Error fetching module:', err);
           setError('Failed to fetch module data.');
@@ -35,10 +26,9 @@ const ModulePage = () => {
         }
       }
     };
-  
+
     fetchModule();
   }, [moduleId]);
-  
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>{error}</p>;
@@ -46,11 +36,11 @@ const ModulePage = () => {
   return (
     <div>
       <h1>{moduleData.title || 'Module Page'}</h1>
-      <p>Version: {moduleData.module_version}</p>
-      <p>Difficulty Level: {moduleData.module_difficultyLevel}</p>
-      <p>Rating: {moduleData.module_rating} / 5</p>
-      <p>Order: {moduleData.module_order}</p>
-      <p>Uploaded Content:</p>
+      <p><strong>Version:</strong> {moduleData.module_version}</p>
+      <p><strong>Difficulty Level:</strong> {moduleData.module_difficultyLevel}</p>
+      <p><strong>Rating:</strong> {moduleData.module_rating} / 5</p>
+      <p><strong>Order:</strong> {moduleData.module_order}</p>
+      <p><strong>Uploaded Content:</strong></p>
       {moduleData.content && moduleData.content.length > 0 ? (
         <ul>
           {moduleData.content.map((filePath, index) => (
@@ -64,12 +54,9 @@ const ModulePage = () => {
       ) : (
         <p>No content uploaded yet.</p>
       )}
-      <button onClick={() => router.push(`/modules/${moduleId}/manage-quizzes`)}>Manage Quizzes</button>
-      <button onClick={() => router.push(`/modules/${moduleId}/update`)}>Update Module</button>
-      <button onClick={() => router.push(`/modules/${moduleId}/upload`)}>Upload Media</button>
-      <button onClick={() => router.push(`/courses/${moduleData.course_id}/modules`)}>Back to Modules</button>
     </div>
   );
 };
 
-export default ModulePage;
+export default ViewModuleForStudentPage;
+

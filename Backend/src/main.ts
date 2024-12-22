@@ -4,6 +4,10 @@ import { AppModule } from './app.module';
 import mongoose from 'mongoose';
 import { Logger } from '@nestjs/common';
 import 'reflect-metadata';
+import * as express from 'express';
+import { join } from 'path';
+import path from 'path';
+
 
 async function bootstrap() {
   const logger = new Logger('MongoDB');
@@ -26,6 +30,9 @@ async function bootstrap() {
   mongoose.connection.on('disconnected', () => {
     logger.warn('MongoDB connection disconnected');
   });
+
+  // Serve static files from the uploads directory
+  app.use('/uploads', express.static(join(__dirname, '..', 'uploads')));
 
   app.useGlobalPipes(new ValidationPipe());
   await app.listen(process.env.PORT ?? 3000);
