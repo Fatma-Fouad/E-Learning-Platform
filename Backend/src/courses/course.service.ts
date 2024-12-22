@@ -112,62 +112,64 @@ export class CoursesService {
    */
   async updateCourse(id: string, updateCourseDto: UpdateCourseDto): Promise<courses> {
     try {
-      // Update the course in the database
+      // ✅ Update the course in the database
       const updatedCourse = await this.courseModel.findByIdAndUpdate(
         id,
         updateCourseDto,
-        { new: true }, // Return the updated document
+        { new: true } // Return the updated document
       ).exec();
 
       if (!updatedCourse) {
         throw new NotFoundException('Course not found.');
       }
 
-      // Notify enrolled students about the course update
+      console.log(`✅ Course updated successfully: ${updatedCourse.title}`);
+
+      // ✅ Create notification payload
+      const notification = {
+        type: 'course-update',
+        content: `The course "${updatedCourse.title}" has been updated.`,
+        courseId: updatedCourse._id,
+        version: updatedCourse.version || 1, // Ensure version consistency
+        read: false,
+        timestamp: new Date(),
+      };
+
+      // ✅ Notify enrolled students
       for (const studentId of updatedCourse.enrolled_student_ids) {
         const roomName = `user:${studentId}`;
         const roomMembers = this.notificationGateway.server.sockets.adapter.rooms.get(roomName);
 
-        // Log the room details
-        console.log(`Room Name: ${roomName}`);
-        console.log(`Room Members:`, roomMembers);
+        console.log(`🔔 Room Name: ${roomName}`);
+        console.log(`👥 Room Members:`, roomMembers);
 
-        // Create notification payload
-        const notification = {
-          type: 'course-update',
-          content: `The course "${updatedCourse.title}" has been updated.`,
-          courseId: updatedCourse._id,
-          version: updatedCourse.version, // You can adjust if version is being tracked
-          read: false, // Mark as unread
-          timestamp: new Date(), // Add timestamp
-        };
-
-        // Send notification if room exists and has members
-        if (roomMembers) {
+        // ✅ Send Notification via WebSocket
+        if (roomMembers && roomMembers.size > 0) {
           this.notificationGateway.server.to(roomName).emit('newNotification', notification);
-          console.log(`Notification sent to room: ${roomName}, notification:`, notification);
+          console.log(`📡 Notification sent to room: ${roomName}`);
         } else {
-          console.log(`Room ${roomName} does not exist or has no members.`);
+          console.warn(`⚠️ Room ${roomName} does not exist or has no members.`);
         }
 
-        // Save notification to the database
+        // ✅ Save Notification to Database
         await this.notificationGateway.notificationService.createNotification(
           studentId.toString(),
           'course-update',
           notification.content,
-          updatedCourse._id.toString(),
+          updatedCourse._id.toString()
         );
-        console.log(`Notification saved to the database for user: ${studentId}`);
+        console.log(`💾 Notification saved to database for user: ${studentId}`);
       }
 
-      // Return the updated course
+      // ✅ Return the updated course
       return updatedCourse;
 
     } catch (error) {
-      console.error('Error in updateCourse:', error.message);
+      console.error('❌ Error in updateCourse:', error.message);
       throw new BadRequestException('Failed to update course.');
     }
   }
+
 
   // /**
   //  * Delete a course
