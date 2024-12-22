@@ -15,7 +15,7 @@ import { NotificationModule } from './communication/notifications/notification.m
 import { AuthGuard } from './authentication/auth.guard';
 import { BackupService } from './backup/backup.service';
 import { BackupController } from './backup/backup.controller';
-import { NoteModule } from './notes/note.module';
+
 import { ResponseModule } from './responses/response.module';
 import { JwtModule } from '@nestjs/jwt';
 
@@ -29,7 +29,6 @@ import { JwtModule } from '@nestjs/jwt';
     }),
       QuizModule,
     QuestionBankModule,
-    NoteModule,
     AuthModule,
     ModulesModule,
     CourseModule,
@@ -39,7 +38,7 @@ import { JwtModule } from '@nestjs/jwt';
     ChatModule,
     NotificationModule,
     ResponseModule,
-    MongooseModule.forRoot('mongodb+srv://softwareproject:sp123@clustersp.wvdbq.mongodb.net/EduLink')],
+      MongooseModule.forRoot('mongodb+srv://softwareproject:sp123@clustersp.wvdbq.mongodb.net/EduLink')],
   
     controllers: [AppController],
   providers: [AppService],

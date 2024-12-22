@@ -42,17 +42,58 @@ export const searchThreadsInCourse = async (courseId: string, searchTerm: string
 
 
 
-export const fetchCourseById = async (id: string) => {
-    const response = await fetch(`${BASE_URL}/courses/${id}`);
-    if (!response.ok) throw new Error('Failed to fetch course details');
-    return response.json();
+export const fetchCourseById = async (id: string, userId?: string) => {
+    try {
+        if (!id) throw new Error('Course ID is required');
+
+        const url = new URL(`${BASE_URL}/courses/${id}`);
+        if (userId) {
+            url.searchParams.append('userId', userId);
+        }
+
+        console.log('🔗 Fetching course from:', url.toString());
+
+        const response = await fetch(url.toString());
+
+        if (!response.ok) {
+            const errorDetails = await response.text();
+            throw new Error(`Failed to fetch course details: ${response.status} - ${errorDetails}`);
+        }
+
+        return await response.json();
+    } catch (error: any) {
+        console.error('❌ Error fetching course details:', error.message);
+        throw new Error(`Unable to fetch course details: ${error.message}`);
+    }
 };
 
-export const fetchForumsByCourse = async (courseId: string) => {
-    const response = await fetch(`${BASE_URL}/forums/course/${courseId}`);
-    if (!response.ok) throw new Error('Failed to fetch forums for the course');
-    return response.json();
+
+
+export const fetchForumsByCourse = async (courseId: string, userId: string) => {
+    try {
+        if (!courseId || !userId) {
+            throw new Error('Both courseId and userId are required');
+        }
+
+        const url = new URL(`${BASE_URL}/forums/course/${courseId}`);
+        url.searchParams.append('userId', userId);
+
+        console.log('🔗 Fetching forums from:', url.toString());
+
+        const response = await fetch(url.toString());
+
+        if (!response.ok) {
+            const errorDetails = await response.text();
+            throw new Error(`Failed to fetch forums: ${response.status} - ${errorDetails}`);
+        }
+
+        return await response.json();
+    } catch (error: any) {
+        console.error('❌ Error fetching forums:', error.message);
+        throw new Error(`Unable to fetch forums: ${error.message}`);
+    }
 };
+
 
 export const addThread = async (courseId: string, title: string, description: string, createdBy: string) => {
     const response = await fetch(`http://localhost:3001/forums/${courseId}/threads`, {

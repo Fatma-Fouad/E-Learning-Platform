@@ -5,6 +5,7 @@ import mongoose, { Model } from 'mongoose';
 import { Forum,ForumDocument } from './fourms.schema';
 import { NotificationGateway } from '../notifications/notificationGateway';
 import { User, UserSchema } from '../../users/user.schema';
+import { courses, CourseDocument } from '../../courses/course.schema'; // Adjust the path if needed
 
 
 @Injectable()
@@ -12,7 +13,8 @@ export class ForumsService {
     constructor(
         @InjectModel(Forum.name) private readonly forumModel: Model<ForumDocument>,
         @InjectModel(User.name) private userModel: Model<User>, // Inject user model
-        private readonly notificationGateway: NotificationGateway // Inject NotificationGateway
+        private readonly notificationGateway: NotificationGateway, // Inject NotificationGateway
+         @InjectModel(courses.name) private readonly courseModel: Model<CourseDocument>, // Inject courseModel
     ) { }
 
 
@@ -20,60 +22,106 @@ export class ForumsService {
     async getAllForums(): Promise<Forum[]> {
         return this.forumModel.find().exec();
     }
-    async getForumsByCourse(courseId: string): Promise<any> {
-        return this.forumModel
-            .find({ courseId })
-            .populate('courseId', 'courseName')
-            .populate({
-                path: 'threads.createdBy', // Populate thread creator
-                select: 'name', // Only fetch the name field
-            })
-            .populate({
-                path: 'threads.replies.userId', // Populate reply authors
-                select: 'name', // Only fetch the name field
-            })
-            .exec();
+    async getForumsByCourse(courseId: string, userId: string): Promise<any> {
+        try {
+            if (!mongoose.Types.ObjectId.isValid(courseId)) {
+                throw new BadRequestException(`Invalid courseId: ${courseId}`);
+            }
+            if (!mongoose.Types.ObjectId.isValid(userId)) {
+                throw new BadRequestException(`Invalid userId: ${userId}`);
+            }
+
+            const objectId = new mongoose.Types.ObjectId(courseId);
+            const userObjectId = new mongoose.Types.ObjectId(userId);
+
+            // ✅ Add the user to participants if not already included
+            const updatedForum = await this.forumModel.findOneAndUpdate(
+                { courseId: objectId },
+                { $addToSet: { participants: userObjectId } },
+                { new: true, useFindAndModify: false }
+            ).exec();
+
+            if (!updatedForum) {
+                throw new NotFoundException(`Course with ID ${courseId} not found.`);
+            }
+
+            console.log('✅ User added to participants:', userId);
+
+            // ✅ Populate course and user data
+            return await this.forumModel
+                .find({ courseId: objectId })
+                .populate('courseId', 'courseName')
+                .populate({
+                    path: 'threads.createdBy',
+                    select: 'name',
+                })
+                .populate({
+                    path: 'threads.replies.userId',
+                    select: 'name',
+                })
+                .exec();
+        } catch (error) {
+            console.error('❌ Error in getForumsByCourse:', error.message);
+            throw new InternalServerErrorException(`Unable to fetch forums: ${error.message}`);
+        }
     }
 
 
-    //adding a new forum 
     async addForum(courseId: string, courseName: string, createdBy: string): Promise<any> {
         try {
-            // Validate the `createdBy` field
+            // ✅ Validate the `createdBy` field
             if (!createdBy || !mongoose.Types.ObjectId.isValid(createdBy)) {
-                throw new Error('Invalid or missing createdBy field');
+                throw new BadRequestException('Invalid or missing createdBy field');
             }
 
-            // Fetch user details to validate role (adjust based on your implementation)
-            const user = await this.userModel.findById(createdBy).exec(); // Assuming `userModel` is available
+            // ✅ Fetch user details to validate role
+            const user = await this.userModel.findById(createdBy).exec();
             if (!user) {
-                throw new Error('User not found');
+                throw new NotFoundException('User not found');
             }
 
             if (user.role !== 'instructor') {
-                throw new Error('Only instructors can create forums');
+                throw new ForbiddenException('Only instructors can create forums');
             }
 
-            // Create the forum
+            // ✅ Fetch course details to get enrolled students
+            const course = await this.courseModel.findById(courseId).exec();
+            if (!course) {
+                throw new NotFoundException('Course not found');
+            }
+
+            // Collect all participants (Instructor + Enrolled Students)
+            const participants = [
+                createdBy,
+                ...course.enrolled_student_ids.map((studentId) => studentId.toString()) // Ensure proper string conversion
+            ];
+
+            // Remove duplicates in participants
+            const uniqueParticipants = Array.from(new Set(participants));
+
+            // ✅ Create the forum
             const forum = new this.forumModel({
                 courseId: new mongoose.Types.ObjectId(courseId),
                 courseName,
                 createdBy: new mongoose.Types.ObjectId(createdBy),
                 threads: [],
+                participants: uniqueParticipants,
             });
 
-            console.log('Creating forum:', forum);
+            console.log('✅ Creating forum with participants:', uniqueParticipants);
 
-            return await forum.save();
+            const savedForum = await forum.save();
+
+            console.log('✅ Forum created successfully:', savedForum);
+
+            return savedForum;
         } catch (error) {
-            console.error('Error adding forum:', error.message);
-            throw new Error('Unable to create forum');
+            console.error('❌ Error adding forum:', error.message);
+            throw new InternalServerErrorException('Unable to create forum');
         }
     }
 
-
     //add thread
-    // Add Thread
     async addThread(courseId: string, thread: any): Promise<any> {
         try {
             if (!mongoose.Types.ObjectId.isValid(courseId)) {
@@ -82,21 +130,19 @@ export class ForumsService {
 
             const objectId = new mongoose.Types.ObjectId(courseId);
 
-            // Ensure the thread has the required fields
-            if (!thread.title || !thread.createdBy) { // Description is now optional
+            if (!thread.title || !thread.createdBy) {
                 throw new BadRequestException('Thread title and createdBy are required.');
             }
 
-            // Build the thread object dynamically, excluding undefined fields
             const threadData: any = {
                 title: thread.title,
                 createdBy: thread.createdBy,
             };
+
             if (thread.description) {
-                threadData.description = thread.description; // Only include description if provided
+                threadData.description = thread.description;
             }
 
-            // Add the new thread
             const updatedForum = await this.forumModel.findOneAndUpdate(
                 { courseId: objectId },
                 { $push: { threads: threadData } },
@@ -107,32 +153,39 @@ export class ForumsService {
                 throw new NotFoundException(`Course with ID ${courseId} not found.`);
             }
 
-            console.log('Thread added successfully:', threadData);
+            console.log('✅ Thread added successfully:', threadData);
+
+            // Fetch creator details
+            const creator = await this.userModel.findById(thread.createdBy).select('name').exec();
+            const senderName = creator?.name || 'Unknown User';
+
+            // Ensure participants are strings
+            const participantIds: string[] = (updatedForum.participants || []).map((participantId) =>
+                participantId.toString()
+            );
+
+            console.log('✅ Participants to Notify:', participantIds);
+
+            // Trigger Notification
+            await this.notificationGateway.sendThreadNotification(
+                participantIds,
+                thread.title,
+                senderName,
+                thread.createdBy
+            );
+
+            console.log('✅ Notification triggered successfully.');
             return updatedForum;
         } catch (error) {
-            console.error('Error adding thread:', error.message);
-            throw new Error('Unable to add thread.');
+            console.error('❌ Error adding thread:', error.message);
+            throw new InternalServerErrorException('Unable to add thread.');
         }
     }
 
 
-
-    //add reply
     async addReply(courseId: string, threadId: string, reply: any): Promise<any> {
-        console.log('Received addReply request');
-        console.log('courseId:', courseId);
-        console.log('threadId:', threadId);
-        console.log('reply:', reply);
-
-        // Validate ObjectId formats
-        if (!mongoose.Types.ObjectId.isValid(courseId)) {
-            console.error(`Invalid courseId: ${courseId}`);
-            throw new BadRequestException(`Invalid courseId: ${courseId}`);
-        }
-
-        if (!mongoose.Types.ObjectId.isValid(threadId)) {
-            console.error(`Invalid threadId: ${threadId}`);
-            throw new BadRequestException(`Invalid threadId: ${threadId}`);
+        if (!mongoose.Types.ObjectId.isValid(courseId) || !mongoose.Types.ObjectId.isValid(threadId)) {
+            throw new BadRequestException('Invalid courseId or threadId.');
         }
 
         const courseObjectId = new mongoose.Types.ObjectId(courseId);
@@ -140,11 +193,12 @@ export class ForumsService {
 
         const newReply = {
             ...reply,
-            replyId: new mongoose.Types.ObjectId(), // Generate unique replyId
+            replyId: new mongoose.Types.ObjectId(),
             timestamp: new Date(),
         };
 
         try {
+            // ✅ Add the Reply to the Thread
             const updatedForum = await this.forumModel.findOneAndUpdate(
                 {
                     courseId: courseObjectId,
@@ -157,17 +211,37 @@ export class ForumsService {
             ).exec();
 
             if (!updatedForum) {
-                console.error(`Thread with ID ${threadId} not found in course ${courseId}`);
                 throw new NotFoundException(`Thread with ID ${threadId} not found in course ${courseId}`);
             }
 
-            console.log('Reply added successfully:', newReply);
+            console.log('✅ Reply added successfully:', newReply);
+
+            // ✅ Fetch Replier's Name
+            const replier = await this.userModel.findById(reply.userId).select('name').exec();
+            const senderName = replier?.name || 'Unknown User';
+
+            // ✅ Ensure Participants are Strings
+            const participantIds: string[] = (updatedForum.participants || []).map((participantId) =>
+                participantId.toString()
+            );
+
+            console.log('✅ Participants to Notify:', participantIds);
+
+            // ✅ Trigger Notification
+            await this.notificationGateway.sendReplyNotification(
+                participantIds,
+                reply.message,
+                senderName,
+                reply.userId
+            );
+
             return updatedForum;
         } catch (error) {
-            console.error('Error adding reply:', error.message);
+            console.error('❌ Error adding reply:', error.message);
             throw new InternalServerErrorException('Unable to add reply.');
         }
     }
+
 
 
 

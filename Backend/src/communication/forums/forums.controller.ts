@@ -19,9 +19,12 @@ export class ForumsController {
         return this.forumsService.getAllForums();
     }
     // Get forums by courseId
-    @Get('course/:courseId') // Route: /forums/course/:courseId
-    getForumsByCourse(@Param('courseId') courseId: string) {
-        return this.forumsService.getForumsByCourse(courseId);
+    @Get('course/:courseId')
+    async getForumsByCourse(
+        @Param('courseId') courseId: string,
+        @Query('userId') userId: string, // Expect userId as a query parameter
+    ) {
+        return this.forumsService.getForumsByCourse(courseId, userId);
     }
 
 

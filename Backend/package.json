@@ -33,16 +33,14 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.1",
     "jsonwebtoken": "^9.0.2",
-    "mongodb": "^6.12.0",
-
-    "mongoose": "^8.8.2",
+    "mongodb": "^5.9.2",
+    "mongoose": "^7.8.3",
     "node-cron": "^3.0.3",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "socket.io": "^4.8.1"
-  
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",

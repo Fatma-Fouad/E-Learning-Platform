@@ -1,10 +1,11 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { Document } from 'mongoose';
-
+import { User } from '../../users/user.schema';
 @Schema()
 export class Message {
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true })
-    sender: mongoose.Schema.Types.ObjectId;
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
+    sender: mongoose.Schema.Types.ObjectId | User;
+
 
     @Prop({ type: String, required: true })
     content: string;

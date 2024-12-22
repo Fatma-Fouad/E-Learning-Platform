@@ -2,13 +2,6 @@ import { useEffect } from 'react';
 import { getSocket } from '../../utils/socket';
 import { toast } from 'react-toastify';
 
-interface Notification {
-    chatId: string;
-    sender: string;
-    content: string;
-    timestamp: string;
-}
-
 export const useNotificationSocket = (userId: string) => {
     useEffect(() => {
         if (!userId) return;
@@ -17,12 +10,16 @@ export const useNotificationSocket = (userId: string) => {
 
         // ✅ Join Notification Room
         socket.emit('joinNotifications', { userId });
-        console.log(`🔗 User joined notification room: user:${userId}`);
+        console.log(`🔗 User explicitly joined notification room: user:${userId}`);
 
-        // ✅ Listen for Notifications
-        // ✅ Ensure Listener Runs Once
+        // ✅ Listen for newNotification
         const handleNewNotification = (notification: any) => {
             console.log('🔔 New Notification Received:', notification);
+
+            if (!notification || !notification.content || !notification.sender) {
+                console.warn('⚠️ Invalid notification received:', notification);
+                return;
+            }
 
             toast.info(`💬 New Message from ${notification.sender}: ${notification.content}`, {
                 position: 'top-right',
@@ -33,11 +30,12 @@ export const useNotificationSocket = (userId: string) => {
                 draggable: true,
             });
         };
-        // ✅ Prevent Duplicate Listeners
-        socket.off('newNotification'); // Remove existing listener
-        socket.on('newNotification', handleNewNotification);
+
+        socket.off('newNotification').on('newNotification', handleNewNotification);
+
         socket.on('connect', () => {
             console.log('✅ Connected to notification server');
+            socket.emit('joinNotifications', { userId });
         });
 
         socket.on('disconnect', () => {
@@ -45,10 +43,10 @@ export const useNotificationSocket = (userId: string) => {
         });
 
         return () => {
-            socket.off('newNotification', handleNewNotification); // Cleanup on unmount
+            socket.off('newNotification', handleNewNotification);
             socket.off('connect');
             socket.off('disconnect');
-            socket.disconnect();
+            console.log('🧹 Cleaned up socket listeners');
         };
     }, [userId]);
 };

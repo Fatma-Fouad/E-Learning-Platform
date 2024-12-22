@@ -9,7 +9,6 @@ import { Server, Socket } from 'socket.io';
 import { NotificationService } from './notification.service';
 import { forwardRef, Inject } from '@nestjs/common';
 
-
 @WebSocketGateway({
     cors: {
         origin: '*', // Allow cross-origin requests (configure for production)
@@ -18,26 +17,21 @@ import { forwardRef, Inject } from '@nestjs/common';
 export class NotificationGateway {
     @WebSocketServer()
     server: Server;
+
     constructor(
         @Inject(forwardRef(() => NotificationService))
         public readonly notificationService: NotificationService
-        
-    ) { } // Change to public
+    ) { }
 
     /**
-     * Send a notification in real-time to specific users.
-     * @param userIds Array of user IDs to notify
-     * @param type Type of the notification
-     * @param content Content of the notification
-     * @param senderId ID of the sender (to exclude from notifications)
-     * @param chatId Optional chat ID for the notification
+     * Send a generic notification in real-time to specific users.
      */
     async sendNotification(
         userIds: string[],
         type: string,
         content: string,
         senderId: string,
-        chatId?: string,
+        chatId?: string
     ) {
         try {
             if (!Array.isArray(userIds) || userIds.length === 0) {
@@ -46,7 +40,7 @@ export class NotificationGateway {
 
             console.log('Users to notify (before filtering):', userIds);
 
-            // Exclude sender
+            // ✅ Exclude sender from notifications
             const filteredUserIds = userIds.filter((id) => id !== senderId);
             console.log(`Users to notify (excluding sender ${senderId}):`, filteredUserIds);
 
@@ -57,68 +51,122 @@ export class NotificationGateway {
 
             for (const userId of filteredUserIds) {
                 const roomName = `user:${userId}`;
-                const roomMembers = this.server.sockets.adapter.rooms.get(roomName);
+                const roomExists = this.server.sockets.adapter.rooms.has(roomName);
 
-                if (!roomMembers) {
-                    console.log(`User ${userId} has not joined room: ${roomName}`);
+                console.log(`🔍 Checking room: ${roomName}, Exists: ${roomExists}`);
+
+                if (!roomExists) {
+                    console.warn(`⚠️ User ${userId} is not connected to room: ${roomName}`);
                     continue;
                 }
 
-                console.log(`Sending notification to room: ${roomName}`);
+                console.log(`📡 Emitting newNotification to room: ${roomName}`);
 
-                // Prepare the notification payload
                 const notification = {
                     chatId: chatId || null,
                     userId,
                     type,
                     content,
-                    timestamp: new Date(),
+                    sender: senderId,
+                    timestamp: new Date().toISOString(),
                     read: false,
                 };
 
-                // Emit the notification
                 this.server.to(roomName).emit('newNotification', notification);
-
-                console.log(`Notification sent successfully to user: ${userId}`);
+                console.log(`✅ Notification sent successfully to user: ${userId}`);
             }
 
             return { success: true, message: 'Notifications sent.' };
         } catch (error) {
-            console.error('Error sending notifications:', error.message);
+            console.error('❌ Error sending notifications:', error.message);
             return { success: false, message: error.message };
         }
     }
 
+    /**
+     * Send a Thread Notification
+     */
+    async sendThreadNotification(
+        userIds: string[],
+        title: string,
+        senderName: string,
+        senderId: string
+    ) {
+        try {
+            for (const userId of userIds) {
+                const roomName = `user:${userId}`;
+                const roomMembers = this.server.sockets.adapter.rooms.get(roomName);
+
+                if (!roomMembers) {
+                    console.warn(`User ${userId} is not connected to room: ${roomName}`);
+                    continue;
+                }
+
+                const notification = {
+                    type: 'newThread',
+                    content: `🧵 New Thread: ${title}`,
+                    sender: senderName,
+                    timestamp: new Date(),
+                };
+
+                this.server.to(roomName).emit('newNotification', notification);
+                console.log(`✅ Notification sent to ${roomName}:`, notification);
+            }
+        } catch (error) {
+            console.error('❌ Error sending thread notification:', error.message);
+        }
+    }
 
 
+    async sendReplyNotification(userIds: string[], replyContent: string, senderName: string, senderId: string) {
+        try {
+            for (const userId of userIds) {
+                const roomName = `user:${userId}`;
+                this.server.to(roomName).emit('newReply', {
+                    sender: senderName,
+                    content: `A new reply was added: "${replyContent}"`,
+                    timestamp: new Date(),
+                });
+            }
+            console.log('✅ Reply notifications sent successfully.');
+        } catch (error) {
+            console.error('❌ Error sending reply notifications:', error.message);
+        }
+    }
 
     /**
      * Allow users to join their notification rooms.
-     * Clients must emit 'joinNotifications' with their userId to receive notifications.
      */
-    @SubscribeMessage("joinNotifications")
-  
+    @SubscribeMessage('joinNotifications')
+
+    @SubscribeMessage('joinNotifications')
     handleJoinNotifications(
         @ConnectedSocket() client: Socket,
         @MessageBody() payload: { userId: string }
     ) {
         try {
             const userId = payload?.userId;
-            if (!userId) throw new Error('User ID is required to join notifications');
+            if (!userId) {
+                throw new Error('User ID is required to join notifications');
+            }
 
             const roomName = `user:${userId}`;
+            console.log(`🔄 User attempting to join room: ${roomName}`);
 
-            // Check if the user is already in the room
             if (client.rooms.has(roomName)) {
-                console.log(`User ${userId} is already in room: ${roomName}`);
+                console.log(`🟢 User ${userId} is already in room: ${roomName}`);
                 return;
             }
 
             client.join(roomName);
-            console.log(`User ${userId} successfully joined room: ${roomName}`);
+            console.log(`✅ User ${userId} successfully joined room: ${roomName}`);
+
+            console.log('🔍 Active Rooms After Join:', Array.from(this.server.sockets.adapter.rooms.keys()));
         } catch (error) {
-            console.error('Error in joinNotifications:', error.message);
+            console.error('❌ Error in joinNotifications:', error.message);
             client.emit('error', { message: error.message });
         }
     }
+
+
 }

@@ -19,7 +19,7 @@ const NotificationPopup = () => {
                     }}
                 >
                     <p>
-                        <strong>From:</strong> {notification.sender}
+                        <strong>From:</strong> {notification.sender || 'System'}
                     </p>
                     <p>{notification.content}</p>
                     <button onClick={() => removeNotification(notification.id)}>Dismiss</button>

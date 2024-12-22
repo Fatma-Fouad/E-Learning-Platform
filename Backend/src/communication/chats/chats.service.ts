@@ -72,7 +72,7 @@ export class ChatService {
 
         return newChat.save();
     }
-
+  
 
     async getChatsByCourse(courseId: string): Promise<Chat[]> {
         return this.chatModel.find({ courseId: new mongoose.Types.ObjectId(courseId) }).exec();
@@ -132,14 +132,29 @@ export class ChatService {
         return chat.messages;
     }
 
-
     async getChatById(chatId: string | mongoose.Types.ObjectId): Promise<ChatDocument> {
-        const chat = await this.chatModel.findById(chatId).exec();
+        const chat = await this.chatModel
+            .findById(chatId)
+            .populate({
+                path: 'messages.sender',  // Populate sender details
+                select: 'name'            // Only fetch the name field
+            })
+            .populate({
+                path: 'participants',     // Populate participant details
+                select: '_id'             // Only fetch the _id field
+            })
+            .exec();
+
         if (!chat) {
             throw new Error('Chat not found');
         }
+
+        // Map participants to their string IDs
+        chat.participants = chat.participants.map((participant: any) => participant._id.toString());
+
         return chat;
     }
+
 
 
     async addParticipantToChat(chatId: string, participantId: string): Promise<void> {
