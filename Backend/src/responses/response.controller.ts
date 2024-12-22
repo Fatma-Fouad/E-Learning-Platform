@@ -9,8 +9,8 @@ export class ResponseController {
   constructor(private responseService: ResponseService) {}
 
   @Post('submit')
-  //@UseGuards(AuthGuard, RolesGuard) 
-  //@Roles('student' as Role)
+  @UseGuards(AuthGuard, RolesGuard) 
+  @Roles('student' as Role)
   async submitQuizResponse(
     @Body('user_id') userId: string,
     @Body('quiz_id') quizId: string,

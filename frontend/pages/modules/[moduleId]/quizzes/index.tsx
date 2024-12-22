@@ -8,11 +8,24 @@ const QuizzesPage = () => {
 
   const [quiz, setQuiz] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const token = localStorage.getItem("token");
+  console.log("Retrieved Token:", token);
+  if (!token) {
+    setError("Unauthorized access. Redirecting to login...");
+    router.push("/login");
+    return;
+  }
 
   useEffect(() => {
     const fetchQuiz = async () => {
       try {
-        const response = await axios.get(`http://localhost:3000/quizzes/module/${moduleId}`);
+        const response = await axios.get(`http://localhost:3000/quizzes/module/${moduleId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },});
         setQuiz(response.data.quiz);
       } catch (err) {
         if (err.response && err.response.status === 404) {
@@ -33,7 +46,11 @@ const QuizzesPage = () => {
 
   const handleDeleteQuiz = async () => {
     try {
-      await axios.delete(`http://localhost:3000/quizzes/${quiz._id}`);
+      await axios.delete(`http://localhost:3000/quizzes/${quiz._id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },});
       alert('Quiz deleted successfully.');
       setQuiz(null);
       router.push(`/modules/${moduleId}/quizzes/create`);

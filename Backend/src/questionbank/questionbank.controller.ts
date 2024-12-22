@@ -11,8 +11,8 @@ export class QuestionBankController {
   constructor(private readonly questionBankService: QuestionBankService) {}
 
   @Post()
-  //@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
-  //@Roles('admin' as Role, 'instructor' as Role)
+  @UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+  @Roles('admin' as Role, 'instructor' as Role)
   async createQuestionBank(@Body() createQuestionBankDto: CreateQuestionBankDto) {
     const { module_id, questions } = createQuestionBankDto;
     const questionBank = await this.questionBankService.createQuestionBank(module_id, questions);
@@ -23,8 +23,8 @@ export class QuestionBankController {
   }
 
   @Patch(':module_id')
-  //@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
-  //@Roles('admin' as Role, 'instructor' as Role)
+  @UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+  @Roles('admin' as Role, 'instructor' as Role)
   async updateQuestionBank(
     @Param('module_id') moduleId: string,
     @Body('questions') questions: any[],
@@ -45,8 +45,8 @@ export class QuestionBankController {
 
 
   @Get(':moduleId')
-  //@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
-  //@Roles('admin' as Role, 'instructor' as Role)
+  @UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+  @Roles('admin' as Role, 'instructor' as Role)
   async getQuestionBank(@Param('moduleId') moduleId: string) {
     const questionBank = await this.questionBankService.getQuestionBank(moduleId);
 
@@ -61,8 +61,8 @@ export class QuestionBankController {
   }
 
   @Delete(':module_id/questions/:question_id')
-  //@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
-  //@Roles('admin' as Role, 'instructor' as Role)
+  @UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+  @Roles('admin' as Role, 'instructor' as Role)
   async deleteQuestion(@Param('module_id') moduleId: string, @Param('question_id') questionId: string) {
     if (!moduleId || !questionId) {
       throw new Error('Both module_id and question_id are required.');

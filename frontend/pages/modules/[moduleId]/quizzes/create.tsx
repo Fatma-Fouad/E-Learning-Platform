@@ -13,16 +13,29 @@ const CreateQuizPage = () => {
   const [quizType, setQuizType] = useState<string>(
     typeof type === 'string' ? type : 'mcq'
   );
+  const [error, setError] = useState('');
+  
+  
+  const token = localStorage.getItem('token');
+  const storedUserId = localStorage.getItem('userId'); // Fetch user ID from localStorage
 
   useEffect(() => {
+    if (!token || !storedUserId) {
+      setError('Unauthorized access. Redirecting to login...');
+      router.push('/login');
+      return;
+    }
+    console.log('Retrieved Token:', token);
+    console.log('Retrieved User ID:', storedUserId);
+
     if (quizId) {
       console.log(`Editing quiz: ${quizId}`);
     }
-  }, [quizId]);
+  }, [quizId, router, token, storedUserId]);
 
   const handleSubmit = async () => {
     try {
-      if (!userId && !quizId) {
+      if (!storedUserId && !quizId) {
         alert('User ID is required for new quizzes.');
         return;
       }
@@ -33,20 +46,30 @@ const CreateQuizPage = () => {
       }
 
       const payload = {
+        user_id: storedUserId, // Use storedUserId from localStorage
         question_count: parseInt(questionCount, 10), // Ensure questionCount is parsed as an integer
         type: quizType,
       };
 
+      //const token = localStorage.getItem('token');
+
       if (quizId) {
         // Update existing quiz
-        const response = await axios.patch(`http://localhost:3000/quizzes/${quizId}`, payload);
+        const response = await axios.patch(`http://localhost:3000/quizzes/${quizId}`, payload,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },});
         alert(response.data.message || 'Quiz updated successfully.');
       } else {
         // Create new quiz
-        const response = await axios.post(`http://localhost:3000/quizzes/${moduleId}`, {
-          user_id: userId,
-          ...payload,
+        const response = await axios.post(`http://localhost:3000/quizzes/${moduleId}`, payload,
+         { 
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         });
+        
         alert(response.data.message || 'Quiz created successfully.');
       }
 
@@ -66,17 +89,6 @@ const CreateQuizPage = () => {
   return (
     <div>
       <h1>{quizId ? 'Edit Quiz' : 'Create Quiz'} for Module: {moduleId}</h1>
-      {!quizId && (
-        <label>
-          User ID:
-          <input
-            type="text"
-            value={userId}
-            onChange={(e) => setUserId(e.target.value)}
-          />
-        </label>
-      )}
-      <br />
       <label>
         Question Count:
         <input
