@@ -22,11 +22,13 @@ const RateModulePage = () => {
     try {
       setError('');
       console.log('Fetching course ID for module:', moduleId);
-  
+
       const moduleResponse = await axios.get(`http://localhost:3000/modules/${moduleId}`);
-      if (moduleResponse.data.course_id) {
-        setCourseId(moduleResponse.data.course_id.toString());
-        console.log('Fetched Course ID:', moduleResponse.data.course_id.toString());
+      const fetchedCourseId = moduleResponse.data?.data?.course_id;
+
+      if (fetchedCourseId) {
+        setCourseId(fetchedCourseId.toString());
+        console.log('Fetched Course ID:', fetchedCourseId.toString());
       } else {
         console.error('Course ID is missing in the module response.');
         setError('Failed to fetch course ID. Please try again.');
@@ -36,7 +38,6 @@ const RateModulePage = () => {
       setError('Failed to fetch course ID. Please try again.');
     }
   };
-  
 
   const checkCourseCompletion = async () => {
     try {
@@ -48,18 +49,17 @@ const RateModulePage = () => {
         setError('Course ID is not available. Please refresh the page.');
         return;
       }
-  
+
       setError('');
       const userResponse = await axios.get(`http://localhost:3000/user/${userId}/profile`);
       const completedCourses = userResponse.data.completed_courses || [];
-  
+
       console.log('Completed Courses:', completedCourses);
       console.log('Course ID to Check:', courseId);
-  
-      // Ensure courseId is a string and compare
+
       const isCompleted = completedCourses.includes(courseId);
       console.log('Is Course Completed:', isCompleted);
-  
+
       setIsCourseCompleted(isCompleted);
       if (!isCompleted) alert('Course is not completed. Only module rating is available.');
     } catch (err) {
@@ -67,8 +67,6 @@ const RateModulePage = () => {
       setError('Failed to fetch user data. Please try again.');
     }
   };
-  
-  
 
   const handleRateModule = async () => {
     try {
@@ -76,7 +74,6 @@ const RateModulePage = () => {
         module_rating: moduleRating,
       });
       alert('Module rating submitted successfully.');
-      router.push(`/modules/${moduleId}/all-modules`);
     } catch (err) {
       console.error('Error rating module:', err.response?.data || err.message);
       setError('Failed to rate module. Please try again.');
@@ -89,7 +86,6 @@ const RateModulePage = () => {
         rating: instructorRating,
       });
       alert('Instructor rating submitted successfully.');
-      router.push(`/modules/${moduleId}/all-modules`);
     } catch (err) {
       console.error('Error rating instructor:', err.response?.data || err.message);
       setError('Failed to rate instructor. Please try again.');
@@ -102,7 +98,6 @@ const RateModulePage = () => {
         comment,
       });
       alert('Comment added successfully.');
-      router.push(`/modules/${moduleId}/all-modules`);
     } catch (err) {
       console.error('Error adding comment:', err.response?.data || err.message);
       setError('Failed to add comment. Please try again.');
@@ -181,6 +176,7 @@ const RateModulePage = () => {
           <button onClick={handleRateModule}>Submit Rating</button>
         </div>
       )}
+      <button onClick={() => router.push(`/modules/${moduleId}/all-modules`)}>Go to All Modules</button>
     </div>
   );
 };
