@@ -56,8 +56,8 @@ const ModulesForStudentPage = () => {
               <h2>{module.title}</h2>
               <p>
                 Difficulty:{' '}
-                {module[' module_difficultyLevel']?.trim() || 'Not specified'}
-              </p>
+                {module.module_difficultyLevel || 'Not specified'}
+                </p>
               <button
                 onClick={() => router.push(`/modules/${module._id}/modules_st`)}
                 style={{
