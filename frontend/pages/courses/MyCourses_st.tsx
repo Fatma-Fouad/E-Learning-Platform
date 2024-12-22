@@ -15,6 +15,7 @@ const MyCoursesPage = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState<boolean>(true); // Initially loading
   const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -41,10 +42,13 @@ const MyCoursesPage = () => {
           }
         );
 
+        if (response.data.courses.length === 0) {
+          setWarning("No courses found for this student.");
+        }
         setCourses(response.data.courses || []);
       } catch (err: any) {
         console.error("Error fetching courses:", err);
-        setError(err.response?.data?.message || "Failed to fetch courses.");
+        setWarning(err.response?.data?.message || "Failed to fetch courses.");
       } finally {
         setLoading(false);
       }
@@ -64,6 +68,9 @@ const MyCoursesPage = () => {
     <div>
       <h1>My Courses</h1>
 
+      {error && <p style={{ color: "red" }}>{error}</p>}
+      {warning && <p style={{ color: "orange" }}>{warning}</p>}
+
       {courses.length > 0 ? (
         <ul>
           {courses.map((course) => (
@@ -80,7 +87,11 @@ const MyCoursesPage = () => {
           ))}
         </ul>
       ) : (
-        <p>No courses found for this student.</p>
+        !error && !loading && (
+          <p style={{ color: "orange" }}>
+            Warning: No courses are currently associated with this student.
+          </p>
+        )
       )}
     </div>
   );

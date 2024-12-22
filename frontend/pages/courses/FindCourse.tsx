@@ -21,13 +21,21 @@ const FindCoursePage = () => {
 
   const router = useRouter();
 
+  const clearPreviousState = () => {
+    setResults([]);
+    setError(null);
+    setSearchByCreator("");
+    setSearchByTitle("");
+    setSearchByKeyword("");
+  };
+
   const handleSearchByCreator = async () => {
     if (!searchByCreator.trim()) {
       setError("Please enter a creator name to search.");
       return;
     }
+    clearPreviousState(); // Clear the previous results and textboxes
     setLoading(true);
-    setError(null);
     try {
       const response = await axios.get(
         `http://localhost:3000/courses/course-by-creator/${searchByCreator}`
@@ -38,6 +46,7 @@ const FindCoursePage = () => {
       setError(err.response?.data?.message || "Failed to fetch courses by creator.");
     } finally {
       setLoading(false);
+      setSearchByCreator(""); // Clear the search textbox
     }
   };
 
@@ -46,8 +55,8 @@ const FindCoursePage = () => {
       setError("Please enter a course title to search.");
       return;
     }
+    clearPreviousState(); // Clear the previous results and textboxes
     setLoading(true);
-    setError(null);
     try {
       const response = await axios.get(
         `http://localhost:3000/courses/course-by-Name/${searchByTitle}`
@@ -58,6 +67,7 @@ const FindCoursePage = () => {
       setError(err.response?.data?.message || "Failed to fetch courses by title.");
     } finally {
       setLoading(false);
+      setSearchByTitle(""); // Clear the search textbox
     }
   };
 
@@ -66,8 +76,8 @@ const FindCoursePage = () => {
       setError("Please enter a keyword to search.");
       return;
     }
+    clearPreviousState(); // Clear the previous results and textboxes
     setLoading(true);
-    setError(null);
     try {
       const response = await axios.get(
         `http://localhost:3000/courses/search-by-keyword?keyword=${searchByKeyword}`
@@ -78,6 +88,7 @@ const FindCoursePage = () => {
       setError(err.response?.data?.message || "Failed to fetch courses by keyword.");
     } finally {
       setLoading(false);
+      setSearchByKeyword(""); // Clear the search textbox
     }
   };
 

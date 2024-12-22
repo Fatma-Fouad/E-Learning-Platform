@@ -27,7 +27,7 @@ const Home = () => {
 
   // Handle Courses
   const Courses = () => {
-    router.push("/courses");
+    router.push("/courses/MyCourses_in");
   };
 
   // Handle Find-Course

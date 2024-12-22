@@ -22,7 +22,7 @@ import { RolesGuard } from 'src/authentication/roles.guard';
      * Retrieve all courses for (all)  
      */
     @Get('available-courses')
-    @UseGuards(AuthGuard)
+    // @UseGuards(AuthGuard)
     async findAll() {
       return this.coursesService.findAll();
     }
@@ -33,8 +33,8 @@ import { RolesGuard } from 'src/authentication/roles.guard';
 //*
 
     @Get('student-courses/:studentId')
-    @UseGuards(AuthGuard, RolesGuard)
-    @Roles('student' as Role)
+    // @UseGuards(AuthGuard, RolesGuard)
+    // @Roles('student' as Role)
 async getCoursesByStudent(@Param('studentId') studentId: string) {
   try {
     if (!studentId) {
@@ -379,9 +379,9 @@ async findCourseByCreator(@Param('created_by') createdBy: string) {
     //  */
 
   @Delete('delete-course/:id')
-  // @Roles('student' as Role)
-  // @Roles('admin' as Role)
-  // @UseGuards(AuthGuard,RolesGuard)
+  @Roles('instructor' as Role)
+  @Roles('admin' as Role)
+  @UseGuards(AuthGuard,RolesGuard)
   async softDeleteCourse(@Param('id') courseId: string) {
     try {
       if (!courseId) {
