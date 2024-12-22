@@ -372,7 +372,7 @@ async findCourseByCreator(@Param('created_by') createdBy: string) {
   @Delete('delete-course/:id')
   @Roles('instructor' as Role)
   @Roles('admin' as Role)
-  //@UseGuards(AuthGuard,RolesGuard)
+  @UseGuards(AuthGuard,RolesGuard)
   async softDeleteCourse(@Param('id') courseId: string) {
     try {
       if (!courseId) {

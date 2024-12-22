@@ -27,7 +27,7 @@ const Home = () => {
 
   // Handle Courses
   const Courses = () => {
-    router.push("/courses");
+    router.push("/courses/MyCourses_in");
   };
 
   // Handle Find-Course
@@ -59,11 +59,11 @@ const Home = () => {
           Find a course
         </button>
         <button onClick={Courses} style={styles.logoutButton}>
-          AllCourses
+          My Courses  (inst)
         </button>
 
         <button onClick={StudentCourses} style={styles.logoutButton}>
-          MyCourses
+          My Courses   (stud)
         </button>
       </nav>
 

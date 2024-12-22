@@ -15,13 +15,11 @@ const AllCoursesPage = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [instructorId, setInstructorId] = useState<string>("");
-
   const [newCourse, setNewCourse] = useState({
     title: "",
     description: "",
     category: "",
-    difficulty_level: "",
+    difficulty_level: "Beginner", // Default value for dropdown
     created_by: "",
     version: 1,
     course_rating: 0,
@@ -38,27 +36,45 @@ const AllCoursesPage = () => {
 
   const router = useRouter();
 
-  const fetchCoursesByInstructor = async () => {
-    if (!instructorId.trim()) {
-      setError("Please provide a valid instructor ID.");
+  const token = localStorage.getItem("token");
+  const storedUserId = localStorage.getItem("userId"); // Fetch user ID from local storage
+
+  useEffect(() => {
+    if (!token || !storedUserId) {
+      setError("Unauthorized access. Redirecting to login...");
+      router.push("/login");
       return;
     }
+    console.log("Retrieved Token:", token);
+    console.log("Retrieved User ID:", storedUserId);
 
-    setLoading(true);
-    setError(null);
+    const fetchCoursesByInstructor = async () => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const response = await axios.get(
-        `http://localhost:3000/courses/instructor-courses/${instructorId}`
-      );
-      setCourses(response.data.courses);
-    } catch (err: any) {
-      console.error("Error fetching courses by instructor:", err);
-      setError(err.response?.data?.message || "Failed to fetch courses. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+      try {
+        const response = await axios.get(
+          `http://localhost:3000/courses/instructor-courses/${storedUserId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        if (response.data.courses.length === 0) {
+          setError("No courses found for this instructor.");
+        }
+        setCourses(response.data.courses || []);
+      } catch (err: any) {
+        console.error("Error fetching courses by instructor:", err);
+        setError(err.response?.data?.message || "Failed to fetch courses. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCoursesByInstructor();
+  }, [router, token, storedUserId]);
 
   const handleViewDetails = (courseId: string) => {
     localStorage.setItem("courseId", courseId);
@@ -79,32 +95,23 @@ const AllCoursesPage = () => {
       nom_of_modules: Number(newCourse.nom_of_modules || 0),
       course_rating: Number(newCourse.course_rating || 0),
       ratingCount: Number(newCourse.ratingCount || 0),
+      created_by: storedUserId, // Use user ID from local storage
+      instructor_id: storedUserId, // Use user ID from local storage
     };
 
-    if (
-      !payload.title ||
-      !payload.description ||
-      !payload.category ||
-      !payload.difficulty_level ||
-      !payload.created_by ||
-      !payload.instructor_id ||
-      payload.enrolled_students < 0 ||
-      payload.version < 1
-    ) {
-      setCreateError("All required fields must be correctly filled.");
-      setCreateLoading(false);
-      return;
-    }
-
     try {
-      const response = await axios.post("http://localhost:3000/courses", payload);
+      const response = await axios.post("http://localhost:3000/courses", payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (response.status === 201 || response.status === 200) {
         setCourses((prevCourses) => [...prevCourses, response.data]);
         setNewCourse({
           title: "",
           description: "",
           category: "",
-          difficulty_level: "",
+          difficulty_level: "Beginner", // Reset to default
           created_by: "",
           version: 1,
           course_rating: 0,
@@ -127,22 +134,11 @@ const AllCoursesPage = () => {
   };
 
   if (loading) return <p>Loading courses...</p>;
-  if (error) return <p style={{ color: "red" }}>{error}</p>;
+  if (error && courses.length === 0) return <p style={{ color: "red" }}>{error}</p>;
 
   return (
     <div>
       <h1>All Courses</h1>
-
-      <div>
-        <h2>Search by Instructor ID</h2>
-        <input
-          type="text"
-          placeholder="Enter Instructor ID"
-          value={instructorId}
-          onChange={(e) => setInstructorId(e.target.value)}
-        />
-        <button onClick={fetchCoursesByInstructor}>Search</button>
-      </div>
 
       {courses.length > 0 ? (
         <ul>
@@ -161,12 +157,11 @@ const AllCoursesPage = () => {
           ))}
         </ul>
       ) : (
-        <p>No courses available for the instructor at the moment.</p>
+        <p style={{ color: "orange" }}>Warning: This instructor currently has no courses listed.</p>
       )}
 
       <h2>Create a New Course</h2>
       <form onSubmit={handleCreateCourse}>
-        {/* The form fields for creating a new course */}
         <label>
           Title:
           <input
@@ -198,32 +193,15 @@ const AllCoursesPage = () => {
         <br />
         <label>
           Difficulty Level:
-          <input
-            type="text"
+          <select
             value={newCourse.difficulty_level}
             onChange={(e) => setNewCourse({ ...newCourse, difficulty_level: e.target.value })}
             required
-          />
-        </label>
-        <br />
-        <label>
-          Created By:
-          <input
-            type="text"
-            value={newCourse.created_by}
-            onChange={(e) => setNewCourse({ ...newCourse, created_by: e.target.value })}
-            required
-          />
-        </label>
-        <br />
-        <label>
-          Instructor ID:
-          <input
-            type="text"
-            value={newCourse.instructor_id}
-            onChange={(e) => setNewCourse({ ...newCourse, instructor_id: e.target.value })}
-            required
-          />
+          >
+            <option value="Beginner">Beginner</option>
+            <option value="Intermediate">Intermediate</option>
+            <option value="Advanced">Advanced</option>
+          </select>
         </label>
         <br />
         <button type="submit" disabled={createLoading}>
