@@ -11,10 +11,21 @@ const ModulePage = () => {
 
   useEffect(() => {
     const fetchModule = async () => {
+      const token = localStorage.getItem("token");
+      console.log("Retrieved Token:", token);
+      if (!token) {
+        setError("Unauthorized access. Redirecting to login...");
+        router.push("/login");
+        return;
+      }
       if (moduleId) {
         try {
-          const response = await axios.get(`http://localhost:3000/modules/${moduleId}`)
-          console.log(response.data); // Log the response
+          const response = await axios.get(`http://localhost:3000/modules/${moduleId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },})
+          console.log("Response data:",response.data); // Log the response
           setModuleData(response.data.data);
         } catch (err) {
           console.error('Error fetching module:', err);
