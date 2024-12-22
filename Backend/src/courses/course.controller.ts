@@ -33,8 +33,8 @@ import { RolesGuard } from 'src/authentication/roles.guard';
 //*
 
     @Get('student-courses/:studentId')
-    // @UseGuards(AuthGuard, RolesGuard)
-    // @Roles('student' as Role)
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles('student' as Role)
 async getCoursesByStudent(@Param('studentId') studentId: string) {
   try {
     if (!studentId) {
