@@ -146,8 +146,8 @@ export class ModulesController {
   // }
 
   @Patch(':id/rate')
-  @UseGuards(AuthGuard, RolesGuard) 
-  @Roles('student' as Role, 'admin' as Role)
+  //@UseGuards(AuthGuard, RolesGuard) 
+  //@Roles('student' as Role, 'admin' as Role)
   async rateModule(
     @Param('id') id: string,
     @Body() rateModuleDto: RateModuleDto,

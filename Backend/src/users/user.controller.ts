@@ -54,7 +54,7 @@ export class UserController {
 
 //admin , student, instrctor
 @Get(':id/profile')
-@UseGuards(AuthGuard) // Require authentication and specific roles
+//@UseGuards(AuthGuard) // Require authentication and specific roles
 async getUserProfile(@Param('id') userId: string) {
   try {
     return await this.userService.getUserProfile(userId);

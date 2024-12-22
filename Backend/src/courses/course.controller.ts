@@ -161,8 +161,8 @@ async getCourseRating(@Param('id') id: string) {
  * add a comment on a course (students)
  */
    @Post(':courseId/comments')
-   @UseGuards(AuthGuard,RolesGuard)
-   @Roles('student' as Role)
+   //@UseGuards(AuthGuard,RolesGuard)
+   //@Roles('student' as Role)
    async addComment(
      @Param('courseId') courseId: string,
      @Body('comment') comment: string,
@@ -199,8 +199,8 @@ async getModuleCount(@Param('id') courseId: string) {
    */
 
 @Patch(':courseId/rate-instructor')
-@UseGuards(AuthGuard,RolesGuard)
-@Roles('student' as Role)
+//@UseGuards(AuthGuard,RolesGuard)
+//@Roles('student' as Role)
 async rateInstructor(
   @Param('courseId') courseId: string,
   @Body() body: { rating: number },
