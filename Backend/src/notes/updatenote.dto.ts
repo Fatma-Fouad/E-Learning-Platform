@@ -1,5 +1,4 @@
-
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString, IsBoolean } from 'class-validator';
 import { Types } from 'mongoose';
 
 export class UpdateNoteDto {
@@ -16,4 +15,8 @@ export class UpdateNoteDto {
 
   @IsOptional()
   module_id?: Types.ObjectId;
+
+  @IsOptional()
+  @IsBoolean()
+  isAutoSaved?: boolean; // Flag to identify autosave requests
 }

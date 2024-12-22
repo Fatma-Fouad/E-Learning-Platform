@@ -15,11 +15,12 @@ import { NoteDocument, notes } from './note.schema'; // Ensure this import match
 export class NoteController {
   constructor(private readonly noteService: NoteService) {}
 
-  @Post() // POST /notes
-  async createNote(@Body() createNoteDto: CreateNoteDto) {
-    const newNote = await this.noteService.create(createNoteDto);
-    return newNote; // Return the newly created note
-  }
+  @Post()
+async createOrUpdateNote(@Body() createNoteDto: CreateNoteDto) {
+  const note = await this.noteService.createOrUpdate(createNoteDto);
+  return note;
+}
+
 
   @Get('user/:userId') // The userId is passed as a parameter in the URL
   async getAllNotesByUser(@Param('userId') userId: string): Promise<NoteDocument[]> {
@@ -68,6 +69,7 @@ export class NoteController {
       updateData
     );
   }
+  
   
   @Delete('title/:noteTitle') // Delete by note title
   async deleteNoteByTitle(@Param('noteTitle') noteTitle: string): Promise<NoteDocument> {

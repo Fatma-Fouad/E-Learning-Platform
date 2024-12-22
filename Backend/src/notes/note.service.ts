@@ -17,25 +17,38 @@ export class NoteService {
   @InjectModel(modules.name) private moduleModel: Model<ModuleDocument>,) {}
 
   // Create a new note
-  async create(createNoteDto: CreateNoteDto): Promise<notes> {
+  async createOrUpdate(createNoteDto: CreateNoteDto): Promise<notes> {
     // Check if the module exists
     const moduleExists = await this.moduleModel.findById(createNoteDto.module_id).exec();
-
+  
     if (!moduleExists) {
-      // Throw an error if the module does not exist
       throw new NotFoundException(`Module with ID "${createNoteDto.module_id}" does not exist`);
     }
-
-    // Create the note
+  
+    // Check for existing note
+    const existingNote = await this.noteModel.findOne({
+      user_id: createNoteDto.user_id,
+      module_id: createNoteDto.module_id,
+      noteTitle: createNoteDto.noteTitle,
+    }).exec();
+  
+    if (existingNote) {
+      // Update existing note
+      existingNote.content = createNoteDto.content;
+      existingNote.last_updated = new Date();
+      return await existingNote.save();
+    }
+  
+    // Create new note
     const newNote = new this.noteModel({
       ...createNoteDto,
       created_at: new Date(),
       last_updated: new Date(),
     });
-
-    return newNote.save();
+  
+    return await newNote.save();
   }
-
+  
   // Fetch all notes
   async findAll(userId: string): Promise<NoteDocument[]> {
     return this.noteModel.find({ user_id: userId }).exec();
@@ -88,27 +101,24 @@ async updateNoteByModuleAndTitle(
   updateData: UpdateNoteDto,
 ): Promise<NoteDocument> {
   try {
-    // Validate moduleId
     if (!Types.ObjectId.isValid(moduleId)) {
       throw new BadRequestException('Invalid Module ID');
     }
 
     const moduleObjectId = new Types.ObjectId(moduleId);
 
-    // Validate content
+    // Prevent saving empty content
     if (updateData.content !== undefined && updateData.content.trim() === '') {
       throw new BadRequestException('Content cannot be empty.');
     }
 
-    // Validate noteTitle
-    if (updateData.noteTitle !== undefined && updateData.noteTitle.trim() === '') {
-      throw new BadRequestException('Note title cannot be empty.');
-    }
-
-    // Set last_updated field
     updateData.last_updated = new Date();
 
-    console.log(`🔄 Updating note for moduleId: ${moduleId}, noteTitle: ${noteTitle}`);
+    if (updateData.isAutoSaved) {
+      console.log(`🔄 Autosaving note for moduleId: ${moduleId}, noteTitle: ${noteTitle}`);
+    } else {
+      console.log(`🔄 Manually updating note for moduleId: ${moduleId}, noteTitle: ${noteTitle}`);
+    }
 
     const updatedNote = await this.noteModel.findOneAndUpdate(
       {
@@ -132,6 +142,7 @@ async updateNoteByModuleAndTitle(
     throw error;
   }
 }
+
 
 
 

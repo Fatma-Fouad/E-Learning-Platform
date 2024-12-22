@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import axios from 'axios';
 
@@ -10,7 +10,8 @@ const UpdateNotePage = () => {
   const [content, setContent] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isManualSave, setIsManualSave] = useState(false);
 
   // Fetch Note Details on Load
   useEffect(() => {
@@ -31,8 +32,43 @@ const UpdateNotePage = () => {
     fetchNote();
   }, [moduleId, noteTitle]);
 
-  // Handle Update Note
+  // ✅ Autosave Function
+  const autosaveNote = useCallback(async () => {
+    if (!moduleId || !noteTitle || !content.trim()) return;
+
+    try {
+      setIsSaving(true);
+      await axios.put(
+        `http://localhost:3000/notes/module/${moduleId}/title/${encodeURIComponent(noteTitle as string)}`,
+        {
+          noteTitle: title,
+          content,
+          isAutoSaved: true, // Indicate autosave
+        }
+      );
+      setIsSaving(false);
+      console.log('✅ Autosave successful');
+    } catch (err) {
+      console.error('Autosave failed:', err);
+      setError('Autosave failed. Please check your connection.');
+      setIsSaving(false);
+    }
+  }, [moduleId, noteTitle, title, content]);
+
+  // ✅ Debounce Autosave
+  useEffect(() => {
+    const autosaveTimer = setTimeout(() => {
+      if (!isManualSave) {
+        autosaveNote();
+      }
+    }, 5000); // Autosave every 5 seconds
+
+    return () => clearTimeout(autosaveTimer);
+  }, [autosaveNote, isManualSave]);
+
+  // ✅ Manual Save
   const handleUpdate = async () => {
+    setIsManualSave(true);
     if (!title.trim()) {
       setError('Note Title cannot be empty.');
       return;
@@ -42,7 +78,7 @@ const UpdateNotePage = () => {
       return;
     }
 
-    setIsLoading(true);
+    setIsSaving(true);
     setError('');
     setSuccess('');
 
@@ -52,6 +88,7 @@ const UpdateNotePage = () => {
         {
           noteTitle: title,
           content,
+          isAutoSaved: false, // Manual save
         }
       );
 
@@ -63,15 +100,18 @@ const UpdateNotePage = () => {
       console.error('Error updating note:', err);
       setError('Failed to update the note. Please try again.');
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
+      setIsManualSave(false);
     }
   };
 
+  // ✅ Component JSX
   return (
     <div style={containerStyle}>
       <h1 style={headerStyle}>Update Note</h1>
       {error && <p style={errorStyle}>{error}</p>}
       {success && <p style={successStyle}>{success}</p>}
+      {isSaving && <p style={{ color: 'orange', textAlign: 'center' }}>Autosaving...</p>}
 
       <div style={formGroupStyle}>
         <label style={labelStyle}>Note Title:</label>
@@ -79,6 +119,7 @@ const UpdateNotePage = () => {
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+          onBlur={autosaveNote}
           placeholder="Enter note title"
           style={inputStyle}
         />
@@ -89,6 +130,7 @@ const UpdateNotePage = () => {
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
+          onBlur={autosaveNote}
           placeholder="Enter note content"
           style={textareaStyle}
         />
@@ -97,16 +139,15 @@ const UpdateNotePage = () => {
       <button
         onClick={handleUpdate}
         style={buttonStyle}
-        disabled={isLoading}
+        disabled={isSaving}
       >
-        {isLoading ? 'Updating...' : 'Update Note'}
+        {isSaving ? 'Saving...' : 'Update Note'}
       </button>
     </div>
   );
 };
 
-// 🎨 **Styles (Same as Create Note Page)**
-
+// ✅ Styles
 const containerStyle: React.CSSProperties = {
   padding: '20px',
   maxWidth: '600px',
@@ -121,7 +162,7 @@ const containerStyle: React.CSSProperties = {
 const headerStyle: React.CSSProperties = {
   fontSize: '24px',
   marginBottom: '20px',
-  textAlign: 'center' as const,
+  textAlign: 'center',
   color: '#333',
 };
 
@@ -159,14 +200,14 @@ const errorStyle: React.CSSProperties = {
   color: 'red',
   fontSize: '14px',
   marginBottom: '10px',
-  textAlign: 'center' as const,
+  textAlign: 'center',
 };
 
 const successStyle: React.CSSProperties = {
   color: 'green',
   fontSize: '14px',
   marginBottom: '10px',
-  textAlign: 'center' as const,
+  textAlign: 'center',
 };
 
 const buttonStyle: React.CSSProperties = {
