@@ -12,7 +12,7 @@ import { CourseSchema } from 'src/courses/course.schema';
 import { courses } from 'src/courses/course.schema';
 import * as fs from 'fs';
 import * as path from 'path';
-import { ProgressDocument } from '../progress/models/progress.schema';
+import { ProgressDocument, ProgressSchema } from '../progress/models/progress.schema';
 import { Types } from 'mongoose';
 import { QuestionBankDocument } from '../questionbank/questionbank.schema'; // QuestionBank document type
 import { QuizDocument } from '../quizzes/quiz.schema'; // Quiz document type

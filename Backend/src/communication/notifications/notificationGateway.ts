@@ -19,8 +19,8 @@ export class NotificationGateway {
     @WebSocketServer()
     server: Server;
     constructor(
-    @Inject(forwardRef(() => NotificationService))
-    public readonly notificationService: NotificationService
+        @Inject(forwardRef(() => NotificationService))
+        public readonly notificationService: NotificationService
         
     ) { } // Change to public
 
@@ -55,15 +55,13 @@ export class NotificationGateway {
                 return { success: false, message: 'No other users to notify.' };
             }
 
-            console.log('Active rooms:', Array.from(this.server.sockets.adapter.rooms.keys()));
-
             for (const userId of filteredUserIds) {
                 const roomName = `user:${userId}`;
                 const roomMembers = this.server.sockets.adapter.rooms.get(roomName);
 
                 if (!roomMembers) {
                     console.log(`User ${userId} has not joined room: ${roomName}`);
-                    continue; // Skip if user hasn’t joined
+                    continue;
                 }
 
                 console.log(`Sending notification to room: ${roomName}`);
@@ -71,7 +69,7 @@ export class NotificationGateway {
                 // Prepare the notification payload
                 const notification = {
                     chatId: chatId || null,
-                    userId: userId,
+                    userId,
                     type,
                     content,
                     timestamp: new Date(),
@@ -91,34 +89,35 @@ export class NotificationGateway {
         }
     }
 
+
+
+
     /**
      * Allow users to join their notification rooms.
      * Clients must emit 'joinNotifications' with their userId to receive notifications.
      */
-    @SubscribeMessage('joinNotifications')
+    @SubscribeMessage("joinNotifications")
+  
     handleJoinNotifications(
         @ConnectedSocket() client: Socket,
-        @MessageBody() payload: { userId: string },
+        @MessageBody() payload: { userId: string }
     ) {
         try {
-            console.log('joinNotifications event received with payload:', payload);
-
-            // Validate payload
             const userId = payload?.userId;
-            if (!userId) {
-                throw new Error('User ID is required to join notifications');
+            if (!userId) throw new Error('User ID is required to join notifications');
+
+            const roomName = `user:${userId}`;
+
+            // Check if the user is already in the room
+            if (client.rooms.has(roomName)) {
+                console.log(`User ${userId} is already in room: ${roomName}`);
+                return;
             }
 
-            // Assign the user to their notification room
-            const roomName = `user:${userId}`;
             client.join(roomName);
-
             console.log(`User ${userId} successfully joined room: ${roomName}`);
-
-            // Debug Step: Check room membership
-            console.log(`Room ${roomName} members:`, this.server.sockets.adapter.rooms.get(roomName));
         } catch (error) {
-            console.error('Error handling joinNotifications:', error.message);
+            console.error('Error in joinNotifications:', error.message);
             client.emit('error', { message: error.message });
         }
     }

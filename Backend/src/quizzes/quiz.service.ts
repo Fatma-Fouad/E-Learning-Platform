@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { QuizDocument } from './quiz.schema';
 import { QuestionBankDocument } from '../questionbank/questionbank.schema';
-import { UserDocument } from '../users/user.schema';
+import { User } from '../users/user.schema';
 import { ProgressDocument } from '../progress/models/progress.schema';
 
 @Injectable()
@@ -11,7 +11,7 @@ export class QuizService {
   constructor(
     @InjectModel('quizzes') private quizModel: Model<QuizDocument>,
     @InjectModel('questionbank') private questionBankModel: Model<QuestionBankDocument>,
-    @InjectModel('User') private userModel: Model<UserDocument>,
+    @InjectModel(User.name) private readonly usersModel: Model<User>, // Inject User schema
     @InjectModel('progress') private progressModel: Model<ProgressDocument>,
   ) {}
 
@@ -22,7 +22,7 @@ export class QuizService {
     type: string,
   ): Promise<{ message: string; quiz: QuizDocument }> {
     //if exists
-    const user = await this.userModel.findById(userId);
+    const user = await this.usersModel.findById(userId);
     if (!user) {
       throw new NotFoundException(`User with ID ${userId} not found.`);
     }

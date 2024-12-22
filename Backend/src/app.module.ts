@@ -15,15 +15,22 @@ import { NotificationModule } from './communication/notifications/notification.m
 import { NoteModule } from './notes/note.module';
 import { ResponseModule } from './responses/response.module';
 import { BackupModule } from './backup/backup.module';
+import { JwtModule } from '@nestjs/jwt';
+
 
 @Module({
-  imports: [QuizModule,
+  imports:
+    
+    [JwtModule.register({
+      secret: process.env.JWT_SECRET,  // Ensure you are loading the correct secret from your .env file
+      signOptions: { expiresIn: '1h' },  // Optional: Set token expiration time
+    }),
+      QuizModule,
     QuestionBankModule,
     NoteModule,
     AuthModule,
     ModulesModule,
     CourseModule,
-    ModulesModule,
     ProgressModule,
     UserModule,
     ForumModule, // Add ForumsModule here

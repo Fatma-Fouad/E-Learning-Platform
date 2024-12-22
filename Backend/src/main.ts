@@ -14,7 +14,6 @@ async function bootstrap() {
     methods: 'GET,POST,PUT,DELETE,PATCH',
     credentials: true,
   });
-
   mongoose.connection.on('connected', () => {
     logger.log('Successfully connected to MongoDB');
   });
@@ -28,7 +27,7 @@ async function bootstrap() {
   });
 
   app.useGlobalPipes(new ValidationPipe());
-  await app.listen(process.env.PORT ?? 3000);
-  logger.log(`Application is running on: http://localhost:${process.env.PORT ?? 3000}`);
+  await app.listen(process.env.PORT ?? 3001);
+  logger.log(`Application is running on: http://localhost:${process.env.PORT ?? 3001}`);
 }
 bootstrap();

@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model } from 'mongoose';
-import { courses } from './course.schema';
+import { courses, CourseDocument } from './course.schema';
 import { User } from 'src/users/user.schema';
 import { progress } from '../progress/models/progress.schema';
 import { CreateCourseDto } from './CreateCourseDto';
@@ -25,8 +25,6 @@ export class CoursesService {
     private readonly notificationGateway: NotificationGateway // Inject NotificationGateway
   ) { }
 
-  
-
 
   /**
    * Retrieve all courses for all
@@ -44,34 +42,38 @@ export class CoursesService {
      /**
    * Search for courses by keywords
    */
-     async searchByKeyword(keyword: string): Promise<any> {
-      try {
-        console.log('Service: Searching for courses with keyword:', keyword);
-    
-        const courses = await this.courseModel
-          .find({ keywords: { $in: [keyword] }, isAvailable: true })
-          .exec();
-    
-        if (!courses || courses.length === 0) {
-          console.log('Service: No courses found for keyword:', keyword);
-          throw new NotFoundException(`No courses found for keyword: ${keyword}`);
-        }
-    
-        console.log('Service: Found courses:', courses);
-    
-        return {
-          courses: courses.map(course => ({
-            ...course.toObject(),
-            course_id: course._id.toString(), // Convert ObjectId to string
-          })),
-        };
-      } catch (error) {
-        console.error('Service: Error in searchByKeyword:', error.message);
-        throw new BadRequestException(
-          error.message || 'Failed to retrieve courses by keyword.',
-        );
+  async searchByKeyword(keyword: string): Promise<any> {
+    try {
+      const regex = new RegExp(keyword, 'i'); // Case-insensitive regex
+      console.log('Service: Searching for courses with keyword:', regex);
+
+      const courses = await this.courseModel.find({
+        $or: [
+          { title: { $regex: regex } },       // Search in title
+          { description: { $regex: regex } } // Search in description
+        ],
+        isAvailable: true
+      }).exec();
+
+      if (!courses || courses.length === 0) {
+        throw new NotFoundException(`No courses found for keyword: ${keyword}`);
       }
+
+      return {
+        courses: courses.map((course) => ({
+          _id: course._id,
+          title: course.title,
+          description: course.description,
+        })),
+      };
+    } catch (error) {
+      console.error('Service: Error in searchByKeyword:', error.message);
+      throw new BadRequestException(
+        error.message || 'Failed to retrieve courses by keyword.'
+      );
     }
+  }
+
 
   /**
    * Retrieve a course by its ID  for all

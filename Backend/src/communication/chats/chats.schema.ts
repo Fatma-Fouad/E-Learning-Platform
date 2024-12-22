@@ -1,7 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { Document } from 'mongoose';
 
-
 @Schema()
 export class Message {
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true })
@@ -24,17 +23,17 @@ export class Chat {
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'courses', required: true })
     courseId: mongoose.Schema.Types.ObjectId;
 
-    @Prop({ type: [mongoose.Schema.Types.ObjectId], ref: 'users', required: true })
+    @Prop({ type: [mongoose.Schema.Types.ObjectId], ref: 'User', required: true })
     participants: mongoose.Types.ObjectId[];
 
-    @Prop({ type: String, enum: ['student', 'mixed'], default: 'student' })
+    @Prop({ type: String, enum: ['student', 'mixed','group'], default: 'student' })
     type: string;
 
-    @Prop({ type: [Message], default: [] })
+    @Prop({ type: [MessageSchema], default: [] })
     messages: Message[];
-    // Add creatorId field to store the user who created the chat
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true })
-    creatorId: mongoose.Types.ObjectId;
+
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
+    creatorId: mongoose.Types.ObjectId; // Store the creator of the chat
 }
 
 export const ChatSchema = SchemaFactory.createForClass(Chat);

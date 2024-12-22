@@ -1,26 +1,33 @@
-import { Controller, Get, Post, Param, Body, Query, NotFoundException, BadRequestException, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Query, NotFoundException, BadRequestException, Delete, Put, UseGuards } from '@nestjs/common';
 import { ForumsService } from './forums.service';
 import mongoose from 'mongoose';
 import { AuthGuard } from 'src/authentication/auth.guard';
 import { Roles, Role } from 'src/authentication/roles.decorator';
 import { RolesGuard } from 'src/authentication/roles.guard';
 
-@Controller('forums')
+
+@Controller('forums') // Maps to `/forums`
 export class ForumsController {
     constructor(private readonly forumsService: ForumsService) { }
 
+    @Get() // Maps to GET /forums
     // Get all forums (Access: Admin)
     @Get()
-    @UseGuards(AuthGuard, RolesGuard) 
-    @Roles('admin' as Role)
+
     getAllForums() {
+        console.log('GET /forums called');
         return this.forumsService.getAllForums();
     }
+    // Get forums by courseId
+    @Get('course/:courseId') // Route: /forums/course/:courseId
+    getForumsByCourse(@Param('courseId') courseId: string) {
+        return this.forumsService.getForumsByCourse(courseId);
+    }
 
-    // Create a new forum (Access: Instructor, Admin)
+
+    // Create a new forum
     @Post('create')
-    @UseGuards(AuthGuard, RolesGuard) 
-    @Roles('admin' as Role, 'instructor' as Role)
+
     async addForum(
         @Body() body: { courseId: string; courseName: string; createdBy: string }
     ) {
@@ -35,9 +42,9 @@ export class ForumsController {
         return this.forumsService.addForum(courseId, courseName, createdBy);
     }
 
-    // Search for a specific course (Access: Student, Instructor, Admin)
+    // Search for a specific course
     @Get('search-courses')
-    @UseGuards(AuthGuard) 
+
     async searchCourses(@Query('q') searchTerm: string) {
         console.log('Search term received for courses:', searchTerm);
         if (!searchTerm || searchTerm.trim() === '') {
@@ -46,9 +53,9 @@ export class ForumsController {
         return this.forumsService.searchCourses(searchTerm);
     }
 
-    // Search forums by thread title in all courses (Access: Student, Instructor, Admin)
+    // Search forums by thread title in all courses
     @Get('search')
-    @UseGuards(AuthGuard) 
+ 
     async searchForum(@Query('q') searchTerm: string) {
         console.log('Search term received:', searchTerm);
         if (!searchTerm || searchTerm.trim() === '') {
@@ -57,9 +64,9 @@ export class ForumsController {
         return this.forumsService.searchForum(searchTerm);
     }
 
-    // Search for threads within a specific course (Access: Student, Instructor, Admin)
+    // Search for threads within a specific course
     @Get(':courseId/search-threads')
-    @UseGuards(AuthGuard) 
+
     async searchThreadsInCourse(
         @Param('courseId') courseId: string,
         @Query('q') searchTerm: string,
@@ -71,9 +78,9 @@ export class ForumsController {
         return this.forumsService.searchThreadsInCourse(courseId, searchTerm);
     }
 
-    // Post a new thread (Access: Student, Instructor, Admin)
+    // Post a new thread
     @Post(':courseId/threads')
-    @UseGuards(AuthGuard) 
+
     addThread(
         @Param('courseId') courseId: string,
         @Body() body: { title: string; description: string; createdBy: string },
@@ -86,7 +93,7 @@ export class ForumsController {
             threadId: new mongoose.Types.ObjectId(),
             title: body.title,
             description: body.description,
-            createdBy: new mongoose.Types.ObjectId(body.createdBy), // Convert to ObjectId
+            createdBy: new mongoose.Types.ObjectId(body.createdBy),
             createdAt: new Date(),
             replies: [],
         };
@@ -96,14 +103,22 @@ export class ForumsController {
         return this.forumsService.addThread(courseId, thread);
     }
 
-    // Add a reply to a thread (Access: Student, Instructor, Admin)
+    // Add a reply to a thread
     @Post(':courseId/threads/:threadId/replies')
-    @UseGuards(AuthGuard) 
+
     async addReply(
         @Param('courseId') courseId: string,
         @Param('threadId') threadId: string,
         @Body() body: { userId: string; message: string },
     ) {
+        if (!mongoose.Types.ObjectId.isValid(courseId)) {
+            throw new BadRequestException('Invalid courseId format.');
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(threadId)) {
+            throw new BadRequestException('Invalid threadId format.');
+        }
+
         if (!body.userId || !body.message) {
             throw new BadRequestException('userId and message are required.');
         }
@@ -118,25 +133,44 @@ export class ForumsController {
         return this.forumsService.addReply(courseId, threadId, reply);
     }
 
-    // Delete a forum (Access: Admin, Instructor)
-    @Delete(':courseId')
-    @UseGuards(AuthGuard, RolesGuard) 
-    @Roles('admin' as Role, 'instructor' as Role)
-    async deleteForum(
+    // Edit a thread
+    @Put(':courseId/threads/:threadId')
+    async editThread(
         @Param('courseId') courseId: string,
-        @Query('userId') userId: string // Pass userId as a query parameter
+        @Param('threadId') threadId: string,
+        @Query('userId') userId: string,
+        @Body() updateData: { title?: string; description?: string },
+    ) {
+        if (!userId) {
+            throw new BadRequestException('User ID is required to edit a thread.');
+        }
+
+        if (!updateData || Object.keys(updateData).length === 0) {
+            throw new BadRequestException('Update data cannot be empty.');
+        }
+
+        console.log(`Editing thread ${threadId} in course ${courseId} by user ${userId}`);
+        return this.forumsService.editThread(courseId, threadId, userId, updateData);
+    }
+
+    // Delete a forum
+    @Delete(':forumId') // Maps to DELETE /forums/:forumId
+    async deleteForum(
+        @Param('forumId') forumId: string, // Extracts forumId from the route
+        @Query('userId') userId: string    // Extracts userId from the query
     ) {
         if (!userId) {
             throw new BadRequestException('User ID is required to delete a forum.');
         }
 
-        console.log(`Deleting forum for courseId: ${courseId} by user ${userId}`);
-        return this.forumsService.deleteForum(courseId, userId);
+        console.log(`Deleting forum with forumId: ${forumId} by user ${userId}`);
+        return this.forumsService.deleteForumById(forumId, userId);
     }
 
-    // Delete a thread in a course (Access: Admin,User who posted the thread)
+
+    // Delete a thread in a course
     @Delete(':courseId/threads/:threadId')
-    @UseGuards(AuthGuard) 
+
     async deleteThread(
         @Param('courseId') courseId: string,
         @Param('threadId') threadId: string,
@@ -150,9 +184,9 @@ export class ForumsController {
         return this.forumsService.deleteThread(courseId, threadId, userId);
     }
 
-    // Delete a reply in a thread (Access: Admin,User who posted the reply)
+    // Delete a reply in a thread
     @Delete(':courseId/threads/:threadId/replies/:replyId')
-    @UseGuards(AuthGuard) 
+
     async deleteReply(
         @Param('courseId') courseId: string,
         @Param('threadId') threadId: string,
