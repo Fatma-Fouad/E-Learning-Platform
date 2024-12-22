@@ -63,7 +63,7 @@ async searchCoursesByKeyword(@Query('keyword') keyword: string) {
      * Retrieve course by id  (ALL)
      */
     @Get(':id')
-    @UseGuards(AuthGuard) 
+    // @UseGuards(AuthGuard) 
     async findCourseById(@Param('id') id: string) {
       try {
         return await this.coursesService.findCourseById(id);
