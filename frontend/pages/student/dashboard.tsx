@@ -10,7 +10,6 @@ const StudentDashboard = () => {
   const { studentId } = router.query; // Get the dynamic studentId from the route
   const [profile, setProfile] = useState<any>(null);
   const [enrolledCourses, setEnrolledCourses] = useState([]);
-  const [completedCourses, setCompletedCourses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -22,16 +21,12 @@ const StudentDashboard = () => {
       setLoading(true);
       try {
         // Fetch user profile
-        const profileRes = await axios.get(`/api/user/profile/${studentId}`);
+        const profileRes = await axios.get(`http://localhost:3000/user/profile/${studentId}`);
         setProfile(profileRes.data);
 
         // Fetch enrolled courses
-        const enrolledRes = await axios.get(`/api/user/enrolled-courses/${studentId}`);
+        const enrolledRes = await axios.get(`http://localhost:3000/user/enrolled-courses/${studentId}`);
         setEnrolledCourses(enrolledRes.data);
-
-        // Fetch completed courses
-        const completedRes = await axios.get(`/api/user/completed-courses/${studentId}`);
-        setCompletedCourses(completedRes.data);
       } catch (err: any) {
         setError(err.response?.data?.message || 'Failed to fetch data.');
       } finally {
@@ -52,7 +47,7 @@ const StudentDashboard = () => {
   // Remove a course
   const handleRemoveCourse = async (courseId: string) => {
     try {
-      await axios.delete(`/api/user/remove-course/${studentId}/${courseId}`);
+      await axios.delete(`http://localhost:3000/user/remove-course/${studentId}/${courseId}`);
       setEnrolledCourses((prev) =>
         prev.filter((course: any) => course.id !== courseId)
       );
@@ -62,19 +57,24 @@ const StudentDashboard = () => {
     }
   };
 
-  // Delete account
-  const handleDeleteAccount = async () => {
-    try {
-      await axios.delete(`/api/user/delete-account/${studentId}`);
-      router.push('/login');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to delete account.');
+  // Redirect to the Delete Account Page
+  const handleDeleteAccountRedirect = () => {
+    const userId = localStorage.getItem('userId');
+    if (userId) {
+      router.push(`/student/delete-account`); // Redirect to the Delete Account page
+    } else {
+      setError('Student ID not found in localStorage.');
     }
   };
 
   // Redirect to search instructors page
   const handleSearchInstructorRedirect = () => {
     router.push(`/student/search-instructor?studentId=${studentId}`);
+  };
+
+  // Redirect to completed courses page
+  const handleCompletedCoursesRedirect = () => {
+    router.push(`/student/complete-courses`);
   };
 
   return (
@@ -118,29 +118,35 @@ const StudentDashboard = () => {
           <p>No enrolled courses available.</p>
         )}
         <button
-  onClick={handleEnrollCourseRedirect}
-  style={{
-    backgroundColor: '#0070f3',
-    color: 'white',
-    padding: '10px',
-    borderRadius: '5px',
-    marginTop: '10px',
-    cursor: 'pointer',
-  }}
->
-  Enroll in a New Course
-</button>
-
+          onClick={handleEnrollCourseRedirect}
+          style={{
+            backgroundColor: '#0070f3',
+            color: 'white',
+            padding: '10px',
+            borderRadius: '5px',
+            marginTop: '10px',
+            cursor: 'pointer',
+          }}
+        >
+          Enroll in a New Course
+        </button>
       </div>
 
-      {/* Completed Courses Section */}
+      {/* Redirect to Completed Courses Section */}
       <div style={{ marginTop: '2rem' }}>
         <h2>✅ Completed Courses</h2>
-        {completedCourses.length > 0 ? (
-          <CourseList courses={completedCourses} />
-        ) : (
-          <p>No completed courses available.</p>
-        )}
+        <button
+          onClick={handleCompletedCoursesRedirect}
+          style={{
+            backgroundColor: '#0070f3',
+            color: 'white',
+            padding: '10px',
+            borderRadius: '5px',
+            cursor: 'pointer',
+          }}
+        >
+          View Completed Courses
+        </button>
       </div>
 
       {/* Search Instructors Section */}
@@ -160,10 +166,10 @@ const StudentDashboard = () => {
         </button>
       </div>
 
-      {/* Account Deletion */}
+      {/* Account Deletion Button */}
       <div style={{ marginTop: '2rem' }}>
         <button
-          onClick={handleDeleteAccount}
+          onClick={handleDeleteAccountRedirect}
           style={{
             backgroundColor: '#ff4d4f',
             color: 'white',

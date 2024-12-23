@@ -7,7 +7,7 @@ import { LoginAttempt } from '../authentication/login.schema';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
-
+import { Types } from 'mongoose'; 
 
 
 @Controller('user')
@@ -121,8 +121,8 @@ async updateUserProfile(@Param('id') userId: string, @Body() updateData: any) {
 //admin , student
   // Get completed courses for a user
   @Get(':id/completed-courses')
-  @UseGuards(AuthGuard, RolesGuard)
-  @Roles('admin' as Role, 'student' as Role)
+  //@UseGuards(AuthGuard, RolesGuard)
+  //@Roles('admin' as Role, 'student' as Role)
   async getCompletedCourses(@Param('id') userId: string) {
     try {
       return await this.userService.getCompletedCourses(userId);
@@ -172,18 +172,19 @@ async deleteAccount(@Param('role') role: string, @Param('id') userId: string) {
   }
 }
 //
-@Delete('/delete-account')
-@UseGuards(AuthGuard)
-@Roles('student' as Role, 'instrctor' as Role)
-async deleteSelf(@Req() request: any) {
-  const authUserId = request.user._id; // Authenticated user ID from JWT/session
+@Delete(':userId/delete-account') 
+//@UseGuards(AuthGuard)
+//@Roles('student' as Role, 'instructor' as Role)
+async deleteSelf(@Param('userId') userId: string) {
   try {
-    await this.userService.deleteSelf(authUserId, authUserId);
+    // Use the userId passed as a parameter
+    await this.userService.deleteSelf(userId, userId);
     return { message: 'Account deleted successfully.' };
   } catch (error) {
     throw new BadRequestException(error.message);
   }
 }
+
 
  
 
@@ -251,6 +252,9 @@ async trackCompletedCourses(
     throw new BadRequestException(error.message || 'Failed to track completed courses.');
   }
 }
+
+
+
 // Get enrolled courses of a specific student (for instructors)
 @Get(':instructorId/student/:studentId/enrolled-courses')
 @UseGuards(AuthGuard, RolesGuard)

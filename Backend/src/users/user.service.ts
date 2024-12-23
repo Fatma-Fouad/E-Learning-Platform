@@ -9,22 +9,20 @@ import mongoose from 'mongoose';
 import { ProgressDocument } from '../progress/models/progress.schema';
 import { NotificationService } from '../communication/notifications/notification.service';
 import { NotificationGateway } from 'src/communication/notifications/notificationGateway';
-import { LoginAttemptSchema } from '../authentication/login.schema';
 
 // hana
 @Injectable()
 export class UserService {
-  constructor(
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
-    @InjectModel('responses') private responseModel: Model<ResponseDocument>, // Inject the responses model
-    @InjectModel(courses.name) private courseModel: Model<CourseDocument>, // Inject the courses model
-    @InjectModel('loginAttempt') private readonly loginAttemptModel: Model<any>, // Ensure this matches the schema registration
-    private readonly notificationService: NotificationService, // Inject NotificationService
-    private readonly notificationGateway: NotificationGateway, // Inject NotificationGateway
-    @InjectModel('progress')
-    private readonly progressModel: Model<ProgressDocument>,
-  ) {}
-  //admin
+    constructor(
+        @InjectModel(User.name) private userModel: Model<UserDocument>,
+        @InjectModel('responses') private responseModel: Model<ResponseDocument>, // Inject the responses model
+      @InjectModel(courses.name) private courseModel: Model<CourseDocument>, // Inject the courses model
+      private readonly notificationService: NotificationService, // Inject NotificationService
+      private readonly notificationGateway: NotificationGateway ,// Inject NotificationGateway
+       @InjectModel('progress') private readonly progressModel: Model<ProgressDocument>
+      
+    ) {}
+    //admin
   async getAllUsers(): Promise<User[]> {
     try {
       const users = await this.userModel.find().exec();
@@ -34,56 +32,45 @@ export class UserService {
     }
   }
 
+
+
   // Fetch user profile except for admin users except for admin users
-  async getUserProfile(userId: string): Promise<User> {
-    if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
-      throw new BadRequestException('Invalid user ID format');
-    }
-
-    const user = await this.userModel.findById(userId).exec();
-
-    // Check if the user is an admin
-    if (user?.role === 'admin') {
-      throw new ForbiddenException(
-        'Access denied: Admin profile cannot be viewed',
-      );
-    }
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    return user;
+async getUserProfile(userId: string): Promise<User> {
+  if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
+    throw new BadRequestException('Invalid user ID format');
   }
 
+  const user = await this.userModel.findById(userId).exec();
+
+  // Check if the user is an admin
+  if (user?.role === 'admin') {
+    throw new ForbiddenException('Access denied: Admin profile cannot be viewed');
+  }
+
+  if (!user) {
+    throw new NotFoundException('User not found');
+  }
+
+  return user;
+}
+
   // Update user profile
-  async updateUserProfile(
-    userId: string,
-    updateData: Partial<User>,
-  ): Promise<User> {
-    // Validate userId format
-    if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
-      throw new BadRequestException('Invalid user ID format');
-    }
+async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User> {
+  // Validate userId format
+  if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
+    throw new BadRequestException('Invalid user ID format');
+  }
 
     // Remove email and role from the updateData to prevent them from being updated
-    const {
-      email,
-      role,
-      gpa,
-      completed_courses,
-      enrolled_courses,
-      ...filteredUpdateData
-    } = updateData;
+  const { email, role, gpa, completed_courses, enrolled_courses, ...filteredUpdateData } = updateData;
+
 
     try {
-      const user = await this.userModel
-        .findByIdAndUpdate(
-          userId,
-          { $set: filteredUpdateData }, // Update the fields provided in filteredUpdateData
-          { new: true }, // Return the updated document
-        )
-        .exec();
+      const user = await this.userModel.findByIdAndUpdate(
+        userId,
+        { $set: filteredUpdateData }, // Update the fields provided in filteredUpdateData
+        { new: true } // Return the updated document
+      ).exec();
 
       if (!user) {
         throw new NotFoundException('User not found');
@@ -94,16 +81,15 @@ export class UserService {
     }
   }
 
+
+
   // Fetch enrolled courses
   async getEnrolledCourses(userId: string): Promise<string[]> {
     if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
       throw new BadRequestException('Invalid user ID format');
     }
 
-    const user = await this.userModel
-      .findById(userId)
-      .select('enrolledCourses')
-      .exec();
+    const user = await this.userModel.findById(userId).select('enrolledCourses').exec();
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -115,24 +101,24 @@ export class UserService {
     if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
       throw new BadRequestException('Invalid user ID format');
     }
-
-    const user = await this.userModel
-      .findById(userId)
-      .select('completedCourses')
-      .exec();
+  
+    // Fetch the user by ID and select the 'completed_courses' field
+    const user = await this.userModel.findById(userId).select('completed_courses').exec();
+    
     if (!user) {
       throw new NotFoundException('User not found');
     }
+    
+    // Return the completed_courses array
     return user.completed_courses;
   }
+  
+   
 
 
   async addCourseToEnrolled(userId: string, courseId: string): Promise<{ user: User; recommendedCourses: string[] }> {
     // Validate userId and courseId
-    if (
-      !userId.match(/^[0-9a-fA-F]{24}$/) ||
-      !courseId.match(/^[0-9a-fA-F]{24}$/)
-    ) {
+    if (!userId.match(/^[0-9a-fA-F]{24}$/) || !courseId.match(/^[0-9a-fA-F]{24}$/)) {
       throw new BadRequestException('Invalid user ID or course ID format');
     }
   
@@ -161,9 +147,7 @@ export class UserService {
       const roomMembers = this.notificationGateway.server.sockets.adapter.rooms.get(roomName);
   
       if (roomMembers) {
-        this.notificationGateway.server
-          .to(roomName)
-          .emit('newNotification', notification);
+        this.notificationGateway.server.to(roomName).emit('newNotification', notification);
         console.log(`Notification sent to user ${userId} in room ${roomName}`);
       } else {
         console.log(`User ${userId} has not joined room: ${roomName}`);
@@ -173,7 +157,7 @@ export class UserService {
       await this.notificationService.createNotification(
         userId,
         'course-update',
-        `You are already enrolled in the course: "${course.title}".`,
+        `You are already enrolled in the course: "${course.title}".`
       );
   
       throw new BadRequestException('This course is already enrolled');
@@ -184,7 +168,7 @@ export class UserService {
   
     // Remove the course from the user's recommended_courses if it exists
     user.recommended_courses = user.recommended_courses.filter(
-      (recommendedCourse) => recommendedCourse !== courseId,
+      (recommendedCourse) => recommendedCourse !== courseId
     );
   
     await user.save();
@@ -221,7 +205,7 @@ export class UserService {
     await this.notificationService.createNotification(
       userId,
       'course-update',
-      `You have successfully enrolled in the course: "${course.title}".`,
+      `You have successfully enrolled in the course: "${course.title}".`
     );
   
     // Recommend new courses based on the user's enrolled courses
@@ -328,22 +312,20 @@ export class UserService {
   }
   
 
+
+
+  //admin
   async createUser(createUserDto: Partial<User>): Promise<User> {
     try {
       const newUser = new this.userModel(createUserDto);
       return await newUser.save(); // Save the new user
     } catch (error) {
-      console.error('Error creating user in createUser:', error.message);
-      console.error('Stack trace:', error.stack);
       throw new BadRequestException('Error creating user.');
     }
   }
-
   //admin
   async updateUser(userId: string, updateData: Partial<User>): Promise<User> {
-    const user = await this.userModel
-      .findByIdAndUpdate(userId, updateData, { new: true })
-      .exec();
+    const user = await this.userModel.findByIdAndUpdate(userId, updateData, { new: true }).exec();
     if (!user) {
       throw new NotFoundException('User not found.');
     }
@@ -367,31 +349,32 @@ export class UserService {
     }
   }
 
-async deleteSelf(userId: string, authUserId: string): Promise<void> {
-  // Validate that the user is deleting their own account
-  if (userId !== authUserId) {
-    throw new ForbiddenException('You can only delete your own account.');
+  async deleteSelf(userId: string, authUserId: string): Promise<void> {
+    // Validate that the user is deleting their own account
+    if (userId !== authUserId) {
+      throw new ForbiddenException('You can only delete your own account.');
+    }
+  
+    // Fetch the user from the database
+    const user = await this.userModel.findById(userId).exec();
+  
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+  
+    // Prevent Admins from deleting themselves (optional)
+    if (user.role === 'admin') {
+      throw new ForbiddenException('Admins cannot delete their own accounts.');
+    }
+  
+    // Delete the user account
+    const result = await this.userModel.findByIdAndDelete(userId).exec();
+  
+    if (!result) {
+      throw new NotFoundException('Failed to delete user account.');
+    }
   }
-
-  // Fetch the user from the database
-  const user = await this.userModel.findById(userId).exec();
-
-  if (!user) {
-    throw new NotFoundException('User not found.');
-  }
-
-  // Prevent Admins from deleting themselves (optional)
-  if (user.role === 'admin') {
-    throw new ForbiddenException('Admins cannot delete their own accounts.');
-  }
-
-  // Delete the user account
-  const result = await this.userModel.findByIdAndDelete(userId).exec();
-
-  if (!result) {
-    throw new NotFoundException('Failed to delete user account.');
-  }
-}
+  
 
 
 //admin, instructor
@@ -548,7 +531,6 @@ async enrollStudentInCourse(
       );
     }
   }
-  
   //student search for instructor
   async findInstructorByName(name: string): Promise<User[]> {
     try {

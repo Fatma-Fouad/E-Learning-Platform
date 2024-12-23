@@ -100,7 +100,7 @@ const EnrollStudent = () => {
       </button>
 
       <button
-        onClick={() => router.push('/instructor/dashboard')}
+        onClick={() => router.push('/instructor/dashborad')}
         style={{
           backgroundColor: '#ccc',
           color: 'black',
