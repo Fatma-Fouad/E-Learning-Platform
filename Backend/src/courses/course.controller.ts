@@ -5,7 +5,7 @@ import { Controller, Get, Post, Patch, Delete, Param, Body,Query,UploadedFile,Us
   import { RateCourseDto } from './RateCourseDto';
   import { UpdateCourseDto } from './UpdateCourseDto';
   import { Express } from 'express';
-//import { InstructorGuard } from './InstructorGuard'; 
+// import { InstructorGuard } from './InstructorGuard'; 
 import { RateInstructorDto } from './RateInstructorDto';
 import { courses, CourseDocument } from './course.schema';
 import { AuthGuard } from 'src/authentication/auth.guard';
@@ -22,7 +22,7 @@ import { RolesGuard } from 'src/authentication/roles.guard';
      * Retrieve all courses for (all)  
      */
     @Get('available-courses')
-    @UseGuards(AuthGuard)
+    // @UseGuards(AuthGuard)
     async findAll() {
       return this.coursesService.findAll();
     }
@@ -59,8 +59,8 @@ async getCoursesByStudent(@Param('studentId') studentId: string) {
 
 
 @Get('instructor-courses/:instructorId')
-@UseGuards(AuthGuard, RolesGuard)
-@Roles('instructor' as Role)
+// @UseGuards(AuthGuard, RolesGuard)
+// @Roles('instructor' as Role)
 async findCoursesByInstructor(
   @Param('instructorId') instructorId: string,
 ) {
@@ -95,7 +95,9 @@ async findCoursesByInstructor(
  * Search for courses by keyword (Instructor + Student)
  */
 @Get('search-by-keyword')
-@UseGuards(AuthGuard)
+//@UseGuards(AuthGuard,RolesGuard)
+//@Roles('student' as Role)
+//@Roles('instructor' as Role)
 async searchCoursesByKeyword(@Query('keyword') keyword: string) {
   try {
     if (!keyword) {
@@ -286,7 +288,9 @@ async rateInstructor(
    */
 
 @Get()
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard,RolesGuard)
+@Roles('student' as Role)
+@Roles('instructor' as Role)
   async findCourseByModuleTitle(@Query('title') title: string) {
     try {
       if (!title) {
@@ -311,7 +315,9 @@ async rateInstructor(
 
 
    @Get('course-by-creator/:created_by')
-   @UseGuards(AuthGuard)
+   @UseGuards(AuthGuard,RolesGuard)
+   @Roles('student' as Role)
+   @Roles('instructor' as Role)
 async findCourseByCreator(@Param('created_by') createdBy: string) {
   try {
     if (!createdBy) {
@@ -341,7 +347,9 @@ async findCourseByCreator(@Param('created_by') createdBy: string) {
    * Find Course details By the course name (Student and instructor)
    */
       @Get('course-by-Name/:title') // Route with :title as parameter
-      @UseGuards(AuthGuard)
+      @Roles('student' as Role)
+      @Roles('instructor' as Role)
+      @UseGuards(AuthGuard,RolesGuard)
       async findCourseByName(@Param('title') Name: string) {
         try {
           if (!Name) {

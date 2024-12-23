@@ -62,6 +62,17 @@ const Home = () => {
     router.push("/login");
   };
 
+  // Handle Dashboard Redirection based on Role
+  const handleDashboardRedirect = () => {
+    if (user?.role === "student") {
+      router.push("/student/dashboard");
+    } else if (user?.role === "instructor") {
+      router.push("/instructor/dashborad");
+    } else if (user?.role === "admin") {
+      router.push("/admin/dashboard");
+    }
+  };
+
   // Handle Courses
   const Courses = () => {
     router.push("/courses");
@@ -69,14 +80,10 @@ const Home = () => {
 
   // Handle Find-Course
   const Find_Course = () => {
-    router.push("courses/FindCourse");
+    router.push("/courses/FindCourse");
   };
 
-  // Handle Student courses
-  const StudentCourses = () => {
-    router.push("courses/MyCourses_st");
-  };
-
+  // Handle Student Courses
   const handleStudentCourses = () => {
     router.push("/courses/MyCourses_st");
   };
@@ -95,12 +102,24 @@ const Home = () => {
       {/* Navbar */}
       <nav style={styles.navbar}>
         <h2 style={styles.logo}>E-Learning Platform</h2>
-        <button onClick={handleLogout} style={styles.logoutButton}>
-          Logout
+        <button onClick={Find_Course} style={styles.button}>
+          Find a Course
         </button>
-        <button onClick={handleLogout} style={styles.logoutButton}>
-          Logout
-        </button>
+        {user?.role === "student" && (
+          <button style={styles.button} onClick={handleStudentCourses}>
+            My Courses (Student)
+          </button>
+        )}
+        {user?.role === "instructor" && (
+          <button style={styles.button} onClick={handleInstructorCourses}>
+            My Courses (Instructor)
+          </button>
+        )}
+        {user && (
+          <button onClick={handleDashboardRedirect} style={styles.dashboardButton}>
+            Go to {user.role.charAt(0).toUpperCase() + user.role.slice(1)} Dashboard
+          </button>
+        )}
         <button onClick={handleLogout} style={styles.logoutButton}>
           Logout
         </button>
@@ -219,7 +238,7 @@ const notificationStyle: React.CSSProperties = {
   boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
 };
 // Inline styles for simplicity
-const styles = {
+const styles: { [key: string]: React.CSSProperties } = {
   navbar: {
     display: "flex",
     justifyContent: "space-between",
@@ -227,9 +246,22 @@ const styles = {
     backgroundColor: "#0070f3",
     color: "white",
     padding: "1rem 2rem",
+    flexWrap: "wrap", // 'flexWrap' is valid CSS here
   },
   logo: {
     margin: 0,
+    fontSize: "1.5rem",
+  },
+  dashboardButton: {
+    backgroundColor: "#34D399",
+    border: "none",
+    color: "white",
+    padding: "0.5rem 1rem",
+    cursor: "pointer",
+    fontSize: "1rem",
+    borderRadius: "5px",
+    marginRight: "1rem",
+    transition: "background-color 0.3s",
   },
   logoutButton: {
     backgroundColor: "#ff4d4f",
@@ -239,24 +271,32 @@ const styles = {
     cursor: "pointer",
     fontSize: "1rem",
     borderRadius: "5px",
+    marginRight: "1rem",
+    transition: "background-color 0.3s",
   },
   content: {
     padding: "2rem",
-    textAlign: "center",
+    textAlign: "center" as React.CSSProperties["textAlign"], // Fixed textAlign type
+  },
+  textCenter: {
+    textAlign: "center" as "center", // Explicitly cast to the correct type
   },
   userInfo: {
     marginTop: "1rem",
     fontSize: "1.2rem",
+    lineHeight: "1.5",
+    color: "#333",
   },
   button: {
-    padding: "15px 25px",
-    fontSize: "1.1rem",
-    backgroundColor: "#9fcdff", // Light pastel blue
+    padding: "10px 15px",
+    fontSize: "1rem",
+    backgroundColor: "#4caf50",
     color: "#ffffff",
     border: "none",
-    borderRadius: "8px",
+    borderRadius: "5px",
     cursor: "pointer",
     transition: "all 0.3s ease",
     boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+    marginRight: "1rem",
   },
 };

@@ -30,7 +30,7 @@ export class User {
   @Prop({  required: false })
   profile_picture_url: string;
 
-  @Prop({ type: Number, required: false }) // Add average_score attribute
+  @Prop({ type: Number, default: null }) // Add average_score attribute
   gpa: number;
 
   @Prop({ type: [String], default: [] })

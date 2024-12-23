@@ -36,6 +36,11 @@ export class modules {
 
   @Prop({ type: Number, required: true, unique: true, min: 1 })
   module_order: number;
+
+  @Prop({ type: Boolean, default: true }) 
+notesEnabled: boolean;
+
 }
+
 
 export const ModuleSchema = SchemaFactory.createForClass(modules);

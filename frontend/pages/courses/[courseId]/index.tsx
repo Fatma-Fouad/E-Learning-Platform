@@ -66,16 +66,16 @@ const CoursePage = () => {
 
       <div style={styles.buttonContainer}>
         <div style={styles.buttonGroup}>
-          <button style={styles.button} onClick={() => router.push('/courses/${courseId}/engagement')}>
+          <button style={styles.button} onClick={() => router.push(`/courses/${courseId}/engagement`)}>
             Engagement Report
           </button>
-          <button style={styles.button} onClick={() => router.push('/courses/${courseId}/effectivness')}>
+          <button style={styles.button} onClick={() => router.push(`/courses/${courseId}/effectivness`)}>
             Content Effectiveness Report
           </button>
-          <button style={styles.button} onClick={() => router.push('/courses/${courseId}/results')}>
+          <button style={styles.button} onClick={() => router.push(`/courses/${courseId}/results`)}>
             Quiz Results Report
           </button>
-          <button style={styles.button} onClick={() => router.push('/courses/${courseId}/modules')}>
+          <button style={styles.button} onClick={() => router.push(`/courses/${courseId}/modules`)}>
             Manage Modules
           </button>
           <button style={styles.button} onClick={Update}>

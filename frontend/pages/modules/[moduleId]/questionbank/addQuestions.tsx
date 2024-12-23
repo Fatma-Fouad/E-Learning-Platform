@@ -6,6 +6,7 @@ const AddQuestionsPage = () => {
   const router = useRouter();
   const { moduleId, count } = router.query; // Get moduleId and count from query
   const questionCount = Number(count) || 0;
+  const [error, setError] = useState('');
 
   const [questions, setQuestions] = useState(
     Array.from({ length: questionCount }, () => ({
@@ -16,6 +17,14 @@ const AddQuestionsPage = () => {
       type: 'mcq',
     }))
   );
+
+  const token = localStorage.getItem("token");
+  console.log("Retrieved Token:", token);
+  if (!token) {
+    setError("Unauthorized access. Redirecting to login...");
+    router.push("/login");
+    return;
+  }
 
   const handleInputChange = (index: number, field: string, value: any) => {
     const updatedQuestions = [...questions];
@@ -35,7 +44,11 @@ const AddQuestionsPage = () => {
         module_id: moduleId,
         questions,
       };
-      await axios.post('http://localhost:3000/questionbank', payload); // API call
+      await axios.post('http://localhost:3000/questionbank', payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },}); // API call
       router.push(`/modules/${moduleId}/questionbank`); // Redirect back to question bank
     } catch (error) {
       console.error('Failed to create question bank:', error);
