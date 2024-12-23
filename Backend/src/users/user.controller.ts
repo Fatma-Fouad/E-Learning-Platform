@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Post, Delete, Param, BadRequestException, Body , UseGuards} from '@nestjs/common';
+import { Controller, Get,Req, Put,Query, Post, Delete, Param, BadRequestException, Body , UseGuards} from '@nestjs/common';
 import { AuthGuard } from '../authentication/auth.guard';
 import { UserService } from './user.service';
 import { RolesGuard } from '../authentication/roles.guard';
@@ -33,8 +33,8 @@ export class UserController {
   
 // hana
 @Post(':id/enroll-course/:courseId')
-@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
-@Roles('admin' as Role, 'student' as Role)
+//@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+//@Roles('admin' as Role, 'student' as Role)
   async enrollCourse(
   @Param('id') userId: string,
   @Param('courseId') courseId: string 
@@ -52,9 +52,12 @@ export class UserController {
 }
  
 
-//admin , student, instrctor
+//admin 
 @Get(':id/profile')
-//@UseGuards(AuthGuard) // Require authentication and specific roles
+@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+@Roles('admin' as Role)
+ // Require authentication and specific roles
 async getUserProfile(@Param('id') userId: string) {
   try {
     return await this.userService.getUserProfile(userId);
@@ -62,9 +65,10 @@ async getUserProfile(@Param('id') userId: string) {
     throw new BadRequestException(error.message);
   }
 }
-//admin , student, instrctor
+//admin 
 @Get()
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+@Roles('admin' as Role)
 async getAllUser() {
   try {
     return await this.userService.getAllUsers();
@@ -76,8 +80,8 @@ async getAllUser() {
 //student, instrctor not admin
   // Update user profile with error handling
 @Put(':id/profile')
-@UseGuards(AuthGuard, RolesGuard)
-@Roles('instructor' as Role, 'student' as Role)
+//@UseGuards(AuthGuard, RolesGuard)
+//@Roles('instructor' as Role, 'student' as Role)
 async updateUserProfile(@Param('id') userId: string, @Body() updateData: any) {
   if (Object.keys(updateData).length === 0) {
     throw new BadRequestException('Update data cannot be empty');
@@ -113,6 +117,7 @@ async updateUserProfile(@Param('id') userId: string, @Body() updateData: any) {
       throw new BadRequestException(error.message);
     }
   }
+
 //admin , student
   // Get completed courses for a user
   @Get(':id/completed-courses')
@@ -125,7 +130,6 @@ async updateUserProfile(@Param('id') userId: string, @Body() updateData: any) {
       throw new BadRequestException(error.message);
     }
   }
-
 
 
 // Create a new account (student/instructor) - admin
@@ -167,11 +171,26 @@ async deleteAccount(@Param('role') role: string, @Param('id') userId: string) {
     throw new BadRequestException(error.message);
   }
 }
+//
+@Delete('/delete-account')
+@UseGuards(AuthGuard)
+@Roles('student' as Role, 'instrctor' as Role)
+async deleteSelf(@Req() request: any) {
+  const authUserId = request.user._id; // Authenticated user ID from JWT/session
+  try {
+    await this.userService.deleteSelf(authUserId, authUserId);
+    return { message: 'Account deleted successfully.' };
+  } catch (error) {
+    throw new BadRequestException(error.message);
+  }
+}
+
+ 
 
 //admin , instrctor
 @Post(':instructorId/enroll-student/:studentId/:courseId')
-@UseGuards(AuthGuard, RolesGuard)
-@Roles('instructor' as Role, 'admin' as Role)
+//@UseGuards(AuthGuard, RolesGuard)
+//@Roles('instructor' as Role, 'admin' as Role)
   async enrollStudentInCourse(
     @Param('instructorId') instructorId: string,
     @Param('studentId') studentId: string,
@@ -212,5 +231,87 @@ async deleteAccount(@Param('role') role: string, @Param('id') userId: string) {
   async getLoginAttempts() {
     return this.LoginAttempt.find().sort({ timestamp: -1 }).exec();
   }
+
+  @Get('instructor/completed-courses')
+async trackCompletedCourses(
+  @Query('created_by') createdBy: string,
+) {
+  try {
+    if (!createdBy) {
+      throw new BadRequestException('Instructor identifier (created_by) is required.');
+    }
+
+    const result = await this.userService.trackInstructorCompletedCourses(createdBy);
+
+    return {
+      message: 'Completed courses tracked successfully.',
+      ...result,
+    };
+  } catch (error) {
+    throw new BadRequestException(error.message || 'Failed to track completed courses.');
+  }
+}
+// Get enrolled courses of a specific student (for instructors)
+@Get(':instructorId/student/:studentId/enrolled-courses')
+@UseGuards(AuthGuard, RolesGuard)
+@Roles('instructor' as Role, 'admin' as Role) // Restricted to instructors or admins
+async getStudentEnrolledCourses(
+  @Param('instructorId') instructorId: string,
+  @Param('studentId') studentId: string,
+) {
+  try {
+    // Validate that the requestor is an instructor or admin
+    const studentEnrolledCourses = await this.userService.getEnrolledCoursesInstructor(studentId);
+    return {
+      studentId,
+      enrolledCourses: studentEnrolledCourses,
+    };
+  } catch (error) {
+    throw new BadRequestException(error.message);
+  }
+}
+
+@Get('instructor/search-students')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('instructor' as Role)
+  async findStudentByName(
+    @Param('instructorId') instructorId: string,
+    @Query('name') name: string,
+  ) {
+    if (!name) {
+      throw new BadRequestException('Student name is required');
+    }
+
+    try {
+      return await this.userService.findStudentByName(name);
+    } catch (error) {
+      throw new BadRequestException(error.message || 'Failed to find students.');
+    }
+  }
+
+  /**
+   * 🔍 Student searching for instructors by name
+   * Accessible only by students
+   */
+  @Get('student/search-instructors')
+  //@UseGuards(AuthGuard, RolesGuard)
+  //@Roles('student' as Role)
+  async findInstructorByName(@Query('name') name: string) {
+    if (!name) {
+      throw new BadRequestException('Instructor name is required');
+    }
+
+    try {
+      return await this.userService.findInstructorByName(name);
+    } catch (error) {
+      throw new BadRequestException(error.message || 'Failed to find instructors.');
+    }
+  }
+
+
+
+
+
+
 
 }
