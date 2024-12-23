@@ -56,6 +56,7 @@ const CoursePage = () => {
   
   return (
     <div style={styles.page}>
+
       <div style={styles.header}>
         <h1 style={styles.title}>{courseData?.title || "Course Page"}</h1>
         <p style={styles.subtitle}>Instructor: {courseData?.instructor_name || "Unknown"}</p>
