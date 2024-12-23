@@ -117,15 +117,17 @@ export class ResponseService {
             // German GPA Formula
             const maxGrade = 100; // Maximum possible grade
             const minGrade = 50;  // Minimum passing grade
-            user.gpa = 1 + 3 * ((maxGrade - avgScore) / (maxGrade - minGrade));
-          } else {
-            user.gpa = 5.0; // Default to failing GPA if no completed courses
-          }
+            user.gpa = Math.max(1, Math.min(5, 1 + 3 * ((maxGrade - avgScore) / (maxGrade - minGrade))));
+            } else {
+              user.gpa = null; // GPA is not calculated if no courses are completed
+            }
 
           await user.save();
         }
       }
     }
+
+    progress.last_quiz_score = percentageScore;
   
     // Save progress
     await progress.save();

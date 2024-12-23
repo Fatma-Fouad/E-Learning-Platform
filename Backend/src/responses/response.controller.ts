@@ -8,7 +8,7 @@ import { RolesGuard } from 'src/authentication/roles.guard';
 export class ResponseController {
   constructor(private responseService: ResponseService) {}
 
-  @Post()
+  @Post('submit')
   @UseGuards(AuthGuard, RolesGuard) 
   @Roles('student' as Role)
   async submitQuizResponse(

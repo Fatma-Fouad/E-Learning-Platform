@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+import axios from "axios";
 import { io, Socket } from "socket.io-client";
 import { getSocket } from "../utils/socket";
 
@@ -8,6 +9,9 @@ const Home = () => {
   const [user, setUser] = useState<{ name: string; role: string; email: string; userId: string } | null>(null);
   const [notifications, setNotifications] = useState<{ type: string; content: string }[]>([]);
   const [socket, setSocket] = useState<Socket | null>(null);
+  const [gpa, setGpa] = useState(null);
+  const token = localStorage.getItem("token");
+  const storedUserId = localStorage.getItem("userId");
 
   // Fetch user information from localStorage
   useEffect(() => {
@@ -27,6 +31,39 @@ const Home = () => {
   }, [router]);
 
   useEffect(() => {
+    if (user?.role === "student") {
+      const fetchStudentGPA = async () => {
+        if (!storedUserId) {
+          console.error("No student ID found in local storage.");
+          return;
+        }
+
+        try {
+          const response = await axios.get(
+            `http://localhost:3000/user/${storedUserId}/profile`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          console.log("Student data:", response.data); // Log the student data
+
+          const fetchedGpa = response.data?.gpa; // Assuming GPA is under data.gpa
+          if (fetchedGpa !== undefined) {
+            console.log("Fetched GPA:", fetchedGpa);
+            setGpa(fetchedGpa);
+          } else {
+            console.error("GPA not found for the student.");
+          }
+        } catch (err) {
+          console.error("Error fetching student data:", err);
+        }
+      };
+
+      fetchStudentGPA();
+    }
+
     if (user?.userId) {
       const socketConnection = io("http://localhost:3000", {
         query: { userId: user.userId },
@@ -53,7 +90,8 @@ const Home = () => {
         socketConnection.disconnect();
       };
     }
-  }, [user?.userId]);
+  }, [user?.userId, storedUserId, token]);
+  
 
   // Handle logout
   const handleLogout = () => {
@@ -71,20 +109,13 @@ const Home = () => {
     router.push("courses/FindCourse");
   };
 
-  // Handle Student courses
-  const StudentCourses = () => {
-    router.push("courses/MyCourses_st");
-  };
-
   const handleStudentCourses = () => {
     router.push("/courses/MyCourses_st");
   };
-  
+
   const handleInstructorCourses = () => {
     router.push("/courses/MyCourses_in");
   };
-  
-
 
   return (
     <div>
@@ -94,23 +125,17 @@ const Home = () => {
         <button onClick={handleLogout} style={styles.logoutButton}>
           Logout
         </button>
-        <button onClick={handleLogout} style={styles.logoutButton}>
-          Logout
-        </button>
-        <button onClick={handleLogout} style={styles.logoutButton}>
-          Logout
-        </button>
         <button onClick={Find_Course} style={styles.logoutButton}>
           Find a course
         </button>
         {user?.role === "student" && (
           <button style={styles.logoutButton} onClick={handleStudentCourses}>
-            My Courses (stud)
+            My Courses
           </button>
         )}
         {user?.role === "instructor" && (
           <button style={styles.logoutButton} onClick={handleInstructorCourses}>
-            My Courses (inst)
+            My Courses
           </button>
         )}
       </nav>
@@ -119,7 +144,7 @@ const Home = () => {
       <div style={{ padding: "20px" }}>
         <h1>Welcome to the Home Page!</h1>
         {user ? (
-          <div style={userInfoStyle}>
+          <div style={styles.userInfo}>
             <p>
               <strong>Name:</strong> {user.name}
             </p>
@@ -129,6 +154,11 @@ const Home = () => {
             <p>
               <strong>Role:</strong> {user.role}
             </p>
+            {user?.role === "student" && (
+              <p>
+                <strong>GPA:</strong> {gpa !== null ? gpa : "Loading..."}
+              </p>
+            )}
           </div>
         ) : (
           <p>Loading user information...</p>
@@ -215,10 +245,6 @@ const styles = {
     cursor: "pointer",
     fontSize: "1rem",
     borderRadius: "5px",
-  },
-  content: {
-    padding: "2rem",
-    textAlign: "center",
   },
   userInfo: {
     marginTop: "1rem",
