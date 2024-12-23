@@ -62,9 +62,12 @@ const AllCoursesPage = () => {
           }
         );
         if (response.data.courses.length === 0) {
+          // If no courses are found, set the error message but don't stop the app
           setError("No courses found for this instructor.");
+          setCourses([]); // Ensure courses is set to an empty array
+        } else {
+          setCourses(response.data.courses);
         }
-        setCourses(response.data.courses || []);
       } catch (err: any) {
         console.error("Error fetching courses by instructor:", err);
         setError(err.response?.data?.message || "Failed to fetch courses. Please try again.");
@@ -134,13 +137,14 @@ const AllCoursesPage = () => {
   };
 
   if (loading) return <p>Loading courses...</p>;
-  if (error && courses.length === 0) return <p style={{ color: "red" }}>{error}</p>;
 
   return (
     <div>
       <h1>All Courses</h1>
 
-      {courses.length > 0 ? (
+      {error && courses.length === 0 ? (
+        <p style={{ color: "orange" }}>{error}</p>
+      ) : (
         <ul>
           {courses.map((course) => (
             <li key={course._id}>
@@ -156,8 +160,6 @@ const AllCoursesPage = () => {
             </li>
           ))}
         </ul>
-      ) : (
-        <p style={{ color: "orange" }}>Warning: This instructor currently has no courses listed.</p>
       )}
 
       <h2>Create a New Course</h2>

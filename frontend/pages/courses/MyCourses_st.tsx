@@ -58,7 +58,11 @@ const MyCoursesPage = () => {
   }, [router]);
 
   const handleViewModules = (courseId: string) => {
-    router.push(`/courses/${courseId}/modules`);
+    router.push(`/courses/${courseId}/modules_st`);
+  };
+
+  const handleViewProgress = (courseId: string) => {
+    router.push(`/courses/${courseId}/progress`);
   };
 
   if (loading) return <p>Loading...</p>;
@@ -81,6 +85,9 @@ const MyCoursesPage = () => {
               </p>
               <button onClick={() => handleViewModules(course._id)}>
                 View Modules
+              </button>
+              <button onClick={() => handleViewProgress(course._id)}>
+                 View Progress
               </button>
             </li>
           ))}
