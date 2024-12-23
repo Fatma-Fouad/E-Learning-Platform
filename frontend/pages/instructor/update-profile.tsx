@@ -21,11 +21,11 @@ const UpdateProfile = () => {
 
     const fetchProfile = async () => {
       try {
-        const response = await axios.get(`/api/user/${userId}/profile`, {
+        const response = await axios.get(`http://localhost:3000/user/${userId}/profile`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        });
+        });        
         setProfile(response.data);
         setName(response.data.name);
         setProfilePicture(response.data.profile_picture); // Assuming profile_picture is part of the response
@@ -51,11 +51,11 @@ const UpdateProfile = () => {
     };
 
     try {
-      const response = await axios.put(`/api/user/${userId}/profile`, updateData, {
+      const response = await axios.put(`http://localhost:3000/user/${userId}/profile`, updateData, {
         headers: {
-          Authorization: `Bearer ${token}`, // Send token for authentication
+          Authorization: `Bearer ${token}`,
         },
-      });
+      });      
       setSuccessMessage('Profile updated successfully!');
       setError('');
     } catch (err: any) {
