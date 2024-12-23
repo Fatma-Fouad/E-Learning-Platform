@@ -69,17 +69,24 @@ export class ForumsController {
 
     // Search for threads within a specific course
     @Get(':courseId/search-threads')
-
     async searchThreadsInCourse(
         @Param('courseId') courseId: string,
         @Query('q') searchTerm: string,
     ) {
-        console.log('Search threads in course:', courseId, 'Search Term:', searchTerm);
+        console.log('🔍 Course ID:', courseId, 'Search Term:', searchTerm);
+
         if (!searchTerm || searchTerm.trim() === '') {
             throw new BadRequestException('Search term is required');
         }
-        return this.forumsService.searchThreadsInCourse(courseId, searchTerm);
+
+        const threads = await this.forumsService.searchThreadsInCourse(courseId, searchTerm);
+
+        console.log('🧵 Filtered Threads:', threads);
+
+        return Array.isArray(threads) ? threads : [];
     }
+
+
 
     // Post a new thread
     @Post(':courseId/threads')

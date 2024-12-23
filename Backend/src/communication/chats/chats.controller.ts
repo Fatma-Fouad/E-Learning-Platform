@@ -133,8 +133,6 @@ export class ChatController {
 
   
     @Get('course/:courseId')
-    //@UseGuards(AuthGuard, RolesGuard)
-    //@Roles('instructor' as Role, 'admin' as Role)
     async getChatsByCourse(
         @Param('courseId') courseId: string,
         @Query('userId') userId: string
@@ -156,21 +154,22 @@ export class ChatController {
         // Fetch all chats for the course
         const chats = await this.chatService.getChatsByCourse(courseId);
 
-        // Filter chats based on user role
         if (user.role === 'instructor') {
-            // Instructors only see mixed chats
+            // Instructors see all mixed chats
             return chats.filter(chat => chat.type === 'mixed');
         }
 
         if (user.role === 'student') {
-            // Cast userId to ObjectId for comparison
-            const userObjectId = new Types.ObjectId(userId);
-            return chats.filter(chat => chat.participants.some(id => id.equals(userObjectId)));
+            // Students see chats they're participants in and mixed chats for their course
+            const userObjectId = new mongoose.Types.ObjectId(userId);
+            return chats.filter(
+                chat => chat.type === 'mixed' || chat.participants.some(id => id.equals(userObjectId))
+            );
         }
 
-        // Fallback: If role is unrecognized, return an empty array
         return [];
     }
+
 
 
 

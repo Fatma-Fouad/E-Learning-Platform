@@ -220,12 +220,12 @@ export class ForumsService {
             const replier = await this.userModel.findById(reply.userId).select('name').exec();
             const senderName = replier?.name || 'Unknown User';
 
-            // ✅ Ensure Participants are Strings
-            const participantIds: string[] = (updatedForum.participants || []).map((participantId) =>
-                participantId.toString()
-            );
+            // ✅ Ensure Participants are Strings & Exclude the Sender
+            const participantIds: string[] = (updatedForum.participants || [])
+                .map((participantId) => participantId.toString())
+                .filter((participantId) => participantId !== reply.userId.toString());
 
-            console.log('✅ Participants to Notify:', participantIds);
+            console.log('✅ Participants to Notify (excluding sender):', participantIds);
 
             // ✅ Trigger Notification
             await this.notificationGateway.sendReplyNotification(
@@ -241,7 +241,6 @@ export class ForumsService {
             throw new InternalServerErrorException('Unable to add reply.');
         }
     }
-
 
 
 
@@ -264,6 +263,8 @@ export class ForumsService {
             throw new Error('Unable to perform course search.');
         }
     }
+
+    
 
 
     // Search forums by thread title
@@ -288,37 +289,35 @@ export class ForumsService {
         }
     }
 
-    async searchThreadsInCourse(courseId: string, searchTerm: string): Promise<any> {
+    
+
+    async searchThreadsInCourse(courseId: string, searchTerm: string): Promise<any[]> {
         try {
             const regex = new RegExp(searchTerm, 'i'); // Case-insensitive regex
-            console.log('Searching threads in courseId:', courseId, 'with searchTerm:', regex);
+            console.log('🔍 Searching threads in courseId:', courseId, 'with searchTerm:', regex);
 
-            // Validate the courseId
-            if (!mongoose.Types.ObjectId.isValid(courseId)) {
-                throw new Error('Invalid courseId format');
-            }
-
-            // Query for the forum with matching threads
-            const forum = await this.forumModel.findOne(
+            // Query forums by courseId and filter threads with a regex match on the title
+            const result = await this.forumModel.find(
                 {
-                    courseId: new mongoose.Types.ObjectId(courseId),
-                    'threads.title': { $regex: regex }, // Match threads with title containing searchTerm
+                    courseId: courseId,
+                    'threads.title': { $regex: regex }
                 },
                 {
                     courseName: 1,
-                    threads: { $elemMatch: { title: { $regex: regex } } }, // Return only matching threads
+                    threads: { $elemMatch: { title: { $regex: regex } } }
                 }
             ).exec();
 
-            if (!forum) {
-                throw new NotFoundException(`No threads found for search term '${searchTerm}' in course '${courseId}'.`);
-            }
+            console.log('🔄 Raw Search Results:', result);
 
-            console.log('Search Results:', forum);
-            return forum;
+            // Flatten the threads from all matching forums
+            const filteredThreads = result.flatMap(forum => forum.threads || []);
+
+            console.log('🧵 Filtered Threads:', filteredThreads);
+            return filteredThreads;
         } catch (error) {
-            console.error('Error during searchThreadsInCourse:', error.message);
-            throw new Error('Unable to search threads in the specified course.');
+            console.error('❌ Backend Error during search:', error.message);
+            throw new Error('Unable to perform search.');
         }
     }
 
@@ -566,6 +565,8 @@ export class ForumsService {
             throw new Error('Unable to delete reply.');
         }
     }
+
+    
 
 }
 

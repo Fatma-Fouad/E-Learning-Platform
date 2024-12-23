@@ -25,6 +25,8 @@ export class ChatService {
         return user;
     }
 
+    
+
 
     async getAllChats(): Promise<Chat[]> {
         return this.chatModel.find().exec();
@@ -39,8 +41,8 @@ export class ChatService {
     ): Promise<Chat> {
         console.log('Creating chat with:', { chatName, participantIds, courseId, userId, type });
 
-        if (!chatName || !participantIds || !courseId || !userId || !type) {
-            throw new BadRequestException('Missing required fields: chatName, participantIds, courseId, userId, or type.');
+        if (!chatName || !courseId || !userId || !type) {
+            throw new BadRequestException('Missing required fields: chatName, courseId, userId, or type.');
         }
 
         // Validate creator's existence
@@ -49,30 +51,42 @@ export class ChatService {
             throw new NotFoundException(`User with ID ${userId} not found.`);
         }
 
-        // Validate participant IDs
-        const participants = await this.userModel
-            .find({ _id: { $in: participantIds } }, 'role')
-            .exec();
+        let finalParticipants: mongoose.Types.ObjectId[] = [];
 
-        if (!participants || participants.length !== participantIds.length) {
-            throw new BadRequestException('One or more participant IDs are invalid.');
+        if (type === 'mixed') {
+            // Fetch all students in the course
+            const students = await this.userModel.find({
+                role: 'student',
+                courses: courseId
+            }).exec();
+
+            if (!students || students.length === 0) {
+                throw new NotFoundException(`No students found for course ${courseId}.`);
+            }
+
+            finalParticipants = students.map(student => student._id);
+        } else {
+            // Default participant logic for other chat types
+            finalParticipants = participantIds.map(id => new mongoose.Types.ObjectId(id));
         }
 
-        // Explicitly use the passed type
-        const chatType = type;
+        // Ensure creator is part of the participants
+        if (!finalParticipants.includes(new mongoose.Types.ObjectId(userId))) {
+            finalParticipants.push(new mongoose.Types.ObjectId(userId));
+        }
 
         // Create the chat
         const newChat = new this.chatModel({
             chatName,
-            participants: participantIds.map(id => new mongoose.Types.ObjectId(id)),
+            participants: finalParticipants,
             courseId: new mongoose.Types.ObjectId(courseId),
-            type: chatType,
+            type,
             creatorId: new mongoose.Types.ObjectId(userId),
         });
 
         return newChat.save();
     }
-  
+
 
     async getChatsByCourse(courseId: string): Promise<Chat[]> {
         return this.chatModel.find({ courseId: new mongoose.Types.ObjectId(courseId) }).exec();

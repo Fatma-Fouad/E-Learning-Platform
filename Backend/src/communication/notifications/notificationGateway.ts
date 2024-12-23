@@ -118,16 +118,39 @@ export class NotificationGateway {
     }
 
 
-    async sendReplyNotification(userIds: string[], replyContent: string, senderName: string, senderId: string) {
+    async sendReplyNotification(
+        userIds: string[],
+        replyContent: string,
+        senderName: string,
+        senderId: string
+    ) {
         try {
+            // ✅ Log Details Before Sending Notifications
+            console.log('🔔 Sending reply notifications to users:', userIds);
+            console.log('📝 Reply Content:', replyContent);
+            console.log('👤 Sender Name:', senderName);
+            console.log('🆔 Sender ID:', senderId);
+
             for (const userId of userIds) {
                 const roomName = `user:${userId}`;
+
+                // ✅ Verify Room Existence Before Emitting
+                const roomMembers = this.server.sockets.adapter.rooms.get(roomName);
+                if (!roomMembers || roomMembers.size === 0) {
+                    console.warn(`⚠️ Room ${roomName} does not exist or has no active members.`);
+                    continue;
+                }
+
+                // ✅ Send Notification
                 this.server.to(roomName).emit('newReply', {
                     sender: senderName,
                     content: `A new reply was added: "${replyContent}"`,
                     timestamp: new Date(),
                 });
+
+                console.log(`📡 Notification sent to room: ${roomName}`);
             }
+
             console.log('✅ Reply notifications sent successfully.');
         } catch (error) {
             console.error('❌ Error sending reply notifications:', error.message);

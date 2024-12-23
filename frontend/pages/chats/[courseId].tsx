@@ -74,16 +74,16 @@ const ChatsPage = () => {
 
         const socket = getSocket(userId);
 
-        // ✅ Join Chat Room
+        // ✅ Join the chat room
         socket.emit('joinChat', { chatId: selectedChat, userId });
         console.log(`🟢 Joined chat room: chat:${selectedChat}`);
 
-        // ✅ Handle Real-Time Messages
+        // ✅ Handle New Messages
         const handleNewMessage = (message) => {
             console.log('💬 Real-Time Message Received:', message);
 
             setMessages((prevMessages) => {
-                // ✅ Prevent duplicates based on local flag and sender
+                // Check for duplicates based on sender, content, and timestamp
                 const isDuplicate = prevMessages.some(
                     (msg) =>
                         msg.sender === message.sender &&
@@ -93,12 +93,6 @@ const ChatsPage = () => {
 
                 if (isDuplicate) {
                     console.warn('⚠️ Duplicate message detected, skipping:', message);
-                    return prevMessages; // Do not add duplicate
-                }
-
-                // ✅ Ignore messages flagged as local
-                if (message.sender === userId && message.local) {
-                    console.warn('⚠️ Skipping local message duplicate from WebSocket.');
                     return prevMessages;
                 }
 
@@ -106,7 +100,7 @@ const ChatsPage = () => {
                     ...prevMessages,
                     {
                         sender: message.sender,
-                        senderName: message.senderName || message.sender,
+                        senderName: message.senderName || 'Unknown',
                         content: message.content,
                         timestamp: message.timestamp || new Date().toISOString(),
                     },
@@ -114,13 +108,12 @@ const ChatsPage = () => {
             });
         };
 
-
-        // ✅ Prevent Duplicate Listeners
-        socket.off('OnMessage'); // Clear previous listeners
+        // ✅ Remove Previous Listeners Before Adding
+        socket.off('OnMessage');
         socket.on('OnMessage', handleNewMessage);
 
         // ✅ Handle Errors
-        socket.off('error'); // Clear any previous error listener
+        socket.off('error');
         socket.on('error', (error) => {
             console.error('❌ Socket Error:', error);
         });
@@ -133,6 +126,7 @@ const ChatsPage = () => {
             console.log(`🛑 Left chat room: chat:${selectedChat}`);
         };
     }, [userId, selectedChat]);
+
 
     // Fetch chat history
     const loadChatHistory = async (chatId: string) => {

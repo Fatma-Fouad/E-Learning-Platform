@@ -11,8 +11,10 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors({
     origin: 'http://localhost:3000', // Allow frontend
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], // Added PATCH and OPTIONS
+    allowedHeaders: ['Content-Type', 'Authorization'], // Allow necessary headers
+    credentials: true, // Include credentials (cookies, auth headers, etc.)
+
   });
   mongoose.connection.on('connected', () => {
     logger.log('Successfully connected to MongoDB');

@@ -1,3 +1,8 @@
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import axios from 'axios';
+
+
 import { io, Socket } from 'socket.io-client';
 
 const BASE_URL = 'http://localhost:3001';
@@ -75,14 +80,31 @@ const setupGlobalListeners = (socket: Socket) => {
     });
 
     /** ✅ Listen for New Reply Notifications */
+    /** ✅ Listen for New Reply Notifications */
     socket.off('newReply').on('newReply', (payload) => {
         console.log('🔔 New Reply Notification:', payload);
-        showNotification({
-            title: '💬 New Reply Received',
-            message: payload.content,
-            sender: payload.sender,
-        });
+
+        // Directly trigger a toast notification
+        toast.info(
+            `💬 ${payload.sender || 'System'}: ${payload.content}`,
+            {
+                position: 'top-right',
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: 'dark',
+                style: {
+                    backgroundColor: '#1e293b', // Dark background
+                    color: '#f8fafc', // Light text
+                    borderRadius: '8px',
+                }
+            }
+        );
     });
+
 
     /** ✅ Listen for General Notifications */
     socket.off('newNotification').on('newNotification', (payload) => {

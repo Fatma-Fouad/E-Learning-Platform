@@ -1,4 +1,20 @@
+import axios from 'axios';
+
+
 const BASE_URL = 'http://localhost:3001';
+interface Thread {
+    title: string;
+    description: string;
+}
+
+interface Thread {
+    title: string;
+    description: string;
+    createdBy: string;
+    threadId: string;
+    createdAt: string;
+    replies: any[];
+}
 
 // Fetch all available courses
 export const fetchCourses = async (): Promise<{ _id: string; title: string }[]> => {
@@ -27,19 +43,25 @@ export const searchCoursesByKeyword = async (keyword: string) => {
     return result.courses; // Return the "courses" array
 };
 
+export const searchThreadsInCourse = async (courseId: string, searchTerm: string): Promise<Thread[]> => {
+    try {
+        console.log('🔍 Searching Threads in Course:', { courseId, searchTerm });
 
+        const response = await axios.get(`http://localhost:3001/forums/${courseId}/search-threads`, {
+            params: { q: searchTerm }
+        });
 
-export const searchThreadsInCourse = async (courseId: string, searchTerm: string) => {
-    const response = await fetch(
-        `${BASE_URL}/forums/${courseId}/search-threads?q=${encodeURIComponent(searchTerm)}`
-    );
-    if (!response.ok) {
-        throw new Error('Failed to search threads in course.');
+        if (Array.isArray(response.data)) {
+            return response.data;
+        }
+
+        console.warn('⚠️ API response is not an array:', response.data);
+        return []; // Return an empty array as a fallback
+    } catch (error: any) {
+        console.error('❌ Error during search:', error.response?.data || error.message);
+        return []; // Always return an array on error
     }
-    return response.json();
 };
-
-
 
 
 export const fetchCourseById = async (id: string, userId?: string) => {
@@ -57,16 +79,37 @@ export const fetchCourseById = async (id: string, userId?: string) => {
 
         if (!response.ok) {
             const errorDetails = await response.text();
+            console.error(`❌ Response Error: ${response.status} - ${errorDetails}`);
             throw new Error(`Failed to fetch course details: ${response.status} - ${errorDetails}`);
         }
 
-        return await response.json();
+        const result = await response.json();
+        console.log('📊 Fetched Course Data:', result);
+        return result;
     } catch (error: any) {
         console.error('❌ Error fetching course details:', error.message);
         throw new Error(`Unable to fetch course details: ${error.message}`);
     }
 };
 
+export const fetchAvailableCourses = async () => {
+    try {
+        console.log('🔗 Fetching available courses from backend...');
+        const response = await fetch(`${BASE_URL}/courses/available-courses`);
+
+        if (!response.ok) {
+            const errorDetails = await response.text();
+            throw new Error(`Failed to fetch available courses: ${response.status} - ${errorDetails}`);
+        }
+
+        const data = await response.json();
+        console.log('✅ Fetched Courses:', data);
+        return data;
+    } catch (error: any) {
+        console.error('❌ Error fetching available courses:', error.message);
+        throw new Error(`Unable to fetch available courses: ${error.message}`);
+    }
+};
 
 
 export const fetchForumsByCourse = async (courseId: string, userId: string) => {

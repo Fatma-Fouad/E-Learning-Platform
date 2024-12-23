@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
+import { toast } from 'react-toastify';
+import axios from 'axios';
+
+
 import {
     fetchForumsByCourse,
     addThread,
@@ -9,6 +13,8 @@ import {
     editThread,
     addForum,
     deleteForum,
+    searchThreadsInCourse,
+   
 } from '../../utils/api';
 
 
@@ -29,12 +35,15 @@ const CourseForumsPage = () => {
     const [forums, setForums] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
     const [newThread, setNewThread] = useState({ title: '', description: '' });
     const [newReply, setNewReply] = useState({ message: '', threadId: '' });
     const [editThreadData, setEditThreadData] = useState({ threadId: '', title: '', description: '' });
     const [newForumName, setNewForumName] = useState<string>('');
     const [showNewForumForm, setShowNewForumForm] = useState<boolean>(false);
+    const [searchTerm, setSearchTerm] = useState<string>(''); // For search input
+    const [searchResults, setSearchResults] = useState([]); // For displaying search results
+    const [isSearching, setIsSearching] = useState<boolean>(false); // To track search state
+
 
     // Load userId and role from localStorage
     useEffect(() => {
@@ -86,7 +95,42 @@ const CourseForumsPage = () => {
         loadForums();
     }, [courseId, userId]);
 
-    // Add new thread
+    const handleSearch = async () => {
+        if (!searchTerm.trim()) {
+            toast.warn('⚠️ Please enter a search term.');
+            return;
+        }
+
+        if (!courseId) {
+            toast.error('❌ Course ID is missing.');
+            return;
+        }
+
+        setIsSearching(true);
+        try {
+            console.log('🔗 Calling Backend API with:', { courseId, searchTerm });
+            const data = await searchThreadsInCourse(courseId as string, searchTerm);
+
+            if (Array.isArray(data)) {
+                setSearchResults(data);
+                setError(null);
+                toast.success('✅ Search completed successfully!');
+            } else {
+                setSearchResults([]);
+                setError('No threads found.');
+                toast.warn('⚠️ No matching threads found.');
+            }
+        } catch (error: any) {
+            console.error('❌ Search error:', error.message);
+            setError(error.message || 'Failed to fetch search results.');
+            setSearchResults([]);
+            toast.error(`❌ ${error.message || 'Failed to fetch search results.'}`);
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
+
     // Add new thread
     const handleAddThread = async () => {
         if (!userId) {
@@ -130,11 +174,13 @@ const CourseForumsPage = () => {
     const handleAddReply = async (threadId: string) => {
         if (!userId) {
             setError('User ID is missing. Please log in.');
+            toast.error('❌ User ID is missing. Please log in.');
             return;
         }
         const replyMessage = newReply.threadId === threadId ? newReply.message.trim() : '';
         if (!replyMessage) {
             setError('Please enter a reply message.');
+            toast.warn('⚠️ Please enter a reply message.');
             return;
         }
 
@@ -143,9 +189,10 @@ const CourseForumsPage = () => {
             setNewReply({ message: '', threadId: '' });
             setError(null);
             loadForums();
-            alert('Reply added successfully!');
+            toast.success('💬 Reply added successfully!');
         } catch {
             setError('Failed to add reply.');
+            toast.error('❌ Failed to add reply.');
         }
     };
 
@@ -236,6 +283,7 @@ const CourseForumsPage = () => {
     if (error) return <p style={{ color: 'red' }}>{error}</p>;
 
     return (
+
         <div style={{
             padding: '20px',
             fontFamily: 'Arial, sans-serif',
@@ -260,6 +308,82 @@ const CourseForumsPage = () => {
                     Forums for Course: {forums.length > 0 && forums[0].courseName}
                 </h1>
 
+                {/* 🔍 Search Bar Section */}
+                <div style={{
+                    marginBottom: '30px',
+                    textAlign: 'center',
+                    padding: '15px',
+                    border: '1px solid #ccc',
+                    borderRadius: '8px',
+                    backgroundColor: '#fdfdfd'
+                }}>
+                    <h3 style={{ marginBottom: '10px', color: '#34495e' }}>🔍 Search Threads</h3>
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        gap: '10px'
+                    }}>
+                        <input
+                            type="text"
+                            placeholder="Search threads..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSearch();
+                            }}
+                            style={{
+                                padding: '8px',
+                                width: '60%',
+                                border: '1px solid #ccc',
+                                borderRadius: '4px'
+                            }}
+                        />
+                        <button
+                            onClick={handleSearch}
+                            style={{
+                                padding: '8px 12px',
+                                backgroundColor: '#3498db',
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: isSearching ? 'not-allowed' : 'pointer'
+                            }}
+                            disabled={isSearching}
+                        >
+                            {isSearching ? 'Searching...' : 'Search'}
+                        </button>
+                    </div>
+                </div>
+
+                {/* 🔍 Display Search Results */}
+                {searchResults.length > 0 ? (
+                    <div style={{
+                        marginBottom: '30px',
+                        padding: '15px',
+                        border: '1px solid #ddd',
+                        borderRadius: '8px',
+                        backgroundColor: '#fdfdfd'
+                    }}>
+                        <h3 style={{ marginBottom: '10px', color: '#2c3e50' }}>🔍 Search Results</h3>
+                        <ul style={{ listStyle: 'none', padding: '0' }}>
+                            {searchResults.map((thread) => (
+                                <li key={thread.threadId} style={{
+                                    marginBottom: '20px',
+                                    padding: '10px',
+                                    borderBottom: '1px solid #eee'
+                                }}>
+                                    <h4 style={{ color: '#2980b9', marginBottom: '5px' }}>{thread.title}</h4>
+                                    <p style={{ color: '#7f8c8d', marginBottom: '5px' }}>{thread.description}</p>
+                                    <small style={{ color: '#999' }}>
+                                        Created At: {new Date(thread.createdAt).toLocaleString()}
+                                    </small>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                ) : (
+                    <p style={{ textAlign: 'center', color: '#7f8c8d' }}>No results found. Try a different search term.</p>
+                )}
                 {/* Add New Thread Section */}
                 <div style={{
                     marginBottom: '30px',
@@ -476,8 +600,10 @@ const CourseForumsPage = () => {
                                                 >
                                                     Delete Reply
                                                 </button>
+                                                
                                             </li>
                                         ))}
+                                        
                                     </ul>
                                 </li>
                             ))}

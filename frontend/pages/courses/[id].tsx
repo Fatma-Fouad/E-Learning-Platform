@@ -19,9 +19,9 @@ const CourseDetailPage = () => {
     const router = useRouter();
     const { id } = router.query; // Extract course ID
 
-    const [course, setCourse] = useState < Course | null > (null);
-    const [loading, setLoading] = useState < boolean > (true);
-    const [error, setError] = useState < string | null > (null);
+    const [course, setCourse] = useState<Course | null>(null);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const loadCourse = async () => {

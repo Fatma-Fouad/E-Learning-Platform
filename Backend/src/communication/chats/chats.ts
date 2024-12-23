@@ -45,7 +45,7 @@ export class ChatGateway implements OnModuleInit {
                 console.log(`Client disconnected: ${socket.id}`);
             });
         });
-    
+
     }
     @SubscribeMessage('sendMessage')
     async handleSendMessage(
