@@ -1,81 +1,50 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
 
-const DeleteInstructorAccount = () => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+const DeleteAccountPage = () => {
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const router = useRouter();
 
-  // Handle account deletion
-  const handleDeleteAccount = async () => {
-    setError('');
-    setSuccessMessage('');
-    setLoading(true);
+  useEffect(() => {
+    // Get the userId and token from localStorage
+    const userId = localStorage.getItem('userId');
+    const token = localStorage.getItem('token');
 
-    try {
-      await axios.delete('/api/user/delete-account');
-      setSuccessMessage('Account deleted successfully. Redirecting to login...');
-      
-      setTimeout(() => {
-        router.push('/login');
-      }, 2000);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to delete account.');
-    } finally {
-      setLoading(false);
+    if (!userId || !token) {
+      setError('User is not authenticated. Please log in first.');
+      return;
     }
-  };
+
+    const handleDeleteAccount = async () => {
+      try {
+        // Making the DELETE request to the API endpoint with userId as parameter
+        const response = await axios.delete(`http://localhost:3000/user/${userId}/delete-account`, {
+          headers: {
+            Authorization: `Bearer ${token}`, // Sending the token for authentication
+          },
+        });
+
+        setSuccessMessage(response.data.message); // Display success message
+        // After successful deletion, redirect the user to the login page or home page
+        setTimeout(() => router.push('/login'), 2000); // Redirect after 2 seconds
+      } catch (error: any) {
+        setError(error.response?.data?.message || 'Failed to delete account.');
+      }
+    };
+
+    handleDeleteAccount();
+  }, [router]);
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '600px', margin: 'auto' }}>
-      <h1>🛑 Delete Account</h1>
-      <p>
-        Warning: Deleting your account is permanent and cannot be undone. All your data will be
-        removed from the system.
-      </p>
+    <div style={{ padding: '2rem', maxWidth: '800px', margin: 'auto' }}>
+      <h1>Delete Account</h1>
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
       {successMessage && <p style={{ color: 'green' }}>{successMessage}</p>}
-      {loading && <p>Deleting your account...</p>}
-
-      <button
-        onClick={handleDeleteAccount}
-        style={{
-          backgroundColor: '#ff4d4f',
-          color: 'white',
-          padding: '10px',
-          width: '100%',
-          border: 'none',
-          cursor: 'pointer',
-          fontSize: '1rem',
-          borderRadius: '5px',
-          marginTop: '20px',
-        }}
-        disabled={loading}
-      >
-        {loading ? 'Deleting...' : 'Delete My Account'}
-      </button>
-
-      <button
-        onClick={() => router.push('/instructor/dashboard')}
-        style={{
-          backgroundColor: '#0070f3',
-          color: 'white',
-          padding: '10px',
-          width: '100%',
-          border: 'none',
-          cursor: 'pointer',
-          fontSize: '1rem',
-          borderRadius: '5px',
-          marginTop: '10px',
-        }}
-      >
-        Cancel
-      </button>
     </div>
   );
 };
 
-export default DeleteInstructorAccount;
+export default DeleteAccountPage;

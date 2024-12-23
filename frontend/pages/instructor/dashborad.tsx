@@ -31,7 +31,7 @@ const InstructorDashboard = () => {
             </Link>
           </li>
           <li>
-            <Link href="/instructor/student-enrolled-courses">
+            <Link href="/instructor/student.enrolled-courses">
               <button style={buttonStyle}>View Student Enrolled Courses</button>
             </Link>
           </li>

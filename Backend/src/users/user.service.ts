@@ -101,13 +101,18 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
     if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
       throw new BadRequestException('Invalid user ID format');
     }
-
-    const user = await this.userModel.findById(userId).select('completedCourses').exec();
+  
+    // Fetch the user by ID and select the 'completed_courses' field
+    const user = await this.userModel.findById(userId).select('completed_courses').exec();
+    
     if (!user) {
       throw new NotFoundException('User not found');
     }
+    
+    // Return the completed_courses array
     return user.completed_courses;
   }
+  
    
 
 
@@ -344,31 +349,32 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
     }
   }
 
-async deleteSelf(userId: string, authUserId: string): Promise<void> {
-  // Validate that the user is deleting their own account
-  if (userId !== authUserId) {
-    throw new ForbiddenException('You can only delete your own account.');
+  async deleteSelf(userId: string, authUserId: string): Promise<void> {
+    // Validate that the user is deleting their own account
+    if (userId !== authUserId) {
+      throw new ForbiddenException('You can only delete your own account.');
+    }
+  
+    // Fetch the user from the database
+    const user = await this.userModel.findById(userId).exec();
+  
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+  
+    // Prevent Admins from deleting themselves (optional)
+    if (user.role === 'admin') {
+      throw new ForbiddenException('Admins cannot delete their own accounts.');
+    }
+  
+    // Delete the user account
+    const result = await this.userModel.findByIdAndDelete(userId).exec();
+  
+    if (!result) {
+      throw new NotFoundException('Failed to delete user account.');
+    }
   }
-
-  // Fetch the user from the database
-  const user = await this.userModel.findById(userId).exec();
-
-  if (!user) {
-    throw new NotFoundException('User not found.');
-  }
-
-  // Prevent Admins from deleting themselves (optional)
-  if (user.role === 'admin') {
-    throw new ForbiddenException('Admins cannot delete their own accounts.');
-  }
-
-  // Delete the user account
-  const result = await this.userModel.findByIdAndDelete(userId).exec();
-
-  if (!result) {
-    throw new NotFoundException('Failed to delete user account.');
-  }
-}
+  
 
 
 //admin, instructor
@@ -525,7 +531,6 @@ async enrollStudentInCourse(
       );
     }
   }
-  
   //student search for instructor
   async findInstructorByName(name: string): Promise<User[]> {
     try {
