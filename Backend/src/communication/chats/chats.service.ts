@@ -72,7 +72,7 @@ export class ChatService {
 
         return newChat.save();
     }
-
+  
 
     async getChatsByCourse(courseId: string): Promise<Chat[]> {
         return this.chatModel.find({ courseId: new mongoose.Types.ObjectId(courseId) }).exec();
@@ -116,30 +116,63 @@ export class ChatService {
     async getChatHistory(chatId: string): Promise<any> {
         console.log(`Validating chatId: ${chatId}`);
         if (!mongoose.Types.ObjectId.isValid(chatId)) {
-            console.error('Invalid chatId format');
+            console.error('❌ Invalid chatId format');
             throw new Error('Invalid chatId');
         }
 
-        const chat = await this.chatModel.findById(chatId).populate('participants').exec();
-        console.log('Chat retrieved:', chat);
+        // Populate both participants and message senders
+        const chat = await this.chatModel
+            .findById(chatId)
+            .populate('participants', 'name') // Populate participants with their names
+            .populate({
+                path: 'messages.sender', // Populate sender in messages
+                select: 'name', // Only fetch the 'name' field of the sender
+            })
+            .exec();
+
+        console.log('✅ Chat retrieved:', chat);
 
         if (!chat) {
-            console.error('Chat not found');
+            console.error('❌ Chat not found');
             throw new Error('Chat not found');
         }
 
-        console.log('Returning messages:', chat.messages);
-        return chat.messages;
+        // Map messages to include sender's name explicitly
+        const messagesWithSenderName = chat.messages.map((msg: any) => ({
+            sender: msg.sender?._id || msg.sender, // Fallback to ID if name isn't populated
+            senderName: msg.sender?.name || 'Unknown User',
+            content: msg.content,
+            timestamp: msg.timestamp,
+        }));
+
+        console.log('✅ Returning messages with sender names:', messagesWithSenderName);
+        return messagesWithSenderName;
     }
 
 
     async getChatById(chatId: string | mongoose.Types.ObjectId): Promise<ChatDocument> {
-        const chat = await this.chatModel.findById(chatId).exec();
+        const chat = await this.chatModel
+            .findById(chatId)
+            .populate({
+                path: 'messages.sender',  // Populate sender details
+                select: 'name'            // Only fetch the name field
+            })
+            .populate({
+                path: 'participants',     // Populate participant details
+                select: '_id'             // Only fetch the _id field
+            })
+            .exec();
+
         if (!chat) {
             throw new Error('Chat not found');
         }
+
+        // Map participants to their string IDs
+        chat.participants = chat.participants.map((participant: any) => participant._id.toString());
+
         return chat;
     }
+
 
 
     async addParticipantToChat(chatId: string, participantId: string): Promise<void> {

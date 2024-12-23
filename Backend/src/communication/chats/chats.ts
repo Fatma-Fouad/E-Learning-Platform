@@ -29,21 +29,24 @@ export class ChatGateway implements OnModuleInit {
     ) { }
 
     onModuleInit() {
-        const server = this.server as any;
-        server.on('connection', (socket: any) => {
+        this.server.on('connection', (socket: Socket) => {
             console.log(`Client connected: ${socket.id}`);
+
+            socket.on('joinUserRoom', (userId: string) => {
+                if (userId) {
+                    socket.join(`user:${userId}`);
+                    console.log(`✅ User ${userId} joined personal room: user:${userId}`);
+                } else {
+                    console.warn(`⚠️ User ID not provided for socket ${socket.id}`);
+                }
+            });
 
             socket.on('disconnect', () => {
                 console.log(`Client disconnected: ${socket.id}`);
             });
-
-            console.log(
-                'Current active rooms:',
-                Array.from(this.server.sockets.adapter.rooms.keys()),
-            );
         });
-    }
 
+    }
     @SubscribeMessage('sendMessage')
     async handleSendMessage(
         @MessageBody() messageData: { chatId: string; sender: string; content: string },
@@ -52,63 +55,76 @@ export class ChatGateway implements OnModuleInit {
         try {
             console.log('📨 Raw message data received:', messageData);
 
-            // ✅ Validate Input
-            if (!messageData.chatId || !messageData.sender || !messageData.content) {
+            const { chatId, sender, content } = messageData;
+
+            if (!chatId || !sender || !content) {
                 console.error('❌ Missing required fields in sendMessage');
                 throw new Error('Missing required fields: chatId, sender, or content.');
             }
 
-            // ✅ Save Message to Database
-            const updatedChat = await this.chatService.addMessage(messageData.chatId, {
-                sender: messageData.sender,
-                content: messageData.content,
-            });
+            // ✅ Save message in the database
+            await this.chatService.addMessage(chatId, { sender, content });
+            console.log('✅ Message saved to database.');
 
-            console.log('✅ Message saved to database:', updatedChat);
+            // ✅ Fetch chat details and participants
+            const chat = await this.chatService.getChatById(chatId);
 
-            // ✅ Broadcast the Message to Room
-            const roomName = `chat:${messageData.chatId}`;
-            console.log(`🚀 Broadcasting message to room: ${roomName}`);
+            if (!chat || !chat.participants) {
+                console.warn('⚠️ No participants found in chat. Skipping notifications.');
+                return;
+            }
 
-            this.server.to(roomName).emit('OnMessage', {
-                chatId: messageData.chatId,
-                sender: messageData.sender,
-                content: messageData.content,
+            // ✅ Fetch sender details
+            const senderUser = await this.chatService.getUserFromDatabase(sender);
+            const senderName = senderUser?.name || 'Unknown User';
+
+            // ✅ Broadcast the message to the chat room
+            const roomName = `chat:${chatId}`;
+            console.log(`🚀 Broadcasting message to room (excluding sender): ${roomName}`);
+
+            client.broadcast.to(roomName).emit('OnMessage', {
+                chatId,
+                sender,
+                senderName,
+                content,
                 timestamp: new Date().toISOString(),
             });
 
-            console.log(`✅ Message broadcasted to room: ${roomName}`);
+            console.log('🔔 Sending notifications to participants (excluding sender)...');
 
-            // ✅ Add Notifications Section (New Logic)
-            try {
-                const chat = await this.chatService.getChatById(messageData.chatId);
+            // ✅ Send Notifications to Each Participant
+            // Iterate over participants and send notifications
+            // ✅ Send Notifications to Each Participant
+            for (const participantId of chat.participants) {
+                const participantIdStr = participantId.toString(); // Ensure it's a string
 
-                if (!chat || !chat.participants) {
-                    console.warn('⚠️ No participants found in the chat. Skipping notifications.');
-                    return;
-                }
+                if (participantIdStr !== sender) {
+                    const roomName = `user:${participantIdStr}`; // Ensure the room is properly formatted
+                    console.log(`📡 Attempting to emit to room: ${roomName}`);
 
-                console.log('🔔 Sending notifications to participants (excluding sender)...');
+                    // Validate if the room exists
+                    const roomExists = this.server.sockets.adapter.rooms.has(roomName);
+                    console.log(`🔍 Room Exists: ${roomExists}`);
 
-                for (const participantId of chat.participants) {
-                    if (participantId.toString() !== messageData.sender) {
-                        console.log(`🔔 Sending notification to participant: ${participantId}`);
-                        this.server.to(`user:${participantId}`).emit('newNotification', {
-                            chatId: messageData.chatId,
-                            sender: messageData.sender,
-                            content: messageData.content,
+                    if (roomExists) {
+                        this.server.to(roomName).emit('newNotification', {
+                            chatId,
+                            sender: senderName,
+                            content,
+                            type: 'chat',
                             timestamp: new Date().toISOString(),
                         });
+                        console.log(`✅ Notification sent to room: ${roomName}`);
+                    } else {
+                        console.warn(`⚠️ Room ${roomName} does not exist. Skipping notification.`);
                     }
                 }
-
-                console.log('✅ Notifications sent to all participants except the sender.');
-            } catch (notificationError) {
-                console.error('❌ Error sending notifications:', notificationError.message);
             }
 
-            return { success: true, message: 'Message broadcasted and notifications sent successfully.' };
 
+
+            console.log('✅ Notifications sent to all participants except the sender.');
+            return { success: true, message: 'Message broadcasted and notifications sent successfully.' };
         } catch (error) {
             console.error('❌ Error in handleSendMessage:', error.message);
             client.emit('error', { message: error.message });
@@ -117,10 +133,18 @@ export class ChatGateway implements OnModuleInit {
     }
 
 
+    @SubscribeMessage('validateUserRoom')
+    handleValidateUserRoom(@MessageBody() payload: { userId: string }) {
+        const roomName = `user:${payload.userId}`;
+        const roomExists = this.server.sockets.adapter.rooms.has(roomName);
+        console.log(`🔍 Room validation for ${roomName}: ${roomExists}`);
+        return { roomExists };
+    }
+
+
     @SubscribeMessage('sendNotification')
     async handleSendNotification(
-        @MessageBody() payload: { chatId: string; sender: string; content: string },
-        @ConnectedSocket() client: Socket
+        @MessageBody() payload: { chatId: string; sender: string; content: string }
     ) {
         try {
             console.log('🔔 Notification Payload Received:', payload);
@@ -132,6 +156,10 @@ export class ChatGateway implements OnModuleInit {
                 throw new Error('Missing required fields: chatId, sender, or content.');
             }
 
+            // ✅ Fetch Sender Details
+            const senderUser = await this.chatService.getUserFromDatabase(sender);
+            const senderName = senderUser?.name || 'Unknown User';
+
             // ✅ Fetch Chat Details
             const chat = await this.chatService.getChatById(chatId);
             if (!chat || !chat.participants || chat.participants.length === 0) {
@@ -142,17 +170,20 @@ export class ChatGateway implements OnModuleInit {
             // ✅ Send Notification to Participants Except Sender
             for (const participantId of chat.participants) {
                 if (participantId.toString() !== sender) {
-                    console.log(`🔔 Sending notification to participant: ${participantId}`);
+                    const roomName = `user:${participantId}`;
+                    console.log(`📡 Emitting newNotification to room: ${roomName}`);
+                    console.log(`🔍 Room Exists:`, this.server.sockets.adapter.rooms.has(roomName));
 
-                    // Emit a notification to each participant's private room
-                    this.server.to(`user:${participantId}`).emit('newNotification', {
+                    this.server.to(roomName).emit('newNotification', {
                         chatId,
-                        sender,
+                        sender: senderName,
                         content,
+                        type: 'chat',
                         timestamp: new Date().toISOString(),
                     });
                 }
             }
+
 
             console.log('✅ Notifications sent to all participants except the sender.');
 

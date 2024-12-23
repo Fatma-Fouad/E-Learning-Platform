@@ -1,4 +1,20 @@
+import axios from 'axios';
+
+
 const BASE_URL = 'http://localhost:3001';
+interface Thread {
+    title: string;
+    description: string;
+}
+
+interface Thread {
+    title: string;
+    description: string;
+    createdBy: string;
+    threadId: string;
+    createdAt: string;
+    replies: any[];
+}
 
 // Fetch all available courses
 export const fetchCourses = async (): Promise<{ _id: string; title: string }[]> => {
@@ -27,32 +43,100 @@ export const searchCoursesByKeyword = async (keyword: string) => {
     return result.courses; // Return the "courses" array
 };
 
+export const searchThreadsInCourse = async (courseId: string, searchTerm: string): Promise<Thread[]> => {
+    try {
+        console.log('🔍 Searching Threads in Course:', { courseId, searchTerm });
 
+        const response = await axios.get(`http://localhost:3001/forums/${courseId}/search-threads`, {
+            params: { q: searchTerm }
+        });
 
-export const searchThreadsInCourse = async (courseId: string, searchTerm: string) => {
-    const response = await fetch(
-        `${BASE_URL}/forums/${courseId}/search-threads?q=${encodeURIComponent(searchTerm)}`
-    );
-    if (!response.ok) {
-        throw new Error('Failed to search threads in course.');
+        if (Array.isArray(response.data)) {
+            return response.data;
+        }
+
+        console.warn('⚠️ API response is not an array:', response.data);
+        return []; // Return an empty array as a fallback
+    } catch (error: any) {
+        console.error('❌ Error during search:', error.response?.data || error.message);
+        return []; // Always return an array on error
     }
-    return response.json();
 };
 
 
+export const fetchCourseById = async (id: string, userId?: string) => {
+    try {
+        if (!id) throw new Error('Course ID is required');
 
+        const url = new URL(`${BASE_URL}/courses/${id}`);
+        if (userId) {
+            url.searchParams.append('userId', userId);
+        }
 
-export const fetchCourseById = async (id: string) => {
-    const response = await fetch(`${BASE_URL}/courses/${id}`);
-    if (!response.ok) throw new Error('Failed to fetch course details');
-    return response.json();
+        console.log('🔗 Fetching course from:', url.toString());
+
+        const response = await fetch(url.toString());
+
+        if (!response.ok) {
+            const errorDetails = await response.text();
+            console.error(`❌ Response Error: ${response.status} - ${errorDetails}`);
+            throw new Error(`Failed to fetch course details: ${response.status} - ${errorDetails}`);
+        }
+
+        const result = await response.json();
+        console.log('📊 Fetched Course Data:', result);
+        return result;
+    } catch (error: any) {
+        console.error('❌ Error fetching course details:', error.message);
+        throw new Error(`Unable to fetch course details: ${error.message}`);
+    }
 };
 
-export const fetchForumsByCourse = async (courseId: string) => {
-    const response = await fetch(`${BASE_URL}/forums/course/${courseId}`);
-    if (!response.ok) throw new Error('Failed to fetch forums for the course');
-    return response.json();
+export const fetchAvailableCourses = async () => {
+    try {
+        console.log('🔗 Fetching available courses from backend...');
+        const response = await fetch(`${BASE_URL}/courses/available-courses`);
+
+        if (!response.ok) {
+            const errorDetails = await response.text();
+            throw new Error(`Failed to fetch available courses: ${response.status} - ${errorDetails}`);
+        }
+
+        const data = await response.json();
+        console.log('✅ Fetched Courses:', data);
+        return data;
+    } catch (error: any) {
+        console.error('❌ Error fetching available courses:', error.message);
+        throw new Error(`Unable to fetch available courses: ${error.message}`);
+    }
 };
+
+
+export const fetchForumsByCourse = async (courseId: string, userId: string) => {
+    try {
+        if (!courseId || !userId) {
+            throw new Error('Both courseId and userId are required');
+        }
+
+        const url = new URL(`${BASE_URL}/forums/course/${courseId}`);
+        url.searchParams.append('userId', userId);
+
+        console.log('🔗 Fetching forums from:', url.toString());
+
+        const response = await fetch(url.toString());
+
+        if (!response.ok) {
+            const errorDetails = await response.text();
+            throw new Error(`Failed to fetch forums: ${response.status} - ${errorDetails}`);
+        }
+
+        return await response.json();
+    } catch (error: any) {
+        console.error('❌ Error fetching forums:', error.message);
+        throw new Error(`Unable to fetch forums: ${error.message}`);
+    }
+};
+
 
 export const addThread = async (courseId: string, title: string, description: string, createdBy: string) => {
     const response = await fetch(`http://localhost:3001/forums/${courseId}/threads`, {
@@ -136,6 +220,7 @@ export const deleteReply = async (
     return response.json();
 };
 
+
 export const addForum = async (courseId: string, courseName: string, createdBy: string) => {
     const response = await fetch(`${BASE_URL}/forums/create`, {
         method: 'POST',
@@ -155,28 +240,36 @@ export const deleteForum = async (forumId: string, userId: string) => {
 };
 
 
+
 //chats
 export const createChat = async (type, payload) => {
     try {
-        console.log("Sending Payload:", payload);
+        console.log("🚀 Sending Payload to Backend:", payload);
+
         const response = await fetch(`http://localhost:3001/chat/${type}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
         });
 
+        console.log("🛠️ Backend Response Status:", response.status);
+
         if (!response.ok) {
             const error = await response.json();
-            console.error("API Error:", error);
+            console.error("❌ API Error Response:", error);
             throw new Error(error.message || "Failed to create chat");
         }
 
-        return response.json();
+        const data = await response.json();
+        console.log("✅ API Response:", data);
+
+        return data;
     } catch (error) {
-        console.error("Error in createChat API call:", error.message);
+        console.error("❌ Error in createChat API call:", error.message);
         throw error;
     }
 };
+
 
 
 export const fetchChatMessages = async (courseId: string) => {
@@ -184,6 +277,7 @@ export const fetchChatMessages = async (courseId: string) => {
     if (!response.ok) throw new Error('Failed to fetch chat messages');
     return response.json();
 };
+
 
 export const sendChatMessage = async (courseId: string, message: string) => {
     const response = await fetch(`http://localhost:3001/chat/${courseId}`, {
@@ -219,8 +313,6 @@ export const fetchChatsByCourse = async (courseId: string, userId: string) => {
         throw error;
     }
 };
-
-
 
 
 export const fetchChatHistory = async (chatId: string) => {

@@ -9,7 +9,7 @@ export class Notification {
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'chats', required: false }) // Optional
     chatId?: mongoose.Schema.Types.ObjectId;
 
-    @Prop({ type: String, required: true, enum: ['message', 'reply', 'course-update','platform'] })
+    @Prop({ type: String, required: true, enum: ['message', 'reply', 'course-update','platform','reply','thread'] })
     type: string;
 
     @Prop({ type: String, required: true })

@@ -2,7 +2,18 @@ import React, { useState } from "react";
 import { useRouter } from "next/router";
 import axios from "axios";
 
-const backend_url = "http://localhost:3000/auth"; // Backend running on port 3000
+// Backend URL
+const backend_url = "http://localhost:3000/auth";
+
+// Interface for the response
+interface LoginResponse {
+  user: {
+    userid: string; // Ensure this matches your backend field names
+    role: string;
+    name: string;
+    email: string;
+  };
+}
 
 const Login = () => {
   const router = useRouter();

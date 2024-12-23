@@ -1,4 +1,3 @@
-
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { Document } from 'mongoose';
 import { User } from '../../users/user.schema';
@@ -9,7 +8,7 @@ export class Reply {
     @Prop({ type: mongoose.Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() })
     replyId: mongoose.Schema.Types.ObjectId; // Use replyId instead of _id
 
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true ,})
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
     userId: mongoose.Schema.Types.ObjectId; // Reference to the user who replied
 
     @Prop({ type: String, required: true })
@@ -21,8 +20,6 @@ export class Reply {
 
 export type ReplyDocument = Document & Reply;
 export const ReplySchema = SchemaFactory.createForClass(Reply);
-
-
 
 @Schema()
 export class Thread {
@@ -45,7 +42,6 @@ export class Thread {
     replies: Reply[]; // Array of replies
 }
 
-
 export type ThreadDocument = Document & Thread;
 export const ThreadSchema = SchemaFactory.createForClass(Thread);
 
@@ -58,12 +54,13 @@ export class Forum {
     courseName: string; // Course name
 
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
-    createdBy: mongoose.Schema.Types.ObjectId; // User who created the thread
+    createdBy: mongoose.Schema.Types.ObjectId; // User who created the forum
 
     @Prop({ type: [ThreadSchema], _id: false, default: [] }) // Disable _id for threads
-    threads: Thread[];
+    threads: Thread[]; // Array of threads
 
-
+    @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], default: [] })
+    participants: mongoose.Schema.Types.ObjectId[]; // Array of user IDs participating in the forum
 }
 
 export type ForumDocument = Document & Forum;
