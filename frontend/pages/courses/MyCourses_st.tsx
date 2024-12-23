@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter } from "next/router";
 
@@ -12,59 +12,57 @@ interface Course {
 }
 
 const MyCoursesPage = () => {
-  const [studentId, setStudentId] = useState<string>("");
   const [courses, setCourses] = useState<Course[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true); // Initially loading
   const [error, setError] = useState<string | null>(null);
-
   const router = useRouter();
 
-  const handleFetchCourses = async () => {
-    if (!studentId.trim()) {
-      setError("Please enter a valid student ID.");
-      return;
-    }
+  useEffect(() => {
+    const fetchCourses = async () => {
+      const token = localStorage.getItem("token");
+      const storedUserId = localStorage.getItem("userId");
 
-    setLoading(true);
-    setError(null);
+      console.log("Retrieved Token:", token);
+      console.log("Retrieved User ID:", storedUserId);
 
-    try {
-      const response = await axios.get(
-        `http://localhost:3000/courses/student-courses/${studentId}`
-      );
-      setCourses(response.data.courses || []);
-    } catch (err: any) {
-      console.error("Error fetching courses:", err);
-      setError(err.response?.data?.message || "Failed to fetch courses.");
-    } finally {
-      setLoading(false);
-    }
-  };
+      if (!token || !storedUserId) {
+        setError("Unauthorized access. Redirecting to login...");
+        router.push("/login");
+        return;
+      }
+
+      try {
+        const response = await axios.get(
+          `http://localhost:3000/courses/student-courses/${storedUserId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        setCourses(response.data.courses || []);
+      } catch (err: any) {
+        console.error("Error fetching courses:", err);
+        setError(err.response?.data?.message || "Failed to fetch courses.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, [router]);
 
   const handleViewModules = (courseId: string) => {
-    router.push(`/courses/${courseId}/modules`);
+    router.push(`/courses/${courseId}/modules_st`);
   };
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p style={{ color: "red" }}>{error}</p>;
 
   return (
     <div>
       <h1>My Courses</h1>
-      <div>
-        <label htmlFor="studentIdInput">
-          Student ID:
-          <input
-            id="studentIdInput"
-            type="text"
-            value={studentId}
-            onChange={(e) => setStudentId(e.target.value)}
-            placeholder="Enter your Student ID"
-          />
-        </label>
-        <button onClick={handleFetchCourses} disabled={loading}>
-          {loading ? "Fetching..." : "Fetch Courses"}
-        </button>
-      </div>
-
-      {error && <p style={{ color: "red" }}>{error}</p>}
 
       {courses.length > 0 ? (
         <ul>
@@ -82,7 +80,7 @@ const MyCoursesPage = () => {
           ))}
         </ul>
       ) : (
-        !loading && <p>No courses found for this student.</p>
+        <p>No courses found for this student.</p>
       )}
     </div>
   );

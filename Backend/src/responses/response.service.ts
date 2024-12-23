@@ -126,6 +126,8 @@ export class ResponseService {
         }
       }
     }
+
+    progress.last_quiz_score = percentageScore;
   
     // Save progress
     await progress.save();

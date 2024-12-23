@@ -5,6 +5,7 @@ import { QuizDocument } from './quiz.schema';
 import { QuestionBankDocument } from '../questionbank/questionbank.schema';
 import { UserDocument } from '../users/user.schema';
 import { ProgressDocument } from '../progress/models/progress.schema';
+import { ModuleDocument } from 'src/modules/module.schema';
 
 @Injectable()
 export class QuizService {
@@ -13,6 +14,7 @@ export class QuizService {
     @InjectModel('questionbank') private questionBankModel: Model<QuestionBankDocument>,
     @InjectModel('User') private userModel: Model<UserDocument>,
     @InjectModel('progress') private progressModel: Model<ProgressDocument>,
+    @InjectModel('modules') private moduleModel: Model<ModuleDocument>,
   ) {}
 
   async generateQuiz(
@@ -33,12 +35,6 @@ export class QuizService {
       throw new NotFoundException(`Question bank for module ID ${moduleId} not found.`);
     }
 
-    //check if quiz for this module exists
-    const existingQuiz = await this.quizModel.findOne({ module_id: moduleId, user_id: userId });
-    if (existingQuiz) {
-      await this.quizModel.deleteOne({ module_id: moduleId, user_id: userId });
-    }
-
     const newQuiz = new this.quizModel({
       user_id: userId,
       module_id: moduleId,
@@ -51,11 +47,32 @@ export class QuizService {
     await newQuiz.save();
 
     return {
-      message: existingQuiz
-        ? 'Old quiz deleted. New quiz generated successfully.'
-        : 'Quiz generated successfully.',
+      message: 'Quiz created successfully.', // Include the message here
       quiz: newQuiz,
     };
+  }
+
+  // Update an existing quiz
+  async updateQuiz(
+    quizId: string,
+    questionCount?: number,
+    type?: string,
+  ): Promise<QuizDocument> {
+    const updatedFields: Partial<QuizDocument> = {};
+    if (questionCount) updatedFields.question_count = questionCount;
+    if (type) updatedFields.type = type;
+
+    const updatedQuiz = await this.quizModel.findByIdAndUpdate(
+      quizId,
+      { $set: updatedFields },
+      { new: true }, // Return the updated document
+    );
+
+    if (!updatedQuiz) {
+      throw new NotFoundException(`Quiz with ID ${quizId} not found.`);
+    }
+
+    return updatedQuiz;
   }
 
   async deleteQuizById(quizId: string): Promise<QuizDocument | null> {
@@ -70,8 +87,22 @@ export class QuizService {
     return deletedQuiz;
   }
 
-  async getQuizForStudent(userId: string,courseId: string, moduleId: string): Promise<QuizDocument> {
+  async getQuizByModule(moduleId: string): Promise<QuizDocument | null> {
+    return await this.quizModel
+      .findOne({ module_id: moduleId })
+      .select('-user_id'); // Excludes the `user_id` field
+  }
+
+  async getQuizForStudent(userId: string, moduleId: string): Promise<QuizDocument> {
     //making sure student has a progress documented
+
+    const module = (await this.moduleModel.findById(moduleId)) as ModuleDocument;
+    if (!module || !module.course_id) {
+      throw new NotFoundException(`Module with ID ${moduleId} not found.`);
+    }
+
+    const courseId = module.course_id.toString();
+
     const progress = await this.progressModel.findOne({ user_id: userId, course_id: courseId  });
     if (!progress) {
       throw new NotFoundException(`No progress found for user ID ${userId} and course ID ${courseId}`);

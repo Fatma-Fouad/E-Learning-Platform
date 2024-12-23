@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Delete, Param ,NotFoundException, BadRequestException, UseGuards} from '@nestjs/common';
+import { Controller, Post, Body, Get, Delete,Patch, Param ,NotFoundException, BadRequestException, UseGuards} from '@nestjs/common';
 import { QuizService } from './quiz.service';
 import { RolesGuard } from '../authentication/roles.guard';
 import { Role, Roles } from '../authentication/roles.decorator';
@@ -9,11 +9,11 @@ import { AuthGuard } from '../authentication/auth.guard';
 export class QuizController {
   constructor(private quizService: QuizService) {}
 
-  @Post()
-  //@Roles('admin' as Role, 'instructor' as Role)
+  @Post(':module_id')
+  @Roles('admin' as Role, 'instructor' as Role)
   async generateQuiz(
     @Body('user_id') userId: string,
-    @Body('module_id') moduleId: string,
+    @Param('module_id') moduleId: string,
     @Body('question_count') questionCount: number,
     @Body('type') type: string,
   ) {
@@ -23,13 +23,38 @@ export class QuizController {
       );
     }
 
+    const existingQuiz = await this.quizService.getQuizByModule(moduleId);
+    if (existingQuiz) {
+      throw new BadRequestException(`A quiz already exists for this module and user.`);
+    }
+
     const result = await this.quizService.generateQuiz(userId, moduleId, questionCount, type);
 
     return {
       message: result.message,
-      quiz: result.quiz,
+      quiz: result.quiz,       
     };
   }
+
+  @Patch(':quiz_id')
+  @Roles('admin' as Role, 'instructor' as Role)
+  async updateQuiz(
+    @Param('quiz_id') quizId: string,
+    @Body('question_count') questionCount?: number,
+    @Body('type') type?: string,
+  ) {
+    if (!questionCount && !type) {
+      throw new BadRequestException('At least one field (question_count or type) must be provided.');
+    }
+
+    const updatedQuiz = await this.quizService.updateQuiz(quizId, questionCount, type);
+
+    return {
+      message: 'Quiz updated successfully.',
+      quiz: updatedQuiz,
+    };
+  }
+
 
   @Delete(':id')
   //@Roles('admin' as Role, 'instructor' as Role)
@@ -46,17 +71,28 @@ export class QuizController {
 
   @Get('student')
   //@Roles('student' as Role)
+  @Get('module/:moduleId')
+  @Roles('admin' as Role, 'instructor' as Role)
+    async getQuizByModuleId(@Param('moduleId') moduleId: string) {
+    const quiz = await this.quizService.getQuizByModule(moduleId);
+    if (!quiz) {
+      throw new NotFoundException(`Quiz for module ID ${moduleId} not found.`);
+    }
+    return { quiz };
+  }
+
+  @Post('student/:module_id')
+  @Roles('student' as Role)
   async getStudentQuiz(
     @Body('user_id') userId: string,
-    @Body('course_id') courseId: string,
-    @Body('module_id') moduleId: string,
+    @Param('module_id') moduleId: string,
   ) {
 
-    if (!userId || !courseId || !moduleId) {
-      throw new NotFoundException('user_id, course_id, and module_id must be provided.');
+    if (!userId || !moduleId) {
+      throw new NotFoundException('user_id, and module_id must be provided.');
     }
 
-    const quiz = await this.quizService.getQuizForStudent(userId, courseId, moduleId);
+    const quiz = await this.quizService.getQuizForStudent(userId, moduleId);
 
     if (!quiz) {
       throw new NotFoundException(`No quizzes available for module ID ${moduleId}`);

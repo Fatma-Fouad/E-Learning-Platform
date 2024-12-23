@@ -125,11 +125,11 @@ const QuestionBankPage = () => {
   
       console.log('Response from backend:', response.data);
   
-      // Update question bank state with the new question
-      setQuestionBank((prev) => ({
-        ...prev,
-        questions: [...prev.questions, newQuestion],
-      }));
+      // Extract the updated question bank from the response
+      const updatedQuestionBank = response.data.questionBank;
+
+      // Update the state with the updated question bank
+      setQuestionBank(updatedQuestionBank);
   
       // Clear the form
       setNewQuestion({

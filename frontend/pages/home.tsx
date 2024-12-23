@@ -40,6 +40,15 @@ const Home = () => {
     router.push("courses/MyCourses_st");
   };
 
+  const handleStudentCourses = () => {
+    router.push("/courses/MyCourses_st");
+  };
+  
+  const handleInstructorCourses = () => {
+    router.push("/courses/MyCourses_in");
+  };
+  
+
 
   return (
     <div>
@@ -58,13 +67,16 @@ const Home = () => {
         <button onClick={Find_Course} style={styles.logoutButton}>
           Find a course
         </button>
-        <button style={styles.logoutButton} onClick={() => router.push(`/courses/MyCourses_in`)}>
-          My Courses (inst)
-        </button>
-
-        <button style={styles.logoutButton} onClick={() => router.push(`/courses/MyCourses_st`)}>
-          My Courses (stud)
-        </button>
+        {user?.role === "student" && (
+          <button style={styles.logoutButton} onClick={handleStudentCourses}>
+            My Courses (stud)
+          </button>
+        )}
+        {user?.role === "instructor" && (
+          <button style={styles.logoutButton} onClick={handleInstructorCourses}>
+            My Courses (inst)
+          </button>
+        )}
       </nav>
 
       {/* Content */}

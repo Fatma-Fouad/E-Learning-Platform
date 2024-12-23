@@ -12,26 +12,45 @@ const CreateNotePage = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const userId = '6746676e0e44216ab25adb75'; // Replace dynamically if you have auth
+  // Retrieve token and userId from localStorage
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
+
+  // Redirect to login if token or userId is missing
+  useEffect(() => {
+    if (!token || !userId) {
+      setError('Unauthorized access. Redirecting to login...');
+      router.push('/login');
+    }
+  }, [token, userId, router]);
 
   // Autosave function with debounce
   const autosaveNote = useCallback(async () => {
-    if (!moduleId || !noteTitle.trim() || !content.trim()) return;
+    if (!moduleId || !noteTitle.trim() || !content.trim() || !token || !userId) return;
 
     try {
       setIsSaving(true);
-      await axios.post('http://localhost:3000/notes', {
-        user_id: userId,
-        module_id: moduleId,
-        noteTitle,
-        content,
-      });
+      await axios.post(
+        'http://localhost:3000/notes',
+        {
+          user_id: userId,
+          module_id: moduleId,
+          noteTitle,
+          content,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      console.log('Autosave successful');
     } catch (err) {
       console.error('Autosave failed:', err);
     } finally {
       setIsSaving(false);
     }
-  }, [moduleId, noteTitle, content]);
+  }, [moduleId, noteTitle, content, token, userId]);
 
   // Debounce for autosave
   useEffect(() => {
@@ -51,12 +70,20 @@ const CreateNotePage = () => {
 
     try {
       setIsSaving(true);
-      await axios.post('http://localhost:3000/notes', {
-        user_id: userId,
-        module_id: moduleId,
-        noteTitle,
-        content,
-      });
+      await axios.post(
+        'http://localhost:3000/notes',
+        {
+          user_id: userId,
+          module_id: moduleId,
+          noteTitle,
+          content,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       setSuccess('Note successfully created!');
       setTimeout(() => {
         router.push(`/modules/${moduleId}/notes`);
@@ -70,60 +97,111 @@ const CreateNotePage = () => {
   };
 
   return (
-    <div style={{ padding: '20px' }}>
+    <div style={containerStyle}>
       <h1>Create Note</h1>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {success && <p style={{ color: 'green' }}>{success}</p>}
-      {isSaving && <p style={{ color: 'orange' }}>Autosaving...</p>}
+      {error && <p style={errorStyle}>{error}</p>}
+      {success && <p style={successStyle}>{success}</p>}
+      {isSaving && <p style={savingStyle}>Autosaving...</p>}
 
-      <div style={{ marginBottom: '10px' }}>
+      <div style={formGroupStyle}>
         <label>Note Title:</label>
         <input
           type="text"
           value={noteTitle}
           onChange={(e) => setNoteTitle(e.target.value)}
           placeholder="Enter note title"
-          style={{
-            display: 'block',
-            marginTop: '5px',
-            padding: '5px',
-            width: '100%',
-          }}
+          style={inputStyle}
         />
       </div>
 
-      <div style={{ marginBottom: '10px' }}>
+      <div style={formGroupStyle}>
         <label>Content:</label>
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="Enter note content"
-          style={{
-            display: 'block',
-            marginTop: '5px',
-            padding: '5px',
-            width: '100%',
-            height: '100px',
-          }}
+          style={textareaStyle}
         />
       </div>
 
       <button
         onClick={handleCreateNote}
         disabled={isSaving}
-        style={{
-          marginTop: '10px',
-          padding: '10px 15px',
-          background: 'blue',
-          color: 'white',
-          border: 'none',
-          cursor: 'pointer',
-        }}
+        style={buttonStyle}
       >
         {isSaving ? 'Saving...' : 'Create Note'}
       </button>
     </div>
   );
+};
+
+// ✅ Styles
+const containerStyle: React.CSSProperties = {
+  padding: '20px',
+  maxWidth: '600px',
+  margin: '50px auto',
+  background: '#f9f9f9',
+  border: '1px solid #ddd',
+  borderRadius: '8px',
+  boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+  fontFamily: 'Arial, sans-serif',
+};
+
+const formGroupStyle: React.CSSProperties = {
+  marginBottom: '15px',
+};
+
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '8px',
+  fontSize: '14px',
+  borderRadius: '4px',
+  border: '1px solid #ccc',
+  marginBottom: '10px',
+};
+
+const textareaStyle: React.CSSProperties = {
+  width: '100%',
+  height: '120px',
+  padding: '8px',
+  fontSize: '14px',
+  borderRadius: '4px',
+  border: '1px solid #ccc',
+  resize: 'none',
+};
+
+const errorStyle: React.CSSProperties = {
+  color: 'red',
+  fontSize: '14px',
+  marginBottom: '10px',
+  textAlign: 'center' as const,
+};
+
+const successStyle: React.CSSProperties = {
+  color: 'green',
+  fontSize: '14px',
+  marginBottom: '10px',
+  textAlign: 'center' as const,
+};
+
+const savingStyle: React.CSSProperties = {
+  color: 'orange',
+  fontSize: '14px',
+  marginBottom: '10px',
+  textAlign: 'center' as const,
+};
+
+const buttonStyle: React.CSSProperties = {
+  marginTop: '10px',
+  padding: '10px 15px',
+  background: 'blue',
+  color: 'white',
+  border: 'none',
+  borderRadius: '4px',
+  cursor: 'pointer',
+  display: 'block',
+  width: '100%',
+  fontSize: '14px',
 };
 
 export default CreateNotePage;
