@@ -22,3 +22,4 @@ import { UserModule } from 'src/users/user.module';
     exports: [NotificationService, NotificationGateway],
 })
 export class NotificationModule { }
+
