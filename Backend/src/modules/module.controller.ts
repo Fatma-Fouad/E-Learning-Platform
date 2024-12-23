@@ -85,8 +85,8 @@ export class ModulesController {
   // }
 
   @Get(':id/student')
-  //@UseGuards(AuthGuard, RolesGuard) 
-  //@Roles('student' as Role, 'admin' as Role)
+  @UseGuards(AuthGuard, RolesGuard) 
+  @Roles('student' as Role, 'admin' as Role)
   async getModuleByIdStudent(
     @Param('id') moduleId: string,
     @Body('user_id') userId: string,

@@ -62,6 +62,7 @@ const Login = () => {
         localStorage.setItem("role",response.data.user.role)
         localStorage.setItem("name",response.data.user.name)
         localStorage.setItem("email",response.data.user.email)
+        if(localStorage.getItem("role") === "student"){localStorage.setItem("gpa",response.data.user.gpa)}
         setSuccess("Login successful. Redirecting...");
         console.log("User Data:", response.data.user); // Optional: log user data
         setTimeout(() => router.push("/home"), 1000); // Redirect to home page

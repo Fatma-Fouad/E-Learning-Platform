@@ -5,7 +5,7 @@ import { getSocket } from "../utils/socket";
 
 const Home = () => {
   const router = useRouter();
-  const [user, setUser] = useState<{ name: string; role: string; email: string; userId: string } | null>(null);
+  const [user, setUser] = useState<{ name: string; role: string; email: string; userId: string; gpa: string } | null>(null);
   const [notifications, setNotifications] = useState<{ type: string; content: string }[]>([]);
   const [socket, setSocket] = useState<Socket | null>(null);
 
@@ -15,9 +15,10 @@ const Home = () => {
     const role = localStorage.getItem("role");
     const email = localStorage.getItem("email");
     const userId = localStorage.getItem("userId");
+    const gpa = localStorage.getItem("gpa") + "";
 
     if (name || role) {
-      setUser({ name, role, email, userId });
+      setUser({ name, role, email, userId, gpa });
       // Establish WebSocket connection and join notifications room
       const socket = getSocket(userId);
       socket.emit("joinNotifications", { userId });
@@ -84,6 +85,9 @@ const Home = () => {
     router.push("/courses/MyCourses_in");
   };
   
+  const backup = () => {
+    router.push("/backup/");
+  };
 
 
   return (
@@ -113,6 +117,9 @@ const Home = () => {
             My Courses (inst)
           </button>
         )}
+        {user?.role === "admin" && (<button onClick={backup} style={styles.logoutButton}>
+          Backup Data
+        </button>)}
       </nav>
 
       {/* Content */}

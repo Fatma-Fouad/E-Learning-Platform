@@ -50,7 +50,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-        const payload = { userid: user._id as Types.ObjectId, role: user.role, name: user.name, email: user.email };
+        const payload = { userid: user._id, role: user.role, name: user.name, email: user.email, gpa:user.gpa };
 
     // Generate the JWT token
     const access_token = await this.jwtService.signAsync(payload);

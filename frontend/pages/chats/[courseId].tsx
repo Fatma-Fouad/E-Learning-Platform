@@ -26,12 +26,14 @@ const ChatsPage = () => {
     const [selectedParticipantId, setSelectedParticipantId] = useState('');
     const [groupParticipants, setGroupParticipants] = useState<string[]>([]);
     const [isUserIdReady, setIsUserIdReady] = useState(false);
+    const [token, setToken] = useState<string | null>(null);
 
     useNotificationSocket(userId);
 //load user info
     useEffect(() => {
         const role = localStorage.getItem('role');
         const user = localStorage.getItem('userId');
+        const storedToken = localStorage.getItem('token');
         setUserRole(role || '');
         setUserId(user || '');
         setIsUserIdReady(true);
