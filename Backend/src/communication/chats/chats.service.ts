@@ -25,8 +25,6 @@ export class ChatService {
         return user;
     }
 
-    
-
 
     async getAllChats(): Promise<Chat[]> {
         return this.chatModel.find().exec();
@@ -41,8 +39,8 @@ export class ChatService {
     ): Promise<Chat> {
         console.log('Creating chat with:', { chatName, participantIds, courseId, userId, type });
 
-        if (!chatName || !courseId || !userId || !type) {
-            throw new BadRequestException('Missing required fields: chatName, courseId, userId, or type.');
+        if (!chatName || !participantIds || !courseId || !userId || !type) {
+            throw new BadRequestException('Missing required fields: chatName, participantIds, courseId, userId, or type.');
         }
 
         // Validate creator's existence
@@ -51,42 +49,30 @@ export class ChatService {
             throw new NotFoundException(`User with ID ${userId} not found.`);
         }
 
-        let finalParticipants: mongoose.Types.ObjectId[] = [];
+        // Validate participant IDs
+        const participants = await this.userModel
+            .find({ _id: { $in: participantIds } }, 'role')
+            .exec();
 
-        if (type === 'mixed') {
-            // Fetch all students in the course
-            const students = await this.userModel.find({
-                role: 'student',
-                courses: courseId
-            }).exec();
-
-            if (!students || students.length === 0) {
-                throw new NotFoundException(`No students found for course ${courseId}.`);
-            }
-
-            finalParticipants = students.map(student => student._id);
-        } else {
-            // Default participant logic for other chat types
-            finalParticipants = participantIds.map(id => new mongoose.Types.ObjectId(id));
+        if (!participants || participants.length !== participantIds.length) {
+            throw new BadRequestException('One or more participant IDs are invalid.');
         }
 
-        // Ensure creator is part of the participants
-        if (!finalParticipants.includes(new mongoose.Types.ObjectId(userId))) {
-            finalParticipants.push(new mongoose.Types.ObjectId(userId));
-        }
+        // Explicitly use the passed type
+        const chatType = type;
 
         // Create the chat
         const newChat = new this.chatModel({
             chatName,
-            participants: finalParticipants,
+            participants: participantIds.map(id => new mongoose.Types.ObjectId(id)),
             courseId: new mongoose.Types.ObjectId(courseId),
-            type,
+            type: chatType,
             creatorId: new mongoose.Types.ObjectId(userId),
         });
 
         return newChat.save();
     }
-
+  
 
     async getChatsByCourse(courseId: string): Promise<Chat[]> {
         return this.chatModel.find({ courseId: new mongoose.Types.ObjectId(courseId) }).exec();
@@ -130,21 +116,39 @@ export class ChatService {
     async getChatHistory(chatId: string): Promise<any> {
         console.log(`Validating chatId: ${chatId}`);
         if (!mongoose.Types.ObjectId.isValid(chatId)) {
-            console.error('Invalid chatId format');
+            console.error('❌ Invalid chatId format');
             throw new Error('Invalid chatId');
         }
 
-        const chat = await this.chatModel.findById(chatId).populate('participants').exec();
-        console.log('Chat retrieved:', chat);
+        // Populate both participants and message senders
+        const chat = await this.chatModel
+            .findById(chatId)
+            .populate('participants', 'name') // Populate participants with their names
+            .populate({
+                path: 'messages.sender', // Populate sender in messages
+                select: 'name', // Only fetch the 'name' field of the sender
+            })
+            .exec();
+
+        console.log('✅ Chat retrieved:', chat);
 
         if (!chat) {
-            console.error('Chat not found');
+            console.error('❌ Chat not found');
             throw new Error('Chat not found');
         }
 
-        console.log('Returning messages:', chat.messages);
-        return chat.messages;
+        // Map messages to include sender's name explicitly
+        const messagesWithSenderName = chat.messages.map((msg: any) => ({
+            sender: msg.sender?._id || msg.sender, // Fallback to ID if name isn't populated
+            senderName: msg.sender?.name || 'Unknown User',
+            content: msg.content,
+            timestamp: msg.timestamp,
+        }));
+
+        console.log('✅ Returning messages with sender names:', messagesWithSenderName);
+        return messagesWithSenderName;
     }
+
 
     async getChatById(chatId: string | mongoose.Types.ObjectId): Promise<ChatDocument> {
         const chat = await this.chatModel

@@ -220,6 +220,7 @@ export const deleteReply = async (
     return response.json();
 };
 
+
 export const addForum = async (courseId: string, courseName: string, createdBy: string) => {
     const response = await fetch(`${BASE_URL}/forums/create`, {
         method: 'POST',
@@ -239,28 +240,36 @@ export const deleteForum = async (forumId: string, userId: string) => {
 };
 
 
+
 //chats
 export const createChat = async (type, payload) => {
     try {
-        console.log("Sending Payload:", payload);
+        console.log("🚀 Sending Payload to Backend:", payload);
+
         const response = await fetch(`http://localhost:3001/chat/${type}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
         });
 
+        console.log("🛠️ Backend Response Status:", response.status);
+
         if (!response.ok) {
             const error = await response.json();
-            console.error("API Error:", error);
+            console.error("❌ API Error Response:", error);
             throw new Error(error.message || "Failed to create chat");
         }
 
-        return response.json();
+        const data = await response.json();
+        console.log("✅ API Response:", data);
+
+        return data;
     } catch (error) {
-        console.error("Error in createChat API call:", error.message);
+        console.error("❌ Error in createChat API call:", error.message);
         throw error;
     }
 };
+
 
 
 export const fetchChatMessages = async (courseId: string) => {
@@ -268,6 +277,7 @@ export const fetchChatMessages = async (courseId: string) => {
     if (!response.ok) throw new Error('Failed to fetch chat messages');
     return response.json();
 };
+
 
 export const sendChatMessage = async (courseId: string, message: string) => {
     const response = await fetch(`http://localhost:3001/chat/${courseId}`, {
@@ -303,8 +313,6 @@ export const fetchChatsByCourse = async (courseId: string, userId: string) => {
         throw error;
     }
 };
-
-
 
 
 export const fetchChatHistory = async (chatId: string) => {

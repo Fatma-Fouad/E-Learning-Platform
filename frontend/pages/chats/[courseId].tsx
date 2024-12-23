@@ -74,16 +74,20 @@ const ChatsPage = () => {
 
         const socket = getSocket(userId);
 
-        // ✅ Join the chat room
-        socket.emit('joinChat', { chatId: selectedChat, userId });
-        console.log(`🟢 Joined chat room: chat:${selectedChat}`);
+        // ✅ Prevent Duplicate Listeners
+        socket.off('OnMessage');
+        socket.off('joinedChat');
+        socket.off('error');
 
-        // ✅ Handle New Messages
+        // ✅ Join the chat room
+        console.log(`🟢 Joining chat room: chat:${selectedChat}`);
+        socket.emit('joinChat', { chatId: selectedChat, userId });
+
+        // ✅ Handle Real-Time Messages
         const handleNewMessage = (message) => {
             console.log('💬 Real-Time Message Received:', message);
 
             setMessages((prevMessages) => {
-                // Check for duplicates based on sender, content, and timestamp
                 const isDuplicate = prevMessages.some(
                     (msg) =>
                         msg.sender === message.sender &&
@@ -108,52 +112,64 @@ const ChatsPage = () => {
             });
         };
 
-        // ✅ Remove Previous Listeners Before Adding
-        socket.off('OnMessage');
-        socket.on('OnMessage', handleNewMessage);
+        // ✅ Event Listener for `joinedChat`
+        const handleJoinedChat = (response) => {
+            console.log('✅ Successfully joined chat:', response);
+        };
 
-        // ✅ Handle Errors
-        socket.off('error');
+        socket.on('OnMessage', handleNewMessage);
+        socket.on('joinedChat', handleJoinedChat);
         socket.on('error', (error) => {
             console.error('❌ Socket Error:', error);
         });
 
-        // ✅ Cleanup on Unmount
+        // ✅ Cleanup on Chat Change or Component Unmount
         return () => {
+            console.log(`🛑 Cleaning up socket listeners for chat:${selectedChat}`);
             socket.off('OnMessage', handleNewMessage);
+            socket.off('joinedChat', handleJoinedChat);
             socket.off('error');
             socket.emit('leaveChat', { chatId: selectedChat, userId });
-            console.log(`🛑 Left chat room: chat:${selectedChat}`);
         };
     }, [userId, selectedChat]);
 
-
     // Fetch chat history
     const loadChatHistory = async (chatId: string) => {
+        console.log('🔄 Loading chat history for chatId:', chatId);
+
         try {
-            const data = await fetchChatHistory(chatId);
-            setMessages(data);
+            setMessages([]);
             setSelectedChat(chatId);
 
-            //  Join chat room
-            const socket = getSocket(userId);
-            socket.emit('joinChat', { chatId, userId });
+            const data = await fetchChatHistory(chatId);
+            const uniqueMessages = data.reduce((acc, msg) => {
+                const isDuplicate = acc.some(
+                    (m) =>
+                        m.sender === msg.sender &&
+                        m.content === msg.content &&
+                        Math.abs(new Date(m.timestamp).getTime() - new Date(msg.timestamp).getTime()) < 1000
+                );
 
-            socket.on('joinedChat', (response) => {
-                console.log('✅ Successfully joined chat:', response);
-            });
+                if (!isDuplicate) {
+                    acc.push({
+                        sender: msg.sender,
+                        senderName: msg.senderName || 'Unknown User',
+                        content: msg.content,
+                        timestamp: msg.timestamp || new Date().toISOString(),
+                    });
+                }
 
-            socket.on('error', (error) => {
-                console.error('❌ Error joining chat:', error);
-            });
+                return acc;
+            }, []);
+
+            setMessages(uniqueMessages);
+            console.log('✅ Chat history loaded without duplicates:', uniqueMessages);
         } catch (err) {
             console.error('❌ Failed to load chat history:', err);
-            setError('Failed to load chat history.');
         }
     };
 
-
-    // Send a message
+  // Send a message
     // Initialize socket
    
     const handleSendMessage = async () => {

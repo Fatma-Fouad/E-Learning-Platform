@@ -159,10 +159,10 @@ export class ForumsService {
             const creator = await this.userModel.findById(thread.createdBy).select('name').exec();
             const senderName = creator?.name || 'Unknown User';
 
-            // Ensure participants are strings
-            const participantIds: string[] = (updatedForum.participants || []).map((participantId) =>
-                participantId.toString()
-            );
+            // Ensure participants are strings and filter out the sender
+            const participantIds: string[] = (updatedForum.participants || [])
+                .map((participantId) => participantId.toString())
+                .filter((participantId) => participantId !== thread.createdBy.toString());
 
             console.log('✅ Participants to Notify:', participantIds);
 

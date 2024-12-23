@@ -72,14 +72,14 @@ const setupGlobalListeners = (socket: Socket) => {
     /** ✅ Listen for New Thread Notifications */
     socket.off('newThread').on('newThread', (payload) => {
         console.log('🔔 New Thread Notification:', payload);
+
+        // Show notification for the new thread
         showNotification({
             title: '🧵 New Thread Created',
             message: payload.content,
             sender: payload.sender,
         });
     });
-
-    /** ✅ Listen for New Reply Notifications */
     /** ✅ Listen for New Reply Notifications */
     socket.off('newReply').on('newReply', (payload) => {
         console.log('🔔 New Reply Notification:', payload);
@@ -89,7 +89,7 @@ const setupGlobalListeners = (socket: Socket) => {
             `💬 ${payload.sender || 'System'}: ${payload.content}`,
             {
                 position: 'top-right',
-                autoClose: 5000,
+                autoClose: false,
                 hideProgressBar: false,
                 closeOnClick: true,
                 pauseOnHover: true,

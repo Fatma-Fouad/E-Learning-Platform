@@ -93,12 +93,21 @@ export class NotificationGateway {
         senderId: string
     ) {
         try {
-            for (const userId of userIds) {
+            // Filter out the sender's ID from the userIds array
+            const recipients = userIds.filter(userId => userId !== senderId);
+
+            // Debugging to ensure filtering works correctly
+            console.log('🔔 Recipients after filtering:', recipients);
+            console.log('📝 Thread Title:', title);
+            console.log('👤 Sender Name:', senderName);
+            console.log('🆔 Sender ID:', senderId);
+
+            for (const userId of recipients) {
                 const roomName = `user:${userId}`;
                 const roomMembers = this.server.sockets.adapter.rooms.get(roomName);
 
                 if (!roomMembers) {
-                    console.warn(`User ${userId} is not connected to room: ${roomName}`);
+                    console.warn(`⚠️ User ${userId} is not connected to room: ${roomName}`);
                     continue;
                 }
 
@@ -112,6 +121,8 @@ export class NotificationGateway {
                 this.server.to(roomName).emit('newNotification', notification);
                 console.log(`✅ Notification sent to ${roomName}:`, notification);
             }
+
+            console.log('✅ Thread notifications sent successfully.');
         } catch (error) {
             console.error('❌ Error sending thread notification:', error.message);
         }
@@ -125,8 +136,10 @@ export class NotificationGateway {
         senderId: string
     ) {
         try {
+
+            const recipients = userIds.filter(userId => userId !== senderId);
             // ✅ Log Details Before Sending Notifications
-            console.log('🔔 Sending reply notifications to users:', userIds);
+            console.log('🔔 Sending reply notifications to users:', recipients);
             console.log('📝 Reply Content:', replyContent);
             console.log('👤 Sender Name:', senderName);
             console.log('🆔 Sender ID:', senderId);
@@ -160,7 +173,6 @@ export class NotificationGateway {
     /**
      * Allow users to join their notification rooms.
      */
-    @SubscribeMessage('joinNotifications')
 
     @SubscribeMessage('joinNotifications')
     handleJoinNotifications(
