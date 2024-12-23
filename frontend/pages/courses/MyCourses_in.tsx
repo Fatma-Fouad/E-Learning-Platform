@@ -37,7 +37,8 @@ const AllCoursesPage = () => {
   const router = useRouter();
 
   const token = localStorage.getItem("token");
-  const storedUserId = localStorage.getItem("userId"); // Fetch user ID from local storage
+  const storedUserId = localStorage.getItem("userId");
+  const storedUserName = localStorage.getItem("name") // Fetch user ID from local storage
 
   useEffect(() => {
     if (!token || !storedUserId) {
@@ -62,12 +63,9 @@ const AllCoursesPage = () => {
           }
         );
         if (response.data.courses.length === 0) {
-          // If no courses are found, set the error message but don't stop the app
           setError("No courses found for this instructor.");
-          setCourses([]); // Ensure courses is set to an empty array
-        } else {
-          setCourses(response.data.courses);
         }
+        setCourses(response.data.courses || []);
       } catch (err: any) {
         console.error("Error fetching courses by instructor:", err);
         setError(err.response?.data?.message || "Failed to fetch courses. Please try again.");
@@ -98,7 +96,7 @@ const AllCoursesPage = () => {
       nom_of_modules: Number(newCourse.nom_of_modules || 0),
       course_rating: Number(newCourse.course_rating || 0),
       ratingCount: Number(newCourse.ratingCount || 0),
-      created_by: storedUserId, // Use user ID from local storage
+      created_by: storedUserName, // Use user ID from local storage
       instructor_id: storedUserId, // Use user ID from local storage
     };
 
@@ -137,14 +135,13 @@ const AllCoursesPage = () => {
   };
 
   if (loading) return <p>Loading courses...</p>;
+  if (error && courses.length === 0) return <p style={{ color: "red" }}>{error}</p>;
 
   return (
     <div>
       <h1>All Courses</h1>
 
-      {error && courses.length === 0 ? (
-        <p style={{ color: "orange" }}>{error}</p>
-      ) : (
+      {courses.length > 0 ? (
         <ul>
           {courses.map((course) => (
             <li key={course._id}>
@@ -160,6 +157,8 @@ const AllCoursesPage = () => {
             </li>
           ))}
         </ul>
+      ) : (
+        <p style={{ color: "orange" }}>Warning: This instructor currently has no courses listed.</p>
       )}
 
       <h2>Create a New Course</h2>
