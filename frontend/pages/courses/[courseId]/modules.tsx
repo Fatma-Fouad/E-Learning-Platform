@@ -48,7 +48,9 @@ const ModulesPage = () => {
 
   if (loading) return <p>Loading modules...</p>;
   if (error) return <p style={{ color: 'red' }}>{error}</p>;
-  if (noModulesFound) return <p style={{ color: 'blue' }}>No modules found for this course.</p>; // Handle no modules found
+  
+  // Handle no modules found
+  if (noModulesFound) return <p style={{ color: 'blue' }}>No modules found for this course.</p>;
 
   // Separate active and outdated modules
   const activeModules = modules.filter((module) => !module.isModuleOutdated);
@@ -59,42 +61,48 @@ const ModulesPage = () => {
       <button onClick={() => router.push(`/courses/${courseId}`)}>Back to the Course</button>
       <h1>Modules for Course ID: {courseId}</h1>
 
-      <h2>Active Modules</h2>
-      {activeModules.length > 0 ? (
-        <ul>
-          {activeModules.map((module) => (
-            <li key={module._id}>
-              <h3>Module Number : {module.module_order}</h3>
-              <p>Created At: {new Date(module.created_at).toLocaleDateString()}</p>
-              <p>Title: {module.title}</p>
-              <p>Module Version: {module.module_version}</p>
-              <button onClick={() => router.push(`/modules/${module._id}`)}>
-                View Module
-              </button>
-            </li>
-          ))}
-        </ul>
+      {noModulesFound ? (
+        <p style={{ color: 'blue' }}>No modules found for this course.</p>
       ) : (
-        <p>No active modules found for this course.</p>
-      )}
+        <>
+          <h2>Active Modules</h2>
+          {activeModules.length > 0 ? (
+            <ul>
+              {activeModules.map((module) => (
+                <li key={module._id}>
+                  <h3>Module Number : {module.module_order}</h3>
+                  <p>Created At: {new Date(module.created_at).toLocaleDateString()}</p>
+                  <p>Title: {module.title}</p>
+                  <p>Module Version: {module.module_version}</p>
+                  <button onClick={() => router.push(`/modules/${module._id}`)}>
+                    View Module
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>No active modules found for this course.</p>
+          )}
 
-      <h2>Outdated Modules</h2>
-      {outdatedModules.length > 0 ? (
-        <ul>
-          {outdatedModules.map((module) => (
-            <li key={module._id}>
-              <h3>Module Number : {module.module_order}</h3>
-              <p>Created At: {new Date(module.created_at).toLocaleDateString()}</p>
-              <p>Title: {module.title}</p>
-              <p>Module Version: {module.module_version}</p>
-              <button onClick={() => router.push(`/modules/${module._id}`)}>
-                View Module
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p>No outdated modules found for this course.</p>
+          <h2>Outdated Modules</h2>
+          {outdatedModules.length > 0 ? (
+            <ul>
+              {outdatedModules.map((module) => (
+                <li key={module._id}>
+                  <h3>Module Number : {module.module_order}</h3>
+                  <p>Created At: {new Date(module.created_at).toLocaleDateString()}</p>
+                  <p>Title: {module.title}</p>
+                  <p>Module Version: {module.module_version}</p>
+                  <button onClick={() => router.push(`/modules/${module._id}`)}>
+                    View Module
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>No outdated modules found for this course.</p>
+          )}
+        </>
       )}
 
       <button onClick={() => router.push(`/courses/createmodule`)}>Create new Module</button>
@@ -103,4 +111,3 @@ const ModulesPage = () => {
 };
 
 export default ModulesPage;
-

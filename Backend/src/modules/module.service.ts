@@ -540,7 +540,8 @@ async getModulesByCourseOrderedByDate(courseId: string): Promise<ModuleDocument[
 
     // Check if no modules were found
     if (!modules || modules.length === 0) {
-      throw new NotFoundException(`No modules found for course ID ${courseId}.`);
+      console.log(`No modules found for course ID ${courseId}.`);
+      return []; // Return an empty array
     }
 
     return modules; // Return the list of modules
@@ -551,6 +552,7 @@ async getModulesByCourseOrderedByDate(courseId: string): Promise<ModuleDocument[
     );
   }
 }
+
 
 async toggleNotes(moduleId: string, enabled: boolean): Promise<modules> {
   if (!Types.ObjectId.isValid(moduleId)) {
