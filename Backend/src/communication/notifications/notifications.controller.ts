@@ -17,24 +17,24 @@ export class NotificationController {
 
     // Get notifications for a specific user (Access: Admin, Instructor, Student)
     @Get(':userId')
-  //  @UseGuards(AuthGuard, RolesGuard)
-  //  @Roles('student' as Role, 'instructor ' as Role)
+   @UseGuards(AuthGuard, RolesGuard)
+   @Roles('student' as Role, 'instructor' as Role)
     async getNotifications(@Param('userId') userId: string) {
         return this.notificationService.getNotifications(userId);
     }
 
     // Mark a notification as read (Access: Admin, Instructor, Student)
     @Put(':notificationId/read')
-   // @UseGuards(AuthGuard, RolesGuard)
-   // @Roles('student' as Role, 'instructor ' as Role)
+   @UseGuards(AuthGuard, RolesGuard)
+   @Roles('student' as Role, 'instructor' as Role)
     async markAsRead(@Param('notificationId') notificationId: string) {
         return this.notificationService.markAsRead(notificationId);
     }
 
     // Create a new notification (Access: Admin, Instructor)
     @Post()
-  //  @UseGuards(AuthGuard, RolesGuard)
-  //  @Roles('student' as Role, 'instructor ' as Role)
+   @UseGuards(AuthGuard, RolesGuard)
+   @Roles('student' as Role, 'instructor' as Role)
     async createNotification(
         @Body('userId') userId: string,
         @Body('type') type: string,
@@ -51,8 +51,8 @@ export class NotificationController {
 
     // Test notification (Access: Admin, Instructor)
     @Post('test-notification')
-  //  @UseGuards(AuthGuard, RolesGuard)
-  //  @Roles('student' as Role, 'instructor ' as Role)
+   @UseGuards(AuthGuard, RolesGuard)
+   @Roles('student' as Role, 'instructor' as Role)
     async testNotification(@Body() body: { chatId: string; userId: string; type: string; content: string }) {
         const { chatId, userId, type, content } = body;
 
@@ -96,8 +96,8 @@ export class NotificationController {
 
     // Platform-wide notifications (Access: Admin)
     @Post('platform')
-  //  @UseGuards(AuthGuard, RolesGuard)
-  //  @Roles('student' as Role, 'instructor ' as Role)
+   @UseGuards(AuthGuard, RolesGuard)
+   @Roles('student' as Role, 'instructor' as Role)
     async sendPlatformNotificationToAllUsers(@Body('content') content: string) {
         if (!content) {
             throw new BadRequestException('Notification content is required.');
@@ -114,8 +114,8 @@ export class NotificationController {
 
     // Get user notifications with pagination (Access: Admin, Instructor, Student)
     @Get(':userId')
-  //  @UseGuards(AuthGuard, RolesGuard)
-   // @Roles('student' as Role, 'instructor ' as Role)
+   @UseGuards(AuthGuard, RolesGuard)
+   @Roles('student' as Role, 'instructor' as Role)
     async getUserNotifications(
         @Param('userId') userId: string,
         @Query('page') page: number = 1,
@@ -130,8 +130,8 @@ export class NotificationController {
 
     // Get unread notifications for a user (Access: Admin, Instructor, Student)
     @Get(':userId/unread')
- //   @UseGuards(AuthGuard, RolesGuard)
-  //  @Roles('student' as Role, 'instructor ' as Role)
+   @UseGuards(AuthGuard, RolesGuard)
+   @Roles('student' as Role, 'instructor' as Role)
     async getUnreadNotifications(@Param('userId') userId: string) {
         try {
             return await this.notificationService.getUnreadNotifications(userId);
@@ -143,8 +143,8 @@ export class NotificationController {
 
     // Mark a specific notification as read (Access: Admin, Instructor, Student)
     @Put(':notificationId/read')
-   // @UseGuards(AuthGuard, RolesGuard)
-  //  @Roles('student' as Role, 'instructor ' as Role)
+   @UseGuards(AuthGuard, RolesGuard)
+   @Roles('student' as Role, 'instructor' as Role)
     async markNotificationAsRead(@Param('notificationId') notificationId: string) {
         try {
             return await this.notificationService.markNotificationAsRead(notificationId);
@@ -156,8 +156,8 @@ export class NotificationController {
 
     // Mark all notifications as read for a user (Access: Admin, Instructor, Student)
     @Put(':userId/read-all')
-  //  @UseGuards(AuthGuard, RolesGuard)
-   // @Roles('student' as Role, 'instructor ' as Role)
+   @UseGuards(AuthGuard, RolesGuard)
+   @Roles('student' as Role, 'instructor' as Role)
     async markAllNotificationsAsRead(@Param('userId') userId: string) {
         try {
             return await this.notificationService.markAllNotificationsAsRead(userId);
@@ -171,8 +171,8 @@ export class NotificationController {
 
     // Get notifications by type (Access: Admin, Instructor, Student)
     @Get(':userId/type')
- //   @UseGuards(AuthGuard, RolesGuard)
- //   @Roles('student' as Role, 'instructor ' as Role)
+   @UseGuards(AuthGuard, RolesGuard)
+   @Roles('student' as Role, 'instructor' as Role)
     async getNotificationsByType(
         @Param('userId') userId: string,
         @Query('type') type: string
@@ -198,4 +198,3 @@ export class NotificationController {
         }
     }
 }
-

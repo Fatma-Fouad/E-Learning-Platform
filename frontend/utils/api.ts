@@ -16,9 +16,16 @@ interface Thread {
     replies: any[];
 }
 
+const getToken = (): string | null => {
+    return localStorage.getItem('token');
+};
+
 // Fetch all available courses
 export const fetchCourses = async (): Promise<{ _id: string; title: string }[]> => {
-    const response = await fetch(`${BASE_URL}/courses/available-courses`);
+    const token = getToken();
+    const response = await fetch(`${BASE_URL}/courses/available-courses`, {
+        headers: {Authorization: `Bearer ${token}`},
+    });
     if (!response.ok) {
         throw new Error('Failed to fetch courses');
     }
@@ -27,12 +34,15 @@ export const fetchCourses = async (): Promise<{ _id: string; title: string }[]> 
 
 // Search courses by keyword
 export const searchCoursesByKeyword = async (keyword: string) => {
+    const token = getToken();
     if (!keyword || keyword.trim() === '') {
         throw new Error('Search keyword cannot be empty.');
     }
 
     const response = await fetch(
-        `http://localhost:3001/courses/search-by-keyword?keyword=${encodeURIComponent(keyword)}`
+        `http://localhost:3000/courses/search-by-keyword?keyword=${encodeURIComponent(keyword)}`, {
+            headers: {Authorization: `Bearer ${token}`},
+        }
     );
 
     if (!response.ok) {
@@ -44,11 +54,13 @@ export const searchCoursesByKeyword = async (keyword: string) => {
 };
 
 export const searchThreadsInCourse = async (courseId: string, searchTerm: string): Promise<Thread[]> => {
+    const token = getToken();
     try {
         console.log('🔍 Searching Threads in Course:', { courseId, searchTerm });
 
         const response = await axios.get(`http://localhost:3000/forums/${courseId}/search-threads`, {
-            params: { q: searchTerm }
+            params: { q: searchTerm },
+            headers: {Authorization: `Bearer ${token}`},
         });
 
         if (Array.isArray(response.data)) {
@@ -65,6 +77,7 @@ export const searchThreadsInCourse = async (courseId: string, searchTerm: string
 
 
 export const fetchCourseById = async (id: string, userId?: string) => {
+    const token = getToken();
     try {
         if (!id) throw new Error('Course ID is required');
 
@@ -75,7 +88,9 @@ export const fetchCourseById = async (id: string, userId?: string) => {
 
         console.log('🔗 Fetching course from:', url.toString());
 
-        const response = await fetch(url.toString());
+        const response = await fetch(url.toString(), {
+            headers: {Authorization: `Bearer ${token}`},
+        });
 
         if (!response.ok) {
             const errorDetails = await response.text();
@@ -93,9 +108,12 @@ export const fetchCourseById = async (id: string, userId?: string) => {
 };
 
 export const fetchAvailableCourses = async () => {
+    const token = getToken();
     try {
         console.log('🔗 Fetching available courses from backend...');
-        const response = await fetch(`${BASE_URL}/courses/available-courses`);
+        const response = await fetch(`${BASE_URL}/courses/available-courses`, {
+            headers: {Authorization: `Bearer ${token}`},
+        });
 
         if (!response.ok) {
             const errorDetails = await response.text();
@@ -113,6 +131,7 @@ export const fetchAvailableCourses = async () => {
 
 
 export const fetchForumsByCourse = async (courseId: string, userId: string) => {
+    const token = getToken();
     try {
         if (!courseId || !userId) {
             throw new Error('Both courseId and userId are required');
@@ -123,7 +142,9 @@ export const fetchForumsByCourse = async (courseId: string, userId: string) => {
 
         console.log('🔗 Fetching forums from:', url.toString());
 
-        const response = await fetch(url.toString());
+        const response = await fetch(url.toString(), {
+            headers: {Authorization: `Bearer ${token}`},
+        });
 
         if (!response.ok) {
             const errorDetails = await response.text();
@@ -139,9 +160,10 @@ export const fetchForumsByCourse = async (courseId: string, userId: string) => {
 
 
 export const addThread = async (courseId: string, title: string, description: string, createdBy: string) => {
+    const token = getToken();
     const response = await fetch(`http://localhost:3000/forums/${courseId}/threads`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ title, description, createdBy }),
     });
     if (!response.ok) throw new Error('Failed to add thread');
@@ -149,6 +171,7 @@ export const addThread = async (courseId: string, title: string, description: st
 };
 
 export const addReply = async (courseId: string, threadId: string, userId: string, message: string) => {
+    const token = getToken();
     console.log('API call - courseId:', courseId);
     console.log('API call - threadId:', threadId);
     console.log('API call - userId:', userId);
@@ -157,7 +180,7 @@ export const addReply = async (courseId: string, threadId: string, userId: strin
     const response = await fetch(`${BASE_URL}/forums/${courseId}/threads/${threadId}/replies`, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json', Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({ userId, message }),
     });
@@ -179,9 +202,10 @@ export const editThread = async (
     userId: string,
     updateData: { title?: string; description?: string }
 ) => {
+    const token = getToken();
     const response = await fetch(`${BASE_URL}/forums/${courseId}/threads/${threadId}?userId=${userId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(updateData),
     });
     if (!response.ok) throw new Error('Failed to edit thread');
@@ -190,10 +214,12 @@ export const editThread = async (
 
 
 export const deleteThread = async (courseId: string, threadId: string, userId: string) => {
+    const token = getToken();
     const response = await fetch(
         `${BASE_URL}/forums/${courseId}/threads/${threadId}?userId=${userId}`,
         {
             method: 'DELETE',
+            headers: {Authorization: `Bearer ${token}`}
         }
     );
     if (!response.ok) {
@@ -208,10 +234,12 @@ export const deleteReply = async (
     replyId: string,
     userId: string
 ) => {
+    const token = getToken();
     const response = await fetch(
         `${BASE_URL}/forums/${courseId}/threads/${threadId}/replies/${replyId}?userId=${userId}`,
         {
             method: 'DELETE',
+            headers: {Authorization: `Bearer ${token}`}
         }
     );
     if (!response.ok) {
@@ -222,9 +250,10 @@ export const deleteReply = async (
 
 
 export const addForum = async (courseId: string, courseName: string, createdBy: string) => {
+    const token = getToken();
     const response = await fetch(`${BASE_URL}/forums/create`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ courseId, courseName, createdBy }),
     });
     if (!response.ok) throw new Error('Failed to create forum');
@@ -232,8 +261,10 @@ export const addForum = async (courseId: string, courseName: string, createdBy: 
 };
 
 export const deleteForum = async (forumId: string, userId: string) => {
+    const token = getToken();
     const response = await fetch(`${BASE_URL}/forums/${forumId}?userId=${userId}`, {
         method: 'DELETE',
+        headers: {Authorization: `Bearer ${token}`}
     });
     if (!response.ok) throw new Error('Failed to delete forum');
     return response.json();
@@ -243,12 +274,13 @@ export const deleteForum = async (forumId: string, userId: string) => {
 
 //chats
 export const createChat = async (type, payload) => {
+    const token = getToken();
     try {
         console.log("🚀 Sending Payload to Backend:", payload);
 
         const response = await fetch(`http://localhost:3000/chat/${type}`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify(payload),
         });
 
@@ -273,22 +305,27 @@ export const createChat = async (type, payload) => {
 
 
 export const fetchChatMessages = async (courseId: string) => {
-    const response = await fetch(`http://localhost:3000/chat/${courseId}`);
+    const token = getToken();
+    const response = await fetch(`http://localhost:3000/chat/${courseId}`, {
+        headers: {Authorization: `Bearer ${token}`},
+    });
     if (!response.ok) throw new Error('Failed to fetch chat messages');
     return response.json();
 };
 
 
 export const sendChatMessage = async (courseId: string, message: string) => {
+    const token = getToken();
     const response = await fetch(`http://localhost:3000/chat/${courseId}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ message }),
     });
     if (!response.ok) throw new Error('Failed to send message');
     return response.json();
 };
 export const fetchChatsByCourse = async (courseId: string, userId: string) => {
+    const token = getToken();
     try {
         console.log('Fetching chats with:', {
             courseId,
@@ -297,7 +334,9 @@ export const fetchChatsByCourse = async (courseId: string, userId: string) => {
         });
 
         const response = await fetch(
-            `http://localhost:3000/chat/course/${courseId}?userId=${userId}`
+            `http://localhost:3000/chat/course/${courseId}?userId=${userId}`, {
+                headers: {Authorization: `Bearer ${token}`},
+            }
         );
 
         if (!response.ok) {
@@ -316,15 +355,19 @@ export const fetchChatsByCourse = async (courseId: string, userId: string) => {
 
 
 export const fetchChatHistory = async (chatId: string) => {
-    const response = await fetch(`http://localhost:3000/chat/${chatId}/messages`);
+    const token = getToken();
+    const response = await fetch(`http://localhost:3000/chat/${chatId}/messages`, {
+        headers: {Authorization: `Bearer ${token}`},
+    });
     if (!response.ok) throw new Error('Failed to fetch chat history');
     return response.json();
 };
 
 export const addMessageToChat = async (chatId: string, payload: { sender: string; content: string }) => {
+    const token = getToken();
     const response = await fetch(`http://localhost:3000/chat/message/${chatId}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(payload),
     });
 
@@ -336,5 +379,3 @@ export const addMessageToChat = async (chatId: string, payload: { sender: string
 
     return response.json();
 };
-
-
