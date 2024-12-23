@@ -59,7 +59,6 @@ const CoursePage = () => {
       <div style={styles.header}>
         <h1 style={styles.title}>{courseData?.title || "Course Page"}</h1>
         <p style={styles.subtitle}>Instructor: {courseData?.instructor_name || "Unknown"}</p>
-        <p style={styles.subtitle}>Rating: {courseData?.course_rating || "No rating yet"} / 5</p>
         <p style={styles.subtitle}>Total Modules: {courseData?.nom_of_modules || 0}</p>
         <p style={styles.subtitle}>Enrolled Students: {courseData?.enrolled_students || 0}</p>
       </div>

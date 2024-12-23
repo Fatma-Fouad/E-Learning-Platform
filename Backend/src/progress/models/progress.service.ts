@@ -37,31 +37,38 @@ async getStudentsEngagementReport(courseId: string) {
   
     // Calculate average course score, skipping null avg_score values
     const validScores = courseProgressRecords
-      .map((record) => record.avg_score)
-      .filter((score) => score !== null);
+    .map((record) => record.avg_score)
+    .filter((score) => score !== null);
     const totalAvgScore = validScores.reduce((sum, score) => sum + score, 0);
     const averageCourseScore = validScores.length > 0 ? totalAvgScore / validScores.length : 0;
-  
+
+    // Define static boundaries for performance metrics
+    const belowAverageThreshold = 40; // Below Average threshold
+    const averageThreshold = 60; // Average threshold
+    const aboveAverageThreshold = 80; // Above Average threshold
+
+    // Count performance tiers based on the new thresholds
     const performanceCounts = {
-      below_average: courseProgressRecords.filter(
-        (record) => record.avg_score !== null && record.avg_score < averageCourseScore * 0.5
-      ).length,
-      average: courseProgressRecords.filter(
-        (record) =>
-          record.avg_score !== null &&
-          record.avg_score >= averageCourseScore * 0.5 &&
-          record.avg_score < averageCourseScore
-      ).length,
-      above_average: courseProgressRecords.filter(
-        (record) =>
-          record.avg_score !== null &&
-          record.avg_score >= averageCourseScore &&
-          record.avg_score < averageCourseScore * 1.2
-      ).length,
-      excellent: courseProgressRecords.filter(
-        (record) => record.avg_score !== null && record.avg_score >= averageCourseScore * 1.2
-      ).length,
+    below_average: courseProgressRecords.filter(
+      (record) => record.avg_score !== null && record.avg_score < belowAverageThreshold
+    ).length,
+    average: courseProgressRecords.filter(
+      (record) =>
+        record.avg_score !== null &&
+        record.avg_score >= belowAverageThreshold &&
+        record.avg_score < averageThreshold
+    ).length,
+    above_average: courseProgressRecords.filter(
+      (record) =>
+        record.avg_score !== null &&
+        record.avg_score >= averageThreshold &&
+        record.avg_score < aboveAverageThreshold
+    ).length,
+    excellent: courseProgressRecords.filter(
+      (record) => record.avg_score !== null && record.avg_score >= aboveAverageThreshold
+    ).length,
     };
+
   
     // Calculate average completion percentage, skipping null values
     const validCompletion = courseProgressRecords
@@ -93,37 +100,56 @@ async getStudentsEngagementReport(courseId: string) {
     // Handle the case when no modules are found
     let moduleDetails = [];
     let averageCourseRating: string | number = 'No rating yet'; // Allow both string and number types
+    let validRatingCount = 0; // Count of modules with valid ratings
+    let modulesWithRatings: any[] = []; // Store modules with valid ratings
   
     if (modules.length > 0) {
       // Calculate average course rating
       const validModuleRatings = modules
         .map((module) => module.module_rating)
-        .filter((rating) => rating !== null); // Exclude null ratings
+        .filter((rating) => typeof rating === 'number' && !isNaN(rating)); // Only consider valid numerical ratings
   
-      const totalRatings = validModuleRatings.reduce((sum, rating) => sum + rating, 0);
-      averageCourseRating =
-        validModuleRatings.length > 0 ? parseFloat((totalRatings / validModuleRatings.length).toFixed(2)) : 'No rating yet';
+      // Ensure that we only consider modules with at least one valid rating
+      modulesWithRatings = modules.filter((module) => {
+        const validRatingsForModule = module.module_rating && typeof module.module_rating === 'number';
+        return validRatingsForModule;
+      });
   
-      // Prepare detailed module data
+      validRatingCount = modulesWithRatings.length;
+  
+      if (validRatingCount > 0) {
+        const totalRatings = validModuleRatings.reduce((sum, rating) => sum + rating, 0);
+        averageCourseRating = parseFloat((totalRatings / validRatingCount).toFixed(2)); // Compute the average and round to 2 decimal places
+      } else {
+        averageCourseRating = 'No rating yet'; // If no valid ratings, return 'No rating yet'
+      }
+  
+      // Prepare detailed module data with performance metrics
       moduleDetails = modules.map((module) => {
-        const moduleRating = module.module_rating ?? 0;
+        const moduleRating = module.module_rating ?? 0; // Default to 0 if no rating
         let performanceMetric: string;
   
-        // Determine performance category for the module
-        if (moduleRating < (typeof averageCourseRating === 'number' ? averageCourseRating * 0.5 : 0)) {
-          performanceMetric = 'Below Average';
-        } else if (
-          moduleRating >= (typeof averageCourseRating === 'number' ? averageCourseRating * 0.5 : 0) &&
-          moduleRating < (typeof averageCourseRating === 'number' ? averageCourseRating : 0)
-        ) {
-          performanceMetric = 'Average';
-        } else if (
-          moduleRating >= (typeof averageCourseRating === 'number' ? averageCourseRating : 0) &&
-          moduleRating < (typeof averageCourseRating === 'number' ? averageCourseRating * 1.2 : 0)
-        ) {
-          performanceMetric = 'Above Average';
+        // Skip modules that don't have any ratings (valid rating count must be at least 1)
+        if (validRatingCount > 0 && typeof moduleRating === 'number' && moduleRating !== 0) {
+          // Determine performance category for the module
+          if (typeof averageCourseRating === 'number') {
+            const lowerBoundary = averageCourseRating * 0.5;
+            const upperBoundary = averageCourseRating * 1.2;
+  
+            if (moduleRating < lowerBoundary) {
+              performanceMetric = 'Below Average';
+            } else if (moduleRating >= lowerBoundary && moduleRating < averageCourseRating) {
+              performanceMetric = 'Average';
+            } else if (moduleRating >= averageCourseRating && moduleRating < upperBoundary) {
+              performanceMetric = 'Above Average';
+            } else {
+              performanceMetric = 'Excellent';
+            }
+          } else {
+            performanceMetric = 'No rating yet'; // When there's no average rating
+          }
         } else {
-          performanceMetric = 'Excellent';
+          performanceMetric = 'No rating yet'; // If no valid ratings, mark the module as 'No rating yet'
         }
   
         return {
@@ -132,7 +158,7 @@ async getStudentsEngagementReport(courseId: string) {
             moduleName: module.title,
             moduleOrder: module.module_order,
             moduleVersion: module.module_version,
-            moduleRating: module.module_rating || 'No rating yet',
+            moduleRating: moduleRating || 'No rating yet',
             performanceMetric,
           },
         };
@@ -153,8 +179,11 @@ async getStudentsEngagementReport(courseId: string) {
       instructorRating: course.instructor_rating || 'No rating yet',
       comments, // Include comments or a default message
       modules: moduleDetails, // Each module with its title or default message
+      validModuleCount: validRatingCount, // Count of modules with ratings
     };
   }
+  
+  
   
   
 
@@ -245,24 +274,20 @@ async getStudentReport(userId: string, courseId: string) {
 const avgScore = studentProgress.avg_score || 0;
 let performanceMetric: string;
 
-if (typeof averageCourseScore === 'number') {
-  const lowerBoundary = averageCourseScore * 0.5; // Below Average threshold
-  const averageBoundary = averageCourseScore; // Average threshold
-  const aboveAverageBoundary = averageCourseScore * 1.2; // Above Average threshold
-  const maxScore = 100; // Maximum possible score
+// Define static boundaries for performance metrics
+const maxScore = 100;
+const belowAverageThreshold = 40; // Below Average threshold
+const averageThreshold = 60; // Average threshold
+const aboveAverageThreshold = 80; // Above Average threshold
 
-  // Define thresholds with dynamic adjustments
-  if (avgScore < lowerBoundary) {
-    performanceMetric = 'Below Average';
-  } else if (avgScore >= lowerBoundary && avgScore < averageBoundary) {
-    performanceMetric = 'Average';
-  } else if (avgScore >= averageBoundary && avgScore < Math.min(aboveAverageBoundary, maxScore)) {
-    performanceMetric = 'Above Average';
-  } else {
-    performanceMetric = 'Excellent';
-  }
+if (avgScore < belowAverageThreshold) {
+  performanceMetric = 'Below Average';
+} else if (avgScore >= belowAverageThreshold && avgScore < averageThreshold) {
+  performanceMetric = 'Average';
+} else if (avgScore >= averageThreshold && avgScore < aboveAverageThreshold) {
+  performanceMetric = 'Above Average';
 } else {
-  performanceMetric = 'Unknown';
+  performanceMetric = 'Excellent';
 }
 
 

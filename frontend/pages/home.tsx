@@ -1,29 +1,67 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+import axios from "axios";
 
 const Home = () => {
   const router = useRouter();
   const [user, setUser] = useState<{ name: string; role: string; email: string; gpa?: number } | null>(null);
+  const [gpa, setGpa] = useState(null);
+  const token = localStorage.getItem("token");
+  const storedUserId = localStorage.getItem("userId");
 
   // Fetch user information from localStorage
   useEffect(() => {
     const name = localStorage.getItem("name");
     const role = localStorage.getItem("role");
     const email = localStorage.getItem("email");
-    const gpa = localStorage.getItem("gpa");
 
     if (name || role) {
       setUser({
         name,
         role,
         email,
-        gpa: gpa ? parseFloat(gpa) : undefined, // Convert GPA to a number if it exists
       });
     } else {
       // Redirect to login if no user info exists
       router.push("/login");
     }
   }, [router]);
+
+  // Fetch the GPA for students
+  useEffect(() => {
+    if (user?.role === "student") {
+      const fetchStudentGPA = async () => {
+        if (!storedUserId) {
+          console.error("No student ID found in local storage.");
+          return;
+        }
+
+        try {
+          const response = await axios.get(
+            `http://localhost:3000/user/${storedUserId}/profile`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          console.log("Student data:", response.data); // Log the student data
+
+          const fetchedGpa = response.data?.gpa; // Assuming GPA is under data.gpa
+          if (fetchedGpa !== undefined) {
+            console.log("Fetched GPA:", fetchedGpa);
+            setGpa(fetchedGpa);
+          } else {
+            console.error("GPA not found for the student.");
+          }
+        } catch (err) {
+          console.error("Error fetching student data:", err);
+        }
+      };
+
+      fetchStudentGPA();
+    }
+  }, [user, storedUserId, token]);
 
   // Handle logout
   const handleLogout = () => {
@@ -62,12 +100,12 @@ const Home = () => {
         </button>
         {user?.role === "student" && (
           <button style={styles.logoutButton} onClick={handleStudentCourses}>
-            My Courses (stud)
+            My Courses
           </button>
         )}
         {user?.role === "instructor" && (
           <button style={styles.logoutButton} onClick={handleInstructorCourses}>
-            My Courses (inst)
+            My Courses
           </button>
         )}
       </nav>
@@ -88,7 +126,7 @@ const Home = () => {
             </p>
             {user?.role === "student" && (
               <p>
-                <strong>GPA:</strong> {user.gpa !== undefined ? user.gpa : "N/A"}
+                <strong>GPA:</strong> {gpa !== null ? gpa : "Loading..."}
               </p>
             )}
           </div>
@@ -127,16 +165,5 @@ const styles = {
   userInfo: {
     marginTop: "1rem",
     fontSize: "1.2rem",
-  },
-  button: {
-    padding: "15px 25px",
-    fontSize: "1.1rem",
-    backgroundColor: "#9fcdff", // Light pastel blue
-    color: "#ffffff",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-    transition: "all 0.3s ease",
-    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
   },
 };

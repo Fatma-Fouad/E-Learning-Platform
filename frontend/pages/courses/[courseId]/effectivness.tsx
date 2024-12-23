@@ -98,7 +98,7 @@ const ContentEffectivenessReport = () => {
 
       <div id="report">
         <h1 className="reportTitle">Content Effectiveness Report</h1>
-        <p className="reportDetails">Course Rating: {contentData.courseRating}</p>
+        <p className="reportDetails">Course Rating: {contentData.courseRating} / 5</p>
         <p className="reportDetails">Instructor Rating: {contentData.instructorRating}</p>
 
         {hasValidModules ? (
