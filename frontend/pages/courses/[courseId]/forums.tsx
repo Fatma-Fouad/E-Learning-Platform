@@ -15,7 +15,7 @@ import {
     deleteForum,
     searchThreadsInCourse,
    
-} from '../../utils/api';
+} from '../../../utils/api';
 
 
 interface ReplyNotification {

@@ -5,7 +5,7 @@ import axios from 'axios';
 
 import { io, Socket } from 'socket.io-client';
 
-const BASE_URL = 'http://localhost:3001';
+const BASE_URL = 'http://localhost:3000';
 let socket: Socket | null = null;
 
 /**

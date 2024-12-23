@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 
-const BASE_URL = 'http://localhost:3001';
+const BASE_URL = 'http://localhost:3000';
 interface Thread {
     title: string;
     description: string;
@@ -47,7 +47,7 @@ export const searchThreadsInCourse = async (courseId: string, searchTerm: string
     try {
         console.log('🔍 Searching Threads in Course:', { courseId, searchTerm });
 
-        const response = await axios.get(`http://localhost:3001/forums/${courseId}/search-threads`, {
+        const response = await axios.get(`http://localhost:3000/forums/${courseId}/search-threads`, {
             params: { q: searchTerm }
         });
 
@@ -139,7 +139,7 @@ export const fetchForumsByCourse = async (courseId: string, userId: string) => {
 
 
 export const addThread = async (courseId: string, title: string, description: string, createdBy: string) => {
-    const response = await fetch(`http://localhost:3001/forums/${courseId}/threads`, {
+    const response = await fetch(`http://localhost:3000/forums/${courseId}/threads`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, description, createdBy }),
@@ -246,7 +246,7 @@ export const createChat = async (type, payload) => {
     try {
         console.log("🚀 Sending Payload to Backend:", payload);
 
-        const response = await fetch(`http://localhost:3001/chat/${type}`, {
+        const response = await fetch(`http://localhost:3000/chat/${type}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
@@ -273,14 +273,14 @@ export const createChat = async (type, payload) => {
 
 
 export const fetchChatMessages = async (courseId: string) => {
-    const response = await fetch(`http://localhost:3001/chat/${courseId}`);
+    const response = await fetch(`http://localhost:3000/chat/${courseId}`);
     if (!response.ok) throw new Error('Failed to fetch chat messages');
     return response.json();
 };
 
 
 export const sendChatMessage = async (courseId: string, message: string) => {
-    const response = await fetch(`http://localhost:3001/chat/${courseId}`, {
+    const response = await fetch(`http://localhost:3000/chat/${courseId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message }),
@@ -293,11 +293,11 @@ export const fetchChatsByCourse = async (courseId: string, userId: string) => {
         console.log('Fetching chats with:', {
             courseId,
             userId,
-            endpoint: `http://localhost:3001/chat/course/${courseId}?userId=${userId}`,
+            endpoint: `http://localhost:3000/chat/course/${courseId}?userId=${userId}`,
         });
 
         const response = await fetch(
-            `http://localhost:3001/chat/course/${courseId}?userId=${userId}`
+            `http://localhost:3000/chat/course/${courseId}?userId=${userId}`
         );
 
         if (!response.ok) {
@@ -316,13 +316,13 @@ export const fetchChatsByCourse = async (courseId: string, userId: string) => {
 
 
 export const fetchChatHistory = async (chatId: string) => {
-    const response = await fetch(`http://localhost:3001/chat/${chatId}/messages`);
+    const response = await fetch(`http://localhost:3000/chat/${chatId}/messages`);
     if (!response.ok) throw new Error('Failed to fetch chat history');
     return response.json();
 };
 
 export const addMessageToChat = async (chatId: string, payload: { sender: string; content: string }) => {
-    const response = await fetch(`http://localhost:3001/chat/message/${chatId}`, {
+    const response = await fetch(`http://localhost:3000/chat/message/${chatId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

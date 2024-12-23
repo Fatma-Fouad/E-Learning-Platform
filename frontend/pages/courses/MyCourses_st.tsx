@@ -65,6 +65,11 @@ const MyCoursesPage = () => {
     router.push(`/courses/${courseId}/progress`);
   };
 
+  const handleViewDetails = (courseId: string) => {
+    localStorage.setItem("courseId", courseId);
+    router.push(`/courses/${courseId}/course_st`);
+  };
+
   if (loading) return <p>Loading...</p>;
 
   return (
@@ -89,6 +94,7 @@ const MyCoursesPage = () => {
               <button onClick={() => handleViewProgress(course._id)}>
                  View Progress
               </button>
+              <button onClick={() => handleViewDetails(course._id)}>View Details</button>
             </li>
           ))}
         </ul>

@@ -6,10 +6,10 @@ import {
     fetchChatHistory,
     addMessageToChat,
     createChat,
-} from '../../utils/api';
-import { getSocket } from '../../utils/socket';
+} from '../../../utils/api';
+import { getSocket } from '../../../utils/socket';
 import { toast } from 'react-toastify';
-import { useNotificationSocket } from '../notifications/useNotificationSocket';
+import { useNotificationSocket } from '../../notifications/useNotificationSocket';
 
 
 const ChatsPage = () => {

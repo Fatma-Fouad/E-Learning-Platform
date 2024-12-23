@@ -33,27 +33,6 @@ const CoursePage = () => {
   if (loading) return <p>Loading...</p>;
   if (error) return <p style={{ color: "red" }}>{error}</p>;
 
-   // Handle Update
-   const Update = () => {
-    const courseId = localStorage.getItem("courseId");
-    if (courseId) {
-      router.push(`/courses/${courseId}/update`);
-    } else {
-      alert("Course ID not found!");
-    }
-  };
-
-  // Handle Delete
-  const Delete = () => {
-    const courseId = localStorage.getItem("courseId");
-    if (courseId) {
-      router.push(`/courses/${courseId}/delete`);
-    } else {
-      alert("Course ID not found!");
-    }
-  };
-  
-  
   return (
     <div style={styles.page}>
       <div style={styles.header}>
@@ -65,35 +44,19 @@ const CoursePage = () => {
       </div>
 
       <div style={styles.buttonContainer}>
-        <div style={styles.buttonGroup}>
-          <button style={styles.button} onClick={() => router.push('/courses/${courseId}/engagement')}>
-            Engagement Report
-          </button>
-          <button style={styles.button} onClick={() => router.push('/courses/${courseId}/effectivness')}>
-            Content Effectiveness Report
-          </button>
-          <button style={styles.button} onClick={() => router.push('/courses/${courseId}/results')}>
-            Quiz Results Report
-          </button>
-          <button style={styles.button} onClick={() => router.push('/courses/${courseId}/modules')}>
-            Manage Modules
-          </button>
-          <button style={styles.button} onClick={Update}>
-            Update Course
-          </button>
-          <button style={styles.button} onClick={Delete}>
-            Delete Course
-          </button>
-          <button style={styles.button}
+      <button
                 onClick={() => router.push(`/courses/${courseId}/forums`)}
+                style={{ marginTop: '20px', padding: '10px', backgroundColor: '#0070f3', color: '#fff' }}
             >
                 Go to Course Forums
             </button>
-            <button style={styles.button}
+            <button
                 onClick={() => router.push(`/courses/${courseId}/chats`)} // Ensure `id` is passed correctly
+                style={{ marginLeft: '10px', padding: '10px', backgroundColor: '#0070f3', color: '#fff' }}
             >
                 Go to Course Chats
             </button>
+        <div style={styles.buttonGroup}>
         </div>
       </div>
     </div>

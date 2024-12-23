@@ -28,7 +28,7 @@ const Home = () => {
 
   useEffect(() => {
     if (user?.userId) {
-      const socketConnection = io("http://localhost:3001", {
+      const socketConnection = io("http://localhost:3000", {
         query: { userId: user.userId },
       });
 
@@ -129,23 +129,6 @@ const Home = () => {
             <p>
               <strong>Role:</strong> {user.role}
             </p>
-
-            {/* New Button to Navigate to Courses Page */}
-            <button
-              onClick={() => router.push("/courses")}
-              style={{
-                backgroundColor: "#0070f3",
-                color: "white",
-                padding: "10px",
-                border: "none",
-                borderRadius: "5px",
-                cursor: "pointer",
-                fontSize: "1rem",
-                marginTop: "20px",
-              }}
-            >
-              View Available Courses
-            </button>
           </div>
         ) : (
           <p>Loading user information...</p>
