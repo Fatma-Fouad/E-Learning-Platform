@@ -502,23 +502,50 @@ async getModuleById(id: string): Promise<ModuleDocument> {
 }
 
 // Retrieve modules for a specific course, ordered by date (newest to oldest)
+// async getModulesByCourseOrderedByDate(courseId: string): Promise<ModuleDocument[]> {
+//   try {
+//     if (!Types.ObjectId.isValid(courseId)) {
+//       throw new BadRequestException('Invalid course ID format.');
+//     }
+
+//     const modules = await this.moduleModel
+//       .find({ course_id: courseId })
+//       .sort({ created_at: -1 }) // Descending order (newest to oldest)
+//       .exec();
+
+//     if (!modules || modules.length === 0) {
+//       throw new NotFoundException(`No modules found for course ID ${courseId}.`);
+//     }
+
+//     return modules;
+//   } catch (error) {
+//     throw new BadRequestException(
+//       error.message || `Error retrieving modules for course ID ${courseId}.`
+//     );
+//   }
+// }
+// Retrieve modules for a specific course, ordered by date (newest to oldest)
 async getModulesByCourseOrderedByDate(courseId: string): Promise<ModuleDocument[]> {
   try {
+    // Check if the course ID is a valid ObjectId
     if (!Types.ObjectId.isValid(courseId)) {
       throw new BadRequestException('Invalid course ID format.');
     }
 
+    // Fetch modules for the specified course, ordered by created_at (newest to oldest)
     const modules = await this.moduleModel
       .find({ course_id: courseId })
       .sort({ created_at: -1 }) // Descending order (newest to oldest)
       .exec();
 
+    // Check if no modules were found
     if (!modules || modules.length === 0) {
       throw new NotFoundException(`No modules found for course ID ${courseId}.`);
     }
 
-    return modules;
+    return modules; // Return the list of modules
   } catch (error) {
+    // Handle any errors during execution
     throw new BadRequestException(
       error.message || `Error retrieving modules for course ID ${courseId}.`
     );
