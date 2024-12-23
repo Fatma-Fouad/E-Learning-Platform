@@ -158,6 +158,9 @@ const Home = () => {
         {user?.role === "admin" && (<button onClick={backup} style={styles.logoutButton}>
           Backup Data
         </button>)}
+        <button onClick={handleDashboardRedirect} style={styles.logoutButton}>
+          Dashboard
+        </button>
       </nav>
 
       {/* Content */}
