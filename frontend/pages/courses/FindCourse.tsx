@@ -160,6 +160,7 @@ const FindCoursePage = () => {
 
   const handleEnrollCourse = (courseId: string) => {
     if (userRole === "student") {
+      router.push("/student/enrollcourse")
       console.log(`Student enrolled in course: ${courseId}`);
     } else {
       console.error("Only students can enroll in courses.");
