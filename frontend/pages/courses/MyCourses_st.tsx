@@ -65,23 +65,33 @@ const MyCoursesPage = () => {
     router.push(`/courses/${courseId}/progress`);
   };
 
+  const handleLogout = () => {
+    localStorage.clear();
+    router.push("/login");
+  };
+
+  const handleHome = () => {
+    router.push("/home"); // Change this to your home page route
+  };
+
   if (loading) return <p>Loading...</p>;
   if (error) return <p style={{ color: "red" }}>{error}</p>;
 
   return (
     <div>
-      <button style={{
-          display: "block",
-          margin: "10px auto 20px auto",
-          padding: "10px 20px",
-          backgroundColor: "#9fcdff", // Light pastel blue
-          color: "black",
-          border: "none",
-          borderRadius: "5px",
-          cursor: "pointer",
-        }} onClick={() => router.push(`/home`)}>
-        Return to Home
-      </button>
+      {/* Navbar */}
+      <nav style={styles.navbar}>
+        <h2 style={styles.logo}>E-Learning Platform</h2>
+        <div style={styles.buttonContainer}>
+          <button onClick={handleHome} style={styles.navButton}>
+            Home
+          </button>
+          <button onClick={handleLogout} style={styles.navButton}>
+            Logout
+          </button>
+        </div>
+      </nav>
+
       <h1>My Courses</h1>
 
       {error && <p style={{ color: "red" }}>{error}</p>}
@@ -114,6 +124,35 @@ const MyCoursesPage = () => {
       )}
     </div>
   );
+};
+
+const styles = {
+  navbar: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#ADD8E6", // Light blue background
+    padding: "10px 20px",
+    borderBottom: "2px solid #ccc",
+  },
+  logo: {
+    color: "#000",
+    fontSize: "24px",
+    fontWeight: "bold",
+  },
+  buttonContainer: {
+    display: "flex",
+    gap: "10px",
+  },
+  navButton: {
+    backgroundColor: "#000",
+    color: "#fff",
+    border: "none",
+    borderRadius: "5px",
+    padding: "8px 15px",
+    cursor: "pointer",
+    transition: "background-color 0.3s ease",
+  },
 };
 
 export default MyCoursesPage;
