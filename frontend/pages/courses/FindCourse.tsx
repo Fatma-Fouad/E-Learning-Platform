@@ -157,7 +157,6 @@ const FindCoursePage = () => {
       alert("You are not authorized to delete this course.");
     }
   };
-  
 
   const handleEnrollCourse = (courseId: string) => {
     if (userRole === "student") {
@@ -167,8 +166,43 @@ const FindCoursePage = () => {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.clear();
+    router.push("/login");
+  };
+
+  const handleMyCourses = () => {
+    if (userRole === "instructor") {
+      router.push("/courses/MyCourses_in");
+    } else if (userRole === "student") {
+      router.push("/courses/MyCourses_st");
+    }
+  };
+
+  const handleHome = () => {
+    router.push("/home"); // Change this to your home page route
+  };
+
   return (
     <div>
+      {/* Navbar */}
+      <nav style={styles.navbar}>
+        <h2 style={styles.logo}>E-Learning Platform</h2>
+        <div style={styles.buttonContainer}>
+          {userRole !== "admin" && (
+            <button onClick={handleMyCourses} style={styles.navButton}>
+              My Courses
+            </button>
+          )}
+          <button onClick={handleLogout} style={styles.navButton}>
+            Logout
+          </button>
+          <button onClick={handleHome} style={styles.navButton}>
+            Home
+          </button>
+        </div>
+      </nav>
+
       <h1>Find a Course</h1>
 
       {/* Search by Creator */}
@@ -232,7 +266,6 @@ const FindCoursePage = () => {
                 <p>
                   <strong>Created By:</strong> {course.created_by}
                 </p>
-                {/* Buttons based on user role */}
                 {(userRole === "instructor" || userRole === "admin") && (
                   <button onClick={() => handleDeleteCourse(course.course_id)}>
                     Delete Course
@@ -252,6 +285,35 @@ const FindCoursePage = () => {
       )}
     </div>
   );
+};
+
+const styles = {
+  navbar: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#ADD8E6", // Light blue background
+    padding: "10px 20px",
+    borderBottom: "2px solid #ccc",
+  },
+  logo: {
+    color: "#000",
+    fontSize: "24px",
+    fontWeight: "bold",
+  },
+  buttonContainer: {
+    display: "flex",
+    gap: "10px",
+  },
+  navButton: {
+    backgroundColor: "#000",
+    color: "#fff",
+    border: "none",
+    borderRadius: "5px",
+    padding: "8px 15px",
+    cursor: "pointer",
+    transition: "background-color 0.3s ease",
+  },
 };
 
 export default FindCoursePage;

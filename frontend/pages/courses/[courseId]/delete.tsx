@@ -46,10 +46,39 @@ const DeleteCoursePage = () => {
     }
   }, [courseId]);
 
+  const handleLogout = () => {
+    localStorage.clear();
+    router.push("/login");
+  };
+
+  const handleHome = () => {
+    router.push("/home");
+  };
+
+  const handleMyCourses = () => {
+    router.push("/courses/MyCourses_in");
+  };
+
   if (loading) return <p>Deleting course...</p>;
 
   return (
     <div>
+      {/* Navbar */}
+      <nav style={styles.navbar}>
+        <h2 style={styles.logo}>E-Learning Platform</h2>
+        <div style={styles.buttonContainer}>
+          <button onClick={handleHome} style={styles.navButton}>
+            Home
+          </button>
+          <button onClick={handleMyCourses} style={styles.navButton}>
+            My Courses
+          </button>
+          <button onClick={handleLogout} style={styles.navButton}>
+            Logout
+          </button>
+        </div>
+      </nav>
+
       <h1>Delete Course</h1>
       {error && <p style={{ color: "red" }}>{error}</p>}
       {successMessage && <p style={{ color: "green" }}>{successMessage}</p>}
@@ -62,6 +91,35 @@ const DeleteCoursePage = () => {
       </button>
     </div>
   );
+};
+
+const styles = {
+  navbar: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#ADD8E6",
+    padding: "10px 20px",
+    borderBottom: "2px solid #ccc",
+  },
+  logo: {
+    color: "#000",
+    fontSize: "24px",
+    fontWeight: "bold",
+  },
+  buttonContainer: {
+    display: "flex",
+    gap: "10px",
+  },
+  navButton: {
+    backgroundColor: "#000",
+    color: "#fff",
+    border: "none",
+    borderRadius: "5px",
+    padding: "8px 15px",
+    cursor: "pointer",
+    transition: "background-color 0.3s ease",
+  },
 };
 
 export default DeleteCoursePage;

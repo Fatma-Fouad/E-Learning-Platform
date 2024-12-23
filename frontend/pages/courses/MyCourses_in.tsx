@@ -19,7 +19,7 @@ const AllCoursesPage = () => {
     title: "",
     description: "",
     category: "",
-    difficulty_level: "Beginner", // Default value for dropdown
+    difficulty_level: "Beginner",
     created_by: "",
     version: 1,
     course_rating: 0,
@@ -38,7 +38,7 @@ const AllCoursesPage = () => {
 
   const token = localStorage.getItem("token");
   const storedUserId = localStorage.getItem("userId");
-  const storedUserName = localStorage.getItem("name") // Fetch user ID from local storage
+  const storedUserName = localStorage.getItem("name");
 
   useEffect(() => {
     if (!token || !storedUserId) {
@@ -46,8 +46,6 @@ const AllCoursesPage = () => {
       router.push("/login");
       return;
     }
-    console.log("Retrieved Token:", token);
-    console.log("Retrieved User ID:", storedUserId);
 
     const fetchCoursesByInstructor = async () => {
       setLoading(true);
@@ -96,8 +94,8 @@ const AllCoursesPage = () => {
       nom_of_modules: Number(newCourse.nom_of_modules || 0),
       course_rating: Number(newCourse.course_rating || 0),
       ratingCount: Number(newCourse.ratingCount || 0),
-      created_by: storedUserName, // Use user ID from local storage
-      instructor_id: storedUserId, // Use user ID from local storage
+      created_by: storedUserName,
+      instructor_id: storedUserId,
     };
 
     try {
@@ -112,7 +110,7 @@ const AllCoursesPage = () => {
           title: "",
           description: "",
           category: "",
-          difficulty_level: "Beginner", // Reset to default
+          difficulty_level: "Beginner",
           created_by: "",
           version: 1,
           course_rating: 0,
@@ -134,11 +132,33 @@ const AllCoursesPage = () => {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.clear();
+    router.push("/login");
+  };
+
+  const handleHome = () => {
+    router.push("/home");
+  };
+
   if (loading) return <p>Loading courses...</p>;
   if (error && courses.length === 0) return <p style={{ color: "red" }}>{error}</p>;
 
   return (
     <div>
+      {/* Navbar */}
+      <nav style={styles.navbar}>
+        <h2 style={styles.logo}>E-Learning Platform</h2>
+        <div style={styles.buttonContainer}>
+          <button onClick={handleHome} style={styles.navButton}>
+            Home
+          </button>
+          <button onClick={handleLogout} style={styles.navButton}>
+            Logout
+          </button>
+        </div>
+      </nav>
+
       <h1>All Courses</h1>
 
       {courses.length > 0 ? (
@@ -212,6 +232,35 @@ const AllCoursesPage = () => {
       {createError && <p style={{ color: "red" }}>{createError}</p>}
     </div>
   );
+};
+
+const styles = {
+  navbar: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#ADD8E6",
+    padding: "10px 20px",
+    borderBottom: "2px solid #ccc",
+  },
+  logo: {
+    color: "#000",
+    fontSize: "24px",
+    fontWeight: "bold",
+  },
+  buttonContainer: {
+    display: "flex",
+    gap: "10px",
+  },
+  navButton: {
+    backgroundColor: "#000",
+    color: "#fff",
+    border: "none",
+    borderRadius: "5px",
+    padding: "8px 15px",
+    cursor: "pointer",
+    transition: "background-color 0.3s ease",
+  },
 };
 
 export default AllCoursesPage;
