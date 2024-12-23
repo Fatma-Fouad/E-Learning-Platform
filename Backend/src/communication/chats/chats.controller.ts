@@ -130,7 +130,7 @@ export class ChatController {
 
     @Get('search')
    @UseGuards(AuthGuard, RolesGuard)
-   @Roles('student' as Role,'instructor 'as Role)
+   @Roles('student' as Role,'instructor'as Role)
     async searchChats(@Query('q') searchTerm: string) {
         if (!searchTerm || searchTerm.trim() === '') {
             throw new BadRequestException('Search term is required');
@@ -141,7 +141,7 @@ export class ChatController {
   
     @Get('course/:courseId')
    @UseGuards(AuthGuard, RolesGuard)
-   @Roles('student' as Role, 'instructor ' as Role)
+   @Roles('student' as Role, 'instructor' as Role)
     async getChatsByCourse(
         @Param('courseId') courseId: string,
         @Query('userId') userId: string
@@ -184,7 +184,7 @@ export class ChatController {
 
     @Delete(':id')
    @UseGuards(AuthGuard, RolesGuard)
-   @Roles('instructor ' as Role)
+   @Roles('instructor' as Role)
     async deleteChat(@Param('id') id: string, @Query('userId') userId: string) {
         // Fetch the chat by ID to verify if the user is the creator
         const chat = await this.chatService.getChatById(id);
@@ -206,7 +206,7 @@ export class ChatController {
     // Add a message to a chat (Access: Student, Instructor, Admin)
     @Post('message/:id')
    @UseGuards(AuthGuard, RolesGuard)
-   @Roles('student' as Role, 'instructor ' as Role) 
+   @Roles('student' as Role, 'instructor' as Role) 
     async addMessage(
         @Param('id') chatId: string,
         @Body() messageData: { sender: string; content: string }
@@ -236,7 +236,7 @@ export class ChatController {
     // Get chat history (Access: Student, Instructor, Admin)
     @Get(':chatId/messages')
    @UseGuards(AuthGuard, RolesGuard)
-   @Roles('student' as Role, 'instructor ' as Role)
+   @Roles('student' as Role, 'instructor' as Role)
     async getChatHistory(@Param('chatId') chatId: string) {
         console.log(`Fetching messages for chatId: ${chatId}`);
         const messages = await this.chatService.getChatHistory(chatId);

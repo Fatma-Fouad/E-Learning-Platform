@@ -12,7 +12,7 @@ export class ForumsController {
 
     @Get()
    @UseGuards(AuthGuard, RolesGuard)
-   @Roles('student' as Role, 'instructor ' as Role)
+   @Roles('student' as Role, 'instructor' as Role)
     getAllForums() {
         console.log('GET /forums called');
         return this.forumsService.getAllForums();
@@ -20,7 +20,7 @@ export class ForumsController {
     // Get forums by courseId
     @Get('course/:courseId')
    @UseGuards(AuthGuard, RolesGuard)
-   @Roles('student' as Role, 'instructor ' as Role)
+   @Roles('student' as Role, 'instructor' as Role)
     async getForumsByCourse(
         @Param('courseId') courseId: string,
         @Query('userId') userId: string, // Expect userId as a query parameter
@@ -32,7 +32,7 @@ export class ForumsController {
     // Create a new forum
     @Post('create')
    @UseGuards(AuthGuard, RolesGuard)
-   @Roles('instructor ' as Role)
+   @Roles('instructor' as Role)
     async addForum(
         @Body() body: { courseId: string; courseName: string; createdBy: string }
     ) {
@@ -50,7 +50,7 @@ export class ForumsController {
     // Search for a specific course
     @Get('search-courses')
    @UseGuards(AuthGuard, RolesGuard)
-   @Roles('student' as Role, 'instructor ' as Role)
+   @Roles('student' as Role, 'instructor' as Role)
     async searchCourses(@Query('q') searchTerm: string) {
         console.log('Search term received for courses:', searchTerm);
         if (!searchTerm || searchTerm.trim() === '') {
@@ -62,7 +62,7 @@ export class ForumsController {
     // Search forums by thread title in all courses
     @Get('search')
    @UseGuards(AuthGuard, RolesGuard)
-   @Roles('student' as Role, 'instructor ' as Role)
+   @Roles('student' as Role, 'instructor' as Role)
     async searchForum(@Query('q') searchTerm: string) {
         console.log('Search term received:', searchTerm);
         if (!searchTerm || searchTerm.trim() === '') {
@@ -74,7 +74,7 @@ export class ForumsController {
     // Search for threads within a specific course
     @Get(':courseId/search-threads')
    @UseGuards(AuthGuard, RolesGuard)
-   @Roles('student' as Role, 'instructor ' as Role)
+   @Roles('student' as Role, 'instructor' as Role)
     async searchThreadsInCourse(
         @Param('courseId') courseId: string,
         @Query('q') searchTerm: string,
@@ -97,7 +97,7 @@ export class ForumsController {
     // Post a new thread
     @Post(':courseId/threads')
    @UseGuards(AuthGuard, RolesGuard)
-   @Roles('student' as Role, 'instructor ' as Role)
+   @Roles('student' as Role, 'instructor' as Role)
     addThread(
         @Param('courseId') courseId: string,
         @Body() body: { title: string; description: string; createdBy: string },
@@ -123,7 +123,7 @@ export class ForumsController {
     // Add a reply to a thread
     @Post(':courseId/threads/:threadId/replies')
    @UseGuards(AuthGuard, RolesGuard)
-   @Roles('student' as Role, 'instructor ' as Role)
+   @Roles('student' as Role, 'instructor' as Role)
     async addReply(
         @Param('courseId') courseId: string,
         @Param('threadId') threadId: string,
@@ -154,7 +154,7 @@ export class ForumsController {
     // Edit a thread
     @Put(':courseId/threads/:threadId')
    @UseGuards(AuthGuard, RolesGuard)
-   @Roles('student' as Role, 'instructor ' as Role)
+   @Roles('student' as Role, 'instructor' as Role)
     async editThread(
         @Param('courseId') courseId: string,
         @Param('threadId') threadId: string,
@@ -176,7 +176,7 @@ export class ForumsController {
     // Delete a forum
     @Delete(':forumId')
    @UseGuards(AuthGuard, RolesGuard)
-   @Roles('instructor ' as Role)
+   @Roles('instructor' as Role)
     async deleteForum(
         @Param('forumId') forumId: string, // Extracts forumId from the route
         @Query('userId') userId: string    // Extracts userId from the query
@@ -193,7 +193,7 @@ export class ForumsController {
     // Delete a thread in a course
     @Delete(':courseId/threads/:threadId')
    @UseGuards(AuthGuard, RolesGuard)
-   @Roles('student' as Role, 'instructor ' as Role)
+   @Roles('student' as Role, 'instructor' as Role)
     async deleteThread(
         @Param('courseId') courseId: string,
         @Param('threadId') threadId: string,
@@ -210,7 +210,7 @@ export class ForumsController {
     // Delete a reply in a thread
     @Delete(':courseId/threads/:threadId/replies/:replyId')
    @UseGuards(AuthGuard, RolesGuard)
-   @Roles('student' as Role, 'instructor ' as Role)
+   @Roles('student' as Role, 'instructor' as Role)
     async deleteReply(
         @Param('courseId') courseId: string,
         @Param('threadId') threadId: string,

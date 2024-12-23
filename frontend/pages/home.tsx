@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+import axios from "axios";
 import { io, Socket } from "socket.io-client";
 import { getSocket } from "../utils/socket";
 
@@ -8,6 +9,9 @@ const Home = () => {
   const [user, setUser] = useState<{ name: string; role: string; email: string; userId: string; gpa: string } | null>(null);
   const [notifications, setNotifications] = useState<{ type: string; content: string }[]>([]);
   const [socket, setSocket] = useState<Socket | null>(null);
+  const [gpa, setGpa] = useState(null);
+  const token = localStorage.getItem("token");
+  const storedUserId = localStorage.getItem("userId");
 
   // Fetch user information from localStorage
   useEffect(() => {
@@ -28,8 +32,41 @@ const Home = () => {
   }, [router]);
 
   useEffect(() => {
+    if (user?.role === "student") {
+      const fetchStudentGPA = async () => {
+        if (!storedUserId) {
+          console.error("No student ID found in local storage.");
+          return;
+        }
+
+        try {
+          const response = await axios.get(
+            `http://localhost:3000/user/${storedUserId}/profile`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          console.log("Student data:", response.data); // Log the student data
+
+          const fetchedGpa = response.data?.gpa; // Assuming GPA is under data.gpa
+          if (fetchedGpa !== undefined) {
+            console.log("Fetched GPA:", fetchedGpa);
+            setGpa(fetchedGpa);
+          } else {
+            console.error("GPA not found for the student.");
+          }
+        } catch (err) {
+          console.error("Error fetching student data:", err);
+        }
+      };
+
+      fetchStudentGPA();
+    }
+
     if (user?.userId) {
-      const socketConnection = io("http://localhost:3001", {
+      const socketConnection = io("http://localhost:3000", {
         query: { userId: user.userId },
       });
 
@@ -54,7 +91,8 @@ const Home = () => {
         socketConnection.disconnect();
       };
     }
-  }, [user?.userId]);
+  }, [user?.userId, storedUserId, token]);
+  
 
   // Handle logout
   const handleLogout = () => {
@@ -80,14 +118,13 @@ const Home = () => {
 
   // Handle Find-Course
   const Find_Course = () => {
-    router.push("/courses/FindCourse");
+    router.push("courses/FindCourse");
   };
 
-  // Handle Student Courses
   const handleStudentCourses = () => {
     router.push("/courses/MyCourses_st");
   };
-  
+
   const handleInstructorCourses = () => {
     router.push("/courses/MyCourses_in");
   };
@@ -102,24 +139,6 @@ const Home = () => {
       {/* Navbar */}
       <nav style={styles.navbar}>
         <h2 style={styles.logo}>E-Learning Platform</h2>
-        <button onClick={Find_Course} style={styles.button}>
-          Find a Course
-        </button>
-        {user?.role === "student" && (
-          <button style={styles.button} onClick={handleStudentCourses}>
-            My Courses (Student)
-          </button>
-        )}
-        {user?.role === "instructor" && (
-          <button style={styles.button} onClick={handleInstructorCourses}>
-            My Courses (Instructor)
-          </button>
-        )}
-        {user && (
-          <button onClick={handleDashboardRedirect} style={styles.dashboardButton}>
-            Go to {user.role.charAt(0).toUpperCase() + user.role.slice(1)} Dashboard
-          </button>
-        )}
         <button onClick={handleLogout} style={styles.logoutButton}>
           Logout
         </button>
@@ -128,12 +147,12 @@ const Home = () => {
         </button>
         {user?.role === "student" && (
           <button style={styles.logoutButton} onClick={handleStudentCourses}>
-            My Courses (stud)
+            My Courses
           </button>
         )}
         {user?.role === "instructor" && (
           <button style={styles.logoutButton} onClick={handleInstructorCourses}>
-            My Courses (inst)
+            My Courses
           </button>
         )}
         {user?.role === "admin" && (<button onClick={backup} style={styles.logoutButton}>
@@ -145,7 +164,7 @@ const Home = () => {
       <div style={{ padding: "20px" }}>
         <h1>Welcome to the Home Page!</h1>
         {user ? (
-          <div style={userInfoStyle}>
+          <div style={styles.userInfo}>
             <p>
               <strong>Name:</strong> {user.name}
             </p>
@@ -155,23 +174,11 @@ const Home = () => {
             <p>
               <strong>Role:</strong> {user.role}
             </p>
-
-            {/* New Button to Navigate to Courses Page */}
-            <button
-              onClick={() => router.push("/courses")}
-              style={{
-                backgroundColor: "#0070f3",
-                color: "white",
-                padding: "10px",
-                border: "none",
-                borderRadius: "5px",
-                cursor: "pointer",
-                fontSize: "1rem",
-                marginTop: "20px",
-              }}
-            >
-              View Available Courses
-            </button>
+            {user?.role === "student" && (
+              <p>
+                <strong>GPA:</strong> {gpa !== null ? gpa : "Loading..."}
+              </p>
+            )}
           </div>
         ) : (
           <p>Loading user information...</p>

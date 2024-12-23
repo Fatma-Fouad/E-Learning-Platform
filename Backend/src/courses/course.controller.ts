@@ -59,8 +59,8 @@ async getCoursesByStudent(@Param('studentId') studentId: string) {
 
 
 @Get('instructor-courses/:instructorId')
-// @UseGuards(AuthGuard, RolesGuard)
-// @Roles('instructor' as Role)
+@UseGuards(AuthGuard, RolesGuard)
+@Roles('instructor' as Role)
 async findCoursesByInstructor(
   @Param('instructorId') instructorId: string,
 ) {
@@ -95,9 +95,9 @@ async findCoursesByInstructor(
  * Search for courses by keyword (Instructor + Student)
  */
 @Get('search-by-keyword')
-//@UseGuards(AuthGuard,RolesGuard)
-//@Roles('student' as Role)
-//@Roles('instructor' as Role)
+@UseGuards(AuthGuard,RolesGuard)
+@Roles('student' as Role)
+@Roles('instructor' as Role)
 async searchCoursesByKeyword(@Query('keyword') keyword: string) {
   try {
     if (!keyword) {

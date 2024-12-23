@@ -379,5 +379,3 @@ export const addMessageToChat = async (chatId: string, payload: { sender: string
 
     return response.json();
 };
-
-
