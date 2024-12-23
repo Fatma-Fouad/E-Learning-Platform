@@ -5,11 +5,11 @@ export class CreateCourseDto {
   difficulty_level: string;
   created_by: string;
   version: number;
-  course_rating: number;
-  ratingCount: number;
+  course_rating?: number;
+  ratingCount?: number;
   enrolled_students: number;
-  nom_of_modules: number;
+  nom_of_modules?: number;
   keywords: string[];
-  isAvailable: boolean;
+  isAvailable?: boolean;
   instructor_id: string; 
 }

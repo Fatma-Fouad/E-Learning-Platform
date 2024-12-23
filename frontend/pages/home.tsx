@@ -61,14 +61,58 @@ const Home = () => {
     router.push("/login");
   };
 
+  // Handle Courses
+  const Courses = () => {
+    router.push("/courses");
+  };
+
+  // Handle Find-Course
+  const Find_Course = () => {
+    router.push("courses/FindCourse");
+  };
+
+  // Handle Student courses
+  const StudentCourses = () => {
+    router.push("courses/MyCourses_st");
+  };
+
+  const handleStudentCourses = () => {
+    router.push("/courses/MyCourses_st");
+  };
+  
+  const handleInstructorCourses = () => {
+    router.push("/courses/MyCourses_in");
+  };
+  
+
+
   return (
     <div>
       {/* Navbar */}
-      <nav style={navbarStyle}>
-        <h2 style={logoStyle}>E-Learning Platform</h2>
-        <button onClick={handleLogout} style={logoutButtonStyle}>
+      <nav style={styles.navbar}>
+        <h2 style={styles.logo}>E-Learning Platform</h2>
+        <button onClick={handleLogout} style={styles.logoutButton}>
           Logout
         </button>
+        <button onClick={handleLogout} style={styles.logoutButton}>
+          Logout
+        </button>
+        <button onClick={handleLogout} style={styles.logoutButton}>
+          Logout
+        </button>
+        <button onClick={Find_Course} style={styles.logoutButton}>
+          Find a course
+        </button>
+        {user?.role === "student" && (
+          <button style={styles.logoutButton} onClick={handleStudentCourses}>
+            My Courses (stud)
+          </button>
+        )}
+        {user?.role === "instructor" && (
+          <button style={styles.logoutButton} onClick={handleInstructorCourses}>
+            My Courses (inst)
+          </button>
+        )}
       </nav>
 
       {/* Content */}
@@ -166,4 +210,46 @@ const notificationStyle: React.CSSProperties = {
   marginBottom: "10px",
   borderRadius: "5px",
   boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+};
+// Inline styles for simplicity
+const styles = {
+  navbar: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#0070f3",
+    color: "white",
+    padding: "1rem 2rem",
+  },
+  logo: {
+    margin: 0,
+  },
+  logoutButton: {
+    backgroundColor: "#ff4d4f",
+    border: "none",
+    color: "white",
+    padding: "0.5rem 1rem",
+    cursor: "pointer",
+    fontSize: "1rem",
+    borderRadius: "5px",
+  },
+  content: {
+    padding: "2rem",
+    textAlign: "center",
+  },
+  userInfo: {
+    marginTop: "1rem",
+    fontSize: "1.2rem",
+  },
+  button: {
+    padding: "15px 25px",
+    fontSize: "1.1rem",
+    backgroundColor: "#9fcdff", // Light pastel blue
+    color: "#ffffff",
+    border: "none",
+    borderRadius: "8px",
+    cursor: "pointer",
+    transition: "all 0.3s ease",
+    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+  },
 };

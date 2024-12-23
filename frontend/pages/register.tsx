@@ -97,7 +97,7 @@ const Register = () => {
             placeholder="Enter your name"
             onChange={handleChange}
             required
-            style={{ width: "100%", padding: "8px", marginTop: "5px" }}
+            style={{ width: "95%", padding: "8px", marginTop: "5px" }}
           />
         </div>
         <div style={{ marginBottom: "1rem" }}>
@@ -109,7 +109,7 @@ const Register = () => {
             placeholder="Enter your email"
             onChange={handleChange}
             required
-            style={{ width: "100%", padding: "8px", marginTop: "5px" }}
+            style={{ width: "95%", padding: "8px", marginTop: "5px" }}
           />
         </div>
         <div style={{ marginBottom: "1rem" }}>
@@ -121,7 +121,7 @@ const Register = () => {
             placeholder="Enter your password"
             onChange={handleChange}
             required
-            style={{ width: "100%", padding: "8px", marginTop: "5px" }}
+            style={{ width: "95%", padding: "8px", marginTop: "5px" }}
           />
         </div>
         <div style={{ marginBottom: "1rem" }}>
@@ -133,7 +133,7 @@ const Register = () => {
             placeholder="Confirm your password"
             onChange={handleChange}
             required
-            style={{ width: "100%", padding: "8px", marginTop: "5px" }}
+            style={{ width: "95%", padding: "8px", marginTop: "5px" }}
           />
         </div>
         <div style={{ marginBottom: "1rem" }}>

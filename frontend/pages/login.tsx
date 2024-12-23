@@ -41,22 +41,27 @@ const Login = () => {
     setSuccess("");
 
     try {
-      const response = await axios.post<LoginResponse>(
+      // Send login request to backend
+      const response = await axios.post(
         `${backend_url}/login`,
         { email: formData.email, password: formData.password },
-        { withCredentials: true, headers: { "Content-Type": "application/json" } }
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
       );
 
-      console.log("API Response:", response.data); // Log response for debugging
-
-      const user = response.data.user;
-
-      if (user && user.userid && user.role && user.name && user.email) {
-        localStorage.setItem("userId", user.userid); // Store user ID
-        localStorage.setItem("role", user.role);
-        localStorage.setItem("name", user.name);
-        localStorage.setItem("email", user.email);
-
+      // Successful login
+      if (response.status === 200 || response.status === 201) {
+        console.log("xxxxxxxxxx",response)
+        localStorage.setItem("token", response.data.token);
+        localStorage.setItem("userData", JSON.stringify(response.data.user));
+        localStorage.setItem("userId",response.data.user.userid)
+        localStorage.setItem("role",response.data.user.role)
+        localStorage.setItem("name",response.data.user.name)
+        localStorage.setItem("email",response.data.user.email)
         setSuccess("Login successful. Redirecting...");
         setTimeout(() => router.push("/home"), 1000); // Redirect to home
       } else {
@@ -92,7 +97,7 @@ const Login = () => {
             placeholder="Enter your email"
             onChange={handleChange}
             required
-            style={{ width: "100%", padding: "8px", marginTop: "5px" }}
+            style={{ width: "95%", padding: "8px", marginTop: "5px" }}
           />
         </div>
         <div style={{ marginBottom: "1rem" }}>
@@ -104,7 +109,7 @@ const Login = () => {
             placeholder="Enter your password"
             onChange={handleChange}
             required
-            style={{ width: "100%", padding: "8px", marginTop: "5px" }}
+            style={{ width: "95%", padding: "8px", marginTop: "5px" }}
           />
         </div>
         <button
