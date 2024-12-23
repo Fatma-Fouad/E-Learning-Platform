@@ -16,9 +16,9 @@ import { AuthGuard } from './authentication/auth.guard';
 import { BackupService } from './backup/backup.service';
 import { BackupController } from './backup/backup.controller';
 import { ResponseModule } from './responses/response.module';
+import { BackupModule } from './backup/backup.module';
 import { JwtModule } from '@nestjs/jwt';
 //import { NoteModule } from './notes/note.module';
-import { BackupModule } from './backup/backup.module';
 
 @Module({
   imports:

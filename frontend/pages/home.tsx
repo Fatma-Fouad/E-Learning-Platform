@@ -6,7 +6,7 @@ import { getSocket } from "../utils/socket";
 
 const Home = () => {
   const router = useRouter();
-  const [user, setUser] = useState<{ name: string; role: string; email: string; userId: string } | null>(null);
+  const [user, setUser] = useState<{ name: string; role: string; email: string; userId: string; gpa: string } | null>(null);
   const [notifications, setNotifications] = useState<{ type: string; content: string }[]>([]);
   const [socket, setSocket] = useState<Socket | null>(null);
   const [gpa, setGpa] = useState(null);
@@ -19,9 +19,10 @@ const Home = () => {
     const role = localStorage.getItem("role");
     const email = localStorage.getItem("email");
     const userId = localStorage.getItem("userId");
+    const gpa = localStorage.getItem("gpa") + "";
 
     if (name || role) {
-      setUser({ name, role, email, userId });
+      setUser({ name, role, email, userId, gpa });
       // Establish WebSocket connection and join notifications room
       const socket = getSocket(userId);
       socket.emit("joinNotifications", { userId });
@@ -99,6 +100,17 @@ const Home = () => {
     router.push("/login");
   };
 
+  // Handle Dashboard Redirection based on Role
+  const handleDashboardRedirect = () => {
+    if (user?.role === "student") {
+      router.push("/student/dashboard");
+    } else if (user?.role === "instructor") {
+      router.push("/instructor/dashborad");
+    } else if (user?.role === "admin") {
+      router.push("/admin/dashboard");
+    }
+  };
+
   // Handle Courses
   const Courses = () => {
     router.push("/courses");
@@ -116,6 +128,11 @@ const Home = () => {
   const handleInstructorCourses = () => {
     router.push("/courses/MyCourses_in");
   };
+  
+  const backup = () => {
+    router.push("/backup/");
+  };
+
 
   return (
     <div>
@@ -138,6 +155,9 @@ const Home = () => {
             My Courses
           </button>
         )}
+        {user?.role === "admin" && (<button onClick={backup} style={styles.logoutButton}>
+          Backup Data
+        </button>)}
       </nav>
 
       {/* Content */}
@@ -225,7 +245,7 @@ const notificationStyle: React.CSSProperties = {
   boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
 };
 // Inline styles for simplicity
-const styles = {
+const styles: { [key: string]: React.CSSProperties } = {
   navbar: {
     display: "flex",
     justifyContent: "space-between",
@@ -233,9 +253,22 @@ const styles = {
     backgroundColor: "#0070f3",
     color: "white",
     padding: "1rem 2rem",
+    flexWrap: "wrap", // 'flexWrap' is valid CSS here
   },
   logo: {
     margin: 0,
+    fontSize: "1.5rem",
+  },
+  dashboardButton: {
+    backgroundColor: "#34D399",
+    border: "none",
+    color: "white",
+    padding: "0.5rem 1rem",
+    cursor: "pointer",
+    fontSize: "1rem",
+    borderRadius: "5px",
+    marginRight: "1rem",
+    transition: "background-color 0.3s",
   },
   logoutButton: {
     backgroundColor: "#ff4d4f",
@@ -245,20 +278,32 @@ const styles = {
     cursor: "pointer",
     fontSize: "1rem",
     borderRadius: "5px",
+    marginRight: "1rem",
+    transition: "background-color 0.3s",
+  },
+  content: {
+    padding: "2rem",
+    textAlign: "center" as React.CSSProperties["textAlign"], // Fixed textAlign type
+  },
+  textCenter: {
+    textAlign: "center" as "center", // Explicitly cast to the correct type
   },
   userInfo: {
     marginTop: "1rem",
     fontSize: "1.2rem",
+    lineHeight: "1.5",
+    color: "#333",
   },
   button: {
-    padding: "15px 25px",
-    fontSize: "1.1rem",
-    backgroundColor: "#9fcdff", // Light pastel blue
+    padding: "10px 15px",
+    fontSize: "1rem",
+    backgroundColor: "#4caf50",
     color: "#ffffff",
     border: "none",
-    borderRadius: "8px",
+    borderRadius: "5px",
     cursor: "pointer",
     transition: "all 0.3s ease",
     boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+    marginRight: "1rem",
   },
 };

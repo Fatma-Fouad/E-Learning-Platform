@@ -62,13 +62,12 @@ const Login = () => {
         localStorage.setItem("role",response.data.user.role)
         localStorage.setItem("name",response.data.user.name)
         localStorage.setItem("email",response.data.user.email)
+        if(localStorage.getItem("role") === "student"){localStorage.setItem("gpa",response.data.user.gpa)}
         setSuccess("Login successful. Redirecting...");
-        setTimeout(() => router.push("/home"), 1000); // Redirect to home
-      } else {
-        throw new Error("User data is incomplete or missing.");
+        console.log("User Data:", response.data.user); // Optional: log user data
+        setTimeout(() => router.push("/home"), 1000); // Redirect to home page
       }
     } catch (error: any) {
-      console.error("Error during login:", error); // Log full error for debugging
       if (error.response) {
         setError(error.response.data.message || "Invalid email or password.");
       } else {
@@ -76,9 +75,9 @@ const Login = () => {
       }
     }
 
+    // Clear input fields
     setFormData({ email: "", password: "" });
   };
-
 
   const redirectToRegister = () => {
     router.push("/register");
@@ -123,15 +122,15 @@ const Login = () => {
             cursor: "pointer",
             fontSize: "1rem",
             borderRadius: "5px",
-            marginBottom: "1rem",
+            marginBottom: "1rem"
           }}
         >
           Login
         </button>
       </form>
-      <div style={{ marginBottom: "1rem" }}>
-        <label htmlFor="haveAccount">Don't have an account?</label>
-        <button
+        <div style={{ marginBottom: "1rem" }}>
+          <label htmlFor="haveAccount">Do not have an account?</label>
+          <button
           type="button"
           onClick={redirectToRegister}
           style={{
@@ -143,12 +142,12 @@ const Login = () => {
             cursor: "pointer",
             fontSize: "1rem",
             borderRadius: "5px",
-            marginBottom: "1rem",
+            marginBottom: "1rem"
           }}
         >
           Register
         </button>
-      </div>
+        </div>
 
       {/* Success Message */}
       {success && (

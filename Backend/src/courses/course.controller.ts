@@ -33,8 +33,8 @@ import { RolesGuard } from 'src/authentication/roles.guard';
 //*
 
     @Get('student-courses/:studentId')
-    // @UseGuards(AuthGuard, RolesGuard)
-    // @Roles('student' as Role)
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles('student' as Role)
 async getCoursesByStudent(@Param('studentId') studentId: string) {
   try {
     if (!studentId) {
@@ -59,8 +59,8 @@ async getCoursesByStudent(@Param('studentId') studentId: string) {
 
 
 @Get('instructor-courses/:instructorId')
-// @UseGuards(AuthGuard, RolesGuard)
-// @Roles('instructor' as Role)
+@UseGuards(AuthGuard, RolesGuard)
+@Roles('instructor' as Role)
 async findCoursesByInstructor(
   @Param('instructorId') instructorId: string,
 ) {
@@ -95,9 +95,9 @@ async findCoursesByInstructor(
  * Search for courses by keyword (Instructor + Student)
  */
 @Get('search-by-keyword')
-//@UseGuards(AuthGuard,RolesGuard)
-//@Roles('student' as Role)
-//@Roles('instructor' as Role)
+@UseGuards(AuthGuard,RolesGuard)
+@Roles('student' as Role)
+@Roles('instructor' as Role)
 async searchCoursesByKeyword(@Query('keyword') keyword: string) {
   try {
     if (!keyword) {
@@ -126,7 +126,7 @@ async searchCoursesByKeyword(@Query('keyword') keyword: string) {
      * Retrieve course by id  (ALL)
      */
     @Get(':id')
-    // @UseGuards(AuthGuard) 
+    @UseGuards(AuthGuard)
     async findCourseById(@Param('id') id: string) {
       try {
         return await this.coursesService.findCourseById(id);
@@ -140,8 +140,8 @@ async searchCoursesByKeyword(@Query('keyword') keyword: string) {
      */
 
     @Post()
-    //@UseGuards(AuthGuard,RolesGuard)
-    //@Roles('instructor' as Role)
+   @UseGuards(AuthGuard,RolesGuard)
+   @Roles('instructor' as Role)
     async createCourse(@Body() createCourseDto: CreateCourseDto) {
     try {
      console.log('Received CreateCourseDto:', createCourseDto); // Log the incoming request
@@ -156,8 +156,8 @@ async searchCoursesByKeyword(@Query('keyword') keyword: string) {
 //      * Update a course  (instructor)
 //      */
 @Patch(':id')
-//@UseGuards(AuthGuard,RolesGuard)
-//@Roles('instructor' as Role)
+@UseGuards(AuthGuard,RolesGuard)
+@Roles('instructor' as Role)
   async updateCourse(
     @Param('id') id: string,
     @Body() updateCourseDto: UpdateCourseDto,
@@ -197,7 +197,7 @@ async searchCoursesByKeyword(@Query('keyword') keyword: string) {
      * Retrieve number of enrolled students in a specific course (ALL)
      */
     @Get(':id/enrolled-students')
-    // @UseGuards(AuthGuard) 
+   @UseGuards(AuthGuard) 
     async getEnrolledStudents(@Param('id') id: string) {
       return this.coursesService.getEnrolledStudents(id);
     }
@@ -206,8 +206,8 @@ async searchCoursesByKeyword(@Query('keyword') keyword: string) {
      * Rate a course (students)
      */
     @Get(':id/course-rating')
-    //@UseGuards(AuthGuard, RolesGuard) 
-    //@Roles('student' as Role)
+   @UseGuards(AuthGuard, RolesGuard) 
+   @Roles('student' as Role)
 async getCourseRating(@Param('id') id: string) {
   try {
     const courseRating = await this.coursesService.calculateCourseRating(id);
@@ -224,8 +224,8 @@ async getCourseRating(@Param('id') id: string) {
  * add a comment on a course (students)
  */
    @Post(':courseId/comments')
-   //@UseGuards(AuthGuard,RolesGuard)
-   //@Roles('student' as Role)
+  @UseGuards(AuthGuard,RolesGuard)
+  @Roles('student' as Role)
    async addComment(
      @Param('courseId') courseId: string,
      @Body('comment') comment: string,
@@ -243,7 +243,7 @@ async getCourseRating(@Param('id') id: string) {
    * */
 
     @Get(':id/module-count')
-    //@UseGuards(AuthGuard)
+    @UseGuards(AuthGuard)
 async getModuleCount(@Param('id') courseId: string) {
   try {
     const moduleCount = await this.coursesService.getModuleCountForCourse(courseId);
@@ -262,8 +262,8 @@ async getModuleCount(@Param('id') courseId: string) {
    */
 
 @Patch(':courseId/rate-instructor')
-//@UseGuards(AuthGuard,RolesGuard)
-//@Roles('student' as Role)
+@UseGuards(AuthGuard,RolesGuard)
+@Roles('student' as Role)
 async rateInstructor(
   @Param('courseId') courseId: string,
   @Body() body: { rating: number },
@@ -288,9 +288,9 @@ async rateInstructor(
    */
 
 @Get()
-//@UseGuards(AuthGuard,RolesGuard)
-//@Roles('student' as Role)
-//@Roles('instructor' as Role)
+@UseGuards(AuthGuard,RolesGuard)
+@Roles('student' as Role)
+@Roles('instructor' as Role)
   async findCourseByModuleTitle(@Query('title') title: string) {
     try {
       if (!title) {
@@ -315,9 +315,9 @@ async rateInstructor(
 
 
    @Get('course-by-creator/:created_by')
-  //  @UseGuards(AuthGuard,RolesGuard)
-  //  @Roles('student' as Role)
-  //  @Roles('instructor' as Role)
+   @UseGuards(AuthGuard,RolesGuard)
+   @Roles('student' as Role)
+   @Roles('instructor' as Role)
 async findCourseByCreator(@Param('created_by') createdBy: string) {
   try {
     if (!createdBy) {
@@ -347,9 +347,9 @@ async findCourseByCreator(@Param('created_by') createdBy: string) {
    * Find Course details By the course name (Student and instructor)
    */
       @Get('course-by-Name/:title') // Route with :title as parameter
-      // @Roles('student' as Role)
-      // @Roles('instructor' as Role)
-      // @UseGuards(AuthGuard,RolesGuard)
+      @Roles('student' as Role)
+      @Roles('instructor' as Role)
+      @UseGuards(AuthGuard,RolesGuard)
       async findCourseByName(@Param('title') Name: string) {
         try {
           if (!Name) {
