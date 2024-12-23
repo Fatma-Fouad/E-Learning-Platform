@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import axios from "axios";
 
 // Backend URL
-const backend_url = "http://localhost:3001/auth";
+const backend_url = "http://localhost:3000/auth";
 
 // Interface for the response
 interface LoginResponse {
