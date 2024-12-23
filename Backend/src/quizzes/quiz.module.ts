@@ -10,7 +10,6 @@ import { ProgressSchema } from '../progress/models/progress.schema';
 
 @Module({
   imports: [
-    UserModule,
     MongooseModule.forFeature([
       { name: 'quizzes', schema: QuizSchema },
       { name: 'questionbank', schema: QuestionBankSchema, collection: 'questionbank'}, //so i can get the questions

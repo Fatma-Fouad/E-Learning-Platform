@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model } from 'mongoose';
-import { courses } from './course.schema';
+import { courses, CourseDocument } from './course.schema';
 import { User } from 'src/users/user.schema';
 import { progress } from '../progress/models/progress.schema';
 import { CreateCourseDto } from './CreateCourseDto';
@@ -26,7 +26,8 @@ export class CoursesService {
   ) { }
 
   
-
+//RETRIEVE ALL STUDENT COURSES FOR SPECIFIC STUDENT BY ID
+//RETRIEVE ALL INSTRUCTOR COURSES FOR SPECIFIC INSTRUCTOR BY ID
 
   /**
    * Retrieve all courses for all
@@ -40,38 +41,133 @@ export class CoursesService {
       throw new BadRequestException('Failed to retrieve available courses.');
     }
   }
-
-     /**
-   * Search for courses by keywords
-   */
-     async searchByKeyword(keyword: string): Promise<any> {
-      try {
-        console.log('Service: Searching for courses with keyword:', keyword);
-    
-        const courses = await this.courseModel
-          .find({ keywords: { $in: [keyword] }, isAvailable: true })
-          .exec();
-    
-        if (!courses || courses.length === 0) {
-          console.log('Service: No courses found for keyword:', keyword);
-          throw new NotFoundException(`No courses found for keyword: ${keyword}`);
-        }
-    
-        console.log('Service: Found courses:', courses);
-    
+  async findCoursesByStudent(studentId: string): Promise<any> {
+    try {
+      console.log('Service: Searching for courses enrolled by student:', studentId);
+  
+      // Convert studentId to ObjectId
+      const objectId = new mongoose.Types.ObjectId(studentId);
+  
+      // Find courses where the student is in the enrolled_student_ids array
+      const courses = await this.courseModel
+        .find({ enrolled_student_ids: objectId, isAvailable: true })
+        .exec();
+  
+      if (!courses || courses.length === 0) {
+        console.log('Service: No courses found for student:', studentId);
+        // Return an empty array instead of throwing an exception
         return {
-          courses: courses.map(course => ({
-            ...course.toObject(),
-            course_id: course._id.toString(), // Convert ObjectId to string
-          })),
+          message: 'No courses found for the student.',
+          courses: [],
         };
-      } catch (error) {
-        console.error('Service: Error in searchByKeyword:', error.message);
-        throw new BadRequestException(
-          error.message || 'Failed to retrieve courses by keyword.',
-        );
       }
+  
+      console.log('Service: Found courses:', courses);
+  
+      // Map the courses to the expected format
+      return {
+        message: 'Courses retrieved successfully for the student.',
+        courses: courses.map((course) => ({
+          ...course.toObject(),
+          course_id: course._id.toString(),
+          enrolled_student_ids: course.enrolled_student_ids.map((student) => student.toString()),
+        })),
+      };
+    } catch (error) {
+      console.error('Service: Error in findCoursesByStudent:', error.message);
+      throw new BadRequestException(
+        error.message || 'Failed to retrieve courses by student ID.'
+      );
     }
+  }
+  
+  
+  /**
+ * Retrieve all courses of a specific instructor by instructor_id
+ */
+  async findCoursesByInstructor(instructorId: string): Promise<any> {
+    try {
+      console.log('Service: Searching for courses by instructor:', instructorId);
+  
+      const courses = await this.courseModel
+        .find({ instructor_id: instructorId, isAvailable: true }) // Find courses with the given instructor_id and availability
+        .exec();
+  
+      if (!courses || courses.length === 0) {
+        console.log('Service: No courses found for instructor:', instructorId);
+        return {
+          message: 'No courses found for the instructor.',
+          courses: [],
+        };
+      }
+  
+      console.log('Service: Found courses:', courses);
+  
+      return {
+        message: 'Courses retrieved successfully for the instructor.',
+        courses: courses.map((course) => ({
+          ...course.toObject(),
+          course_id: course._id.toString(), // Convert ObjectId to string
+          enrolled_students: course.enrolled_student_ids.map((student) =>
+            student.toString()
+          ), // Convert enrolled student ObjectIds to strings
+        })),
+      };
+    } catch (error) {
+      console.error('Service: Error in findCoursesByInstructor:', error.message);
+      throw new BadRequestException(
+        error.message || 'Failed to retrieve courses by instructor.'
+      );
+    }
+  }
+  
+
+
+  
+
+
+  /**
+ * Search for courses by keywords with suggestions
+ */
+async searchByKeyword(keyword: string): Promise<any> {
+  try {
+    console.log('Service: Searching for courses with keyword:', keyword);
+
+    if (!keyword || keyword.trim() === "") {
+      throw new BadRequestException('Keyword is required.');
+    }
+
+    // Fetch exact matches or partial matches
+    const courses = await this.courseModel
+      .find({
+        keywords: { $regex: keyword, $options: "i" }, // Match both exact and partial keywords
+        isAvailable: true,
+      })
+      .exec();
+
+    if (!courses || courses.length === 0) {
+      console.log('Service: No courses found for keyword:', keyword);
+      throw new NotFoundException(`No courses found for keyword: ${keyword}`);
+    }
+
+    console.log('Service: Found courses:', courses);
+
+    // Return the matching courses
+    return {
+      message: 'Courses retrieved successfully.',
+      courses: courses.map(course => ({
+        ...course.toObject(),
+        course_id: course._id.toString(), // Convert ObjectId to string
+      })),
+    };
+  } catch (error) {
+    console.error('Service: Error in searchByKeyword:', error.message);
+    throw new BadRequestException(
+      error.message || 'Failed to retrieve courses by keyword.'
+    );
+  }
+}
+
 
   /**
    * Retrieve a course by its ID  for all
@@ -110,62 +206,116 @@ export class CoursesService {
    */
   async updateCourse(id: string, updateCourseDto: UpdateCourseDto): Promise<courses> {
     try {
-      // Update the course in the database
+      // ✅ Step 1: Update the course in the database
       const updatedCourse = await this.courseModel.findByIdAndUpdate(
         id,
         updateCourseDto,
-        { new: true }, // Return the updated document
+        { new: true } // Return the updated document
       ).exec();
 
       if (!updatedCourse) {
         throw new NotFoundException('Course not found.');
       }
 
-      // Notify enrolled students about the course update
-      for (const studentId of updatedCourse.enrolled_student_ids) {
-        const roomName = `user:${studentId}`;
-        const roomMembers = this.notificationGateway.server.sockets.adapter.rooms.get(roomName);
+      console.log(`✅ Course updated successfully: ${updatedCourse.title}`);
 
-        // Log the room details
-        console.log(`Room Name: ${roomName}`);
-        console.log(`Room Members:`, roomMembers);
+      // ✅ Step 2: Fetch enrolled students explicitly
+      const populatedCourse = await this.courseModel
+        .findById(updatedCourse._id)
+        .populate('enrolled_student_ids', '_id')
+        .exec();
 
-        // Create notification payload
-        const notification = {
-          type: 'course-update',
-          content: `The course "${updatedCourse.title}" has been updated.`,
-          courseId: updatedCourse._id,
-          version: updatedCourse.version, // You can adjust if version is being tracked
-          read: false, // Mark as unread
-          timestamp: new Date(), // Add timestamp
-        };
-
-        // Send notification if room exists and has members
-        if (roomMembers) {
-          this.notificationGateway.server.to(roomName).emit('newNotification', notification);
-          console.log(`Notification sent to room: ${roomName}, notification:`, notification);
-        } else {
-          console.log(`Room ${roomName} does not exist or has no members.`);
-        }
-
-        // Save notification to the database
-        await this.notificationGateway.notificationService.createNotification(
-          studentId.toString(),
-          'course-update',
-          notification.content,
-          updatedCourse._id.toString(),
-        );
-        console.log(`Notification saved to the database for user: ${studentId}`);
+      if (!populatedCourse) {
+        throw new NotFoundException('Course not found after update.');
       }
 
-      // Return the updated course
+      console.log('🔍 Enrolled Student IDs:', populatedCourse.enrolled_student_ids);
+
+      // ✅ Step 3: Extract Enrolled Student IDs
+      // ✅ Extract Enrolled Student IDs Correctly
+      const enrolledStudentIds = Array.isArray(updatedCourse.enrolled_student_ids)
+        ? updatedCourse.enrolled_student_ids.map((studentId: any) => {
+          // Check if the studentId is an object with _id
+          if (studentId && typeof studentId === 'object' && studentId._id) {
+            return studentId._id.toString();
+          }
+          // Check if it's already an ObjectId
+          if (mongoose.Types.ObjectId.isValid(studentId)) {
+            return studentId.toString();
+          }
+          console.warn(`⚠️ Invalid studentId format:`, studentId);
+          return null;
+        }).filter((id: string | null) => id !== null)
+        : [];
+
+
+      if (!enrolledStudentIds.length) {
+        console.warn('⚠️ No students are currently enrolled in this course.');
+        return updatedCourse;
+      }
+
+      console.log('✅ Final Enrolled Student IDs:', enrolledStudentIds);
+
+      // ✅ Step 4: Create notification payload
+      const notification = {
+        type: 'course-update',
+        content: `The course "${updatedCourse.title}" has been updated.`,
+        courseId: updatedCourse._id,
+        version: updatedCourse.version || 1,
+        read: false,
+        timestamp: new Date(),
+      };
+
+      // ✅ Step 5: Notify Enrolled Students
+      for (const studentId of enrolledStudentIds) {
+        try {
+          const roomName = `user:${studentId}`;
+          const roomMembers = this.notificationGateway.server.sockets.adapter.rooms.get(roomName);
+
+          console.log(`🔔 Room Name: ${roomName}`);
+          console.log(`👥 Room Members:`, roomMembers);
+
+          const notification = {
+            type: 'course-update',
+            content: `The course "${updatedCourse.title}" has been updated.`,
+            courseId: updatedCourse._id.toString(),
+            version: updatedCourse.version || 1,
+            read: false,
+            timestamp: new Date(),
+          };
+
+          // ✅ Emit notification only if room exists
+          if (roomMembers && roomMembers.size > 0) {
+            this.notificationGateway.server.to(roomName).emit('newNotification', notification);
+            console.log(`📡 Notification sent to room: ${roomName}`);
+          } else {
+            console.warn(`⚠️ Room ${roomName} does not exist or has no members.`);
+          }
+
+          // ✅ Save Notification to Database
+          await this.notificationGateway.notificationService.createNotification(
+            studentId,
+            'course-update',
+            notification.content,
+            updatedCourse._id.toString()
+          );
+          console.log(`💾 Notification saved to database for user: ${studentId}`);
+        } catch (notifError) {
+          console.error(`❌ Failed to notify student (${studentId}):`, notifError.message);
+        }
+      }
+
+
+      // ✅ Return the updated course
       return updatedCourse;
 
     } catch (error) {
-      console.error('Error in updateCourse:', error.message);
+      console.error('❌ Error in updateCourse:', error.message);
       throw new BadRequestException('Failed to update course.');
     }
   }
+
+
 
   // /**
   //  * Delete a course
@@ -358,13 +508,23 @@ async findCourseByModuleTitle(title: string): Promise<any> {
    * Find Course details By the created_by//instructor
    */
 
+/**
+ * Find Course details by the created_by (instructor) with partial match
+ */
 async findCourseByCreator(createdBy: string): Promise<any> {
   try {
     console.log('Service: Searching for courses created by:', createdBy);
 
-    // Fetch only courses where isAvailable is true
+    if (!createdBy || createdBy.trim() === "") {
+      throw new BadRequestException('The "created_by" parameter is required.');
+    }
+
+    // Fetch courses where `created_by` partially or exactly matches the input and `isAvailable` is true
     const courses = await this.courseModel
-      .find({ created_by: createdBy, isAvailable: true }) // Add isAvailable condition
+      .find({
+        created_by: { $regex: createdBy, $options: "i" }, // Match both exact and partial creators
+        isAvailable: true,
+      })
       .exec();
 
     if (!courses || courses.length === 0) {
@@ -376,6 +536,7 @@ async findCourseByCreator(createdBy: string): Promise<any> {
 
     // Return all courses matching the criteria
     return {
+      message: 'Courses retrieved successfully.',
       courses: courses.map((course) => ({
         ...course.toObject(),
         course_id: course._id.toString(), // Convert ObjectId to string
@@ -384,22 +545,29 @@ async findCourseByCreator(createdBy: string): Promise<any> {
   } catch (error) {
     console.error('Service: Error in findCourseByCreator:', error.message);
     throw new BadRequestException(
-      error.message || 'Failed to retrieve available courses by creator.',
+      error.message || 'Failed to retrieve available courses by creator.'
     );
   }
 }
 
 
-    /**
- * Find course details by name.
+ /**
+ * Find course details by name with partial match.
  */
 async findCourseByName(Name: string): Promise<any> {
   try {
-    console.log('Service: Searching for courses Name:', Name);
+    console.log('Service: Searching for courses with Name:', Name);
 
-    // Fetch courses where the title matches and isAvailable is true
+    if (!Name || Name.trim() === "") {
+      throw new BadRequestException('The "Name" parameter is required.');
+    }
+
+    // Fetch courses where the title partially or exactly matches and isAvailable is true
     const courses = await this.courseModel
-      .find({ title: Name, isAvailable: true }) // Added isAvailable condition
+      .find({
+        title: { $regex: Name, $options: "i" }, // Match both exact and partial names (case-insensitive)
+        isAvailable: true,
+      })
       .exec();
 
     if (!courses || courses.length === 0) {
@@ -411,6 +579,7 @@ async findCourseByName(Name: string): Promise<any> {
 
     // Return all matching courses
     return {
+      message: 'Courses retrieved successfully.',
       courses: courses.map((course) => ({
         ...course.toObject(),
         course_id: course._id.toString(), // Convert ObjectId to string
@@ -419,10 +588,11 @@ async findCourseByName(Name: string): Promise<any> {
   } catch (error) {
     console.error('Service: Error in findCourseByName:', error.message);
     throw new BadRequestException(
-      error.message || 'Failed to retrieve available courses by name.',
+      error.message || 'Failed to retrieve available courses by name.'
     );
   }
 }
+
 
 
       /**

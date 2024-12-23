@@ -8,13 +8,13 @@ import 'reflect-metadata';
 async function bootstrap() {
   const logger = new Logger('MongoDB');
   const app = await NestFactory.create(AppModule);
-
   app.enableCors({
-    origin: 'http://localhost:3001', // Allow requests from the frontend
-    methods: 'GET,POST,PUT,DELETE,PATCH',
-    credentials: true,
-  });
+    origin: 'http://localhost:3001', // Allow frontend
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], // Added PATCH and OPTIONS
+    allowedHeaders: ['Content-Type', 'Authorization'], // Allow necessary headers
+    credentials: true, // Include credentials (cookies, auth headers, etc.)
 
+  });
   mongoose.connection.on('connected', () => {
     logger.log('Successfully connected to MongoDB');
   });

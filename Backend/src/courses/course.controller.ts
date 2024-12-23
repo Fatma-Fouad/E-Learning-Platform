@@ -7,7 +7,7 @@ import { Controller, Get, Post, Patch, Delete, Param, Body,Query,UploadedFile,Us
   import { Express } from 'express';
 //import { InstructorGuard } from './InstructorGuard'; 
 import { RateInstructorDto } from './RateInstructorDto';
-import { courses } from './course.schema';
+import { courses, CourseDocument } from './course.schema';
 import { AuthGuard } from 'src/authentication/auth.guard';
 import { Roles, Role } from 'src/authentication/roles.decorator';
 import { RolesGuard } from 'src/authentication/roles.guard';
@@ -22,19 +22,79 @@ import { RolesGuard } from 'src/authentication/roles.guard';
      * Retrieve all courses for (all)  
      */
     @Get('available-courses')
-    @UseGuards(AuthGuard)
     async findAll() {
       return this.coursesService.findAll();
     }
+
+
+    //*
+// Get all courses for a specific student
+//*
+
+    @Get('student-courses/:studentId')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles('student' as Role)
+async getCoursesByStudent(@Param('studentId') studentId: string) {
+  try {
+    if (!studentId) {
+      throw new BadRequestException('Student ID is required.');
+    }
+
+    const result = await this.coursesService.findCoursesByStudent(studentId);
+
+    return {
+      message: 'Courses retrieved successfully.',
+      ...result,
+    };
+  } catch (error) {
+    console.error('Controller: Error in getCoursesByStudent:', error.message);
+    throw new BadRequestException(error.message || 'Failed to retrieve courses for student.');
+  }
+}
+
+//*
+// Get all courses that this instructor gives
+//*
+
+
+@Get('instructor-courses/:instructorId')
+@UseGuards(AuthGuard, RolesGuard)
+@Roles('instructor' as Role)
+async findCoursesByInstructor(
+  @Param('instructorId') instructorId: string,
+) {
+  try {
+    if (!instructorId) {
+      throw new BadRequestException('Instructor ID is required.');
+    }
+
+    console.log('Controller: Received instructorId:', instructorId);
+
+    const result = await this.coursesService.findCoursesByInstructor(instructorId);
+
+    console.log('Controller: Retrieved result:', result);
+
+    return {
+      message: 'Courses retrieved successfully for the instructor.',
+      ...result,
+    };
+  } catch (error) {
+    console.error('Controller: Error in findCoursesByInstructor:', error.message);
+    throw new BadRequestException(
+      error.message || 'Failed to retrieve courses by instructor.'
+    );
+  }
+}
+
+
+
 
 
     /**
  * Search for courses by keyword (Instructor + Student)
  */
 @Get('search-by-keyword')
-@UseGuards(AuthGuard,RolesGuard)
-@Roles('student' as Role)
-@Roles('instructor' as Role)
+@UseGuards(AuthGuard)
 async searchCoursesByKeyword(@Query('keyword') keyword: string) {
   try {
     if (!keyword) {
@@ -63,7 +123,7 @@ async searchCoursesByKeyword(@Query('keyword') keyword: string) {
      * Retrieve course by id  (ALL)
      */
     @Get(':id')
-    @UseGuards(AuthGuard) 
+  
     async findCourseById(@Param('id') id: string) {
       try {
         return await this.coursesService.findCourseById(id);
@@ -77,8 +137,8 @@ async searchCoursesByKeyword(@Query('keyword') keyword: string) {
      */
 
     @Post()
-    @UseGuards(AuthGuard,RolesGuard)
-    @Roles('instructor' as Role)
+   // @UseGuards(AuthGuard,RolesGuard)
+   // @Roles('instructor' as Role)
     async createCourse(@Body() createCourseDto: CreateCourseDto) {
     try {
      console.log('Received CreateCourseDto:', createCourseDto); // Log the incoming request
@@ -93,8 +153,8 @@ async searchCoursesByKeyword(@Query('keyword') keyword: string) {
 //      * Update a course  (instructor)
 //      */
 @Patch(':id')
-@UseGuards(AuthGuard,RolesGuard)
-@Roles('instructor' as Role)
+//@UseGuards(AuthGuard,RolesGuard)
+//@Roles('instructor' as Role)
   async updateCourse(
     @Param('id') id: string,
     @Body() updateCourseDto: UpdateCourseDto,
@@ -134,7 +194,7 @@ async searchCoursesByKeyword(@Query('keyword') keyword: string) {
      * Retrieve number of enrolled students in a specific course (ALL)
      */
     @Get(':id/enrolled-students')
-    @UseGuards(AuthGuard) 
+   // @UseGuards(AuthGuard) 
     async getEnrolledStudents(@Param('id') id: string) {
       return this.coursesService.getEnrolledStudents(id);
     }
@@ -143,8 +203,8 @@ async searchCoursesByKeyword(@Query('keyword') keyword: string) {
      * Rate a course (students)
      */
     @Get(':id/course-rating')
-    @UseGuards(AuthGuard, RolesGuard) 
-    @Roles('student' as Role)
+  //  @UseGuards(AuthGuard, RolesGuard) 
+  //  @Roles('student' as Role)
 async getCourseRating(@Param('id') id: string) {
   try {
     const courseRating = await this.coursesService.calculateCourseRating(id);
@@ -161,8 +221,8 @@ async getCourseRating(@Param('id') id: string) {
  * add a comment on a course (students)
  */
    @Post(':courseId/comments')
-   @UseGuards(AuthGuard,RolesGuard)
-   @Roles('student' as Role)
+  // @UseGuards(AuthGuard,RolesGuard)
+  // @Roles('student' as Role)
    async addComment(
      @Param('courseId') courseId: string,
      @Body('comment') comment: string,
@@ -225,9 +285,7 @@ async rateInstructor(
    */
 
 @Get()
-@UseGuards(AuthGuard,RolesGuard)
-@Roles('student' as Role)
-@Roles('instructor' as Role)
+@UseGuards(AuthGuard)
   async findCourseByModuleTitle(@Query('title') title: string) {
     try {
       if (!title) {
@@ -252,9 +310,7 @@ async rateInstructor(
 
 
    @Get('course-by-creator/:created_by')
-   @UseGuards(AuthGuard,RolesGuard)
-   @Roles('student' as Role)
-   @Roles('instructor' as Role)
+   @UseGuards(AuthGuard)
 async findCourseByCreator(@Param('created_by') createdBy: string) {
   try {
     if (!createdBy) {
@@ -284,9 +340,7 @@ async findCourseByCreator(@Param('created_by') createdBy: string) {
    * Find Course details By the course name (Student and instructor)
    */
       @Get('course-by-Name/:title') // Route with :title as parameter
-      @Roles('student' as Role)
-      @Roles('instructor' as Role)
-      @UseGuards(AuthGuard,RolesGuard)
+      @UseGuards(AuthGuard)
       async findCourseByName(@Param('title') Name: string) {
         try {
           if (!Name) {
@@ -316,9 +370,9 @@ async findCourseByCreator(@Param('created_by') createdBy: string) {
     //  */
 
   @Delete('delete-course/:id')
-  @Roles('student' as Role)
-  @Roles('admin' as Role)
-  @UseGuards(AuthGuard,RolesGuard)
+   @Roles('instructor' as Role)
+   @Roles('admin' as Role)
+   @UseGuards(AuthGuard,RolesGuard)
   async softDeleteCourse(@Param('id') courseId: string) {
     try {
       if (!courseId) {
