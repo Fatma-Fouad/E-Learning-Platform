@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model } from 'mongoose';
-import { courses } from './course.schema';
+import { courses, CourseDocument } from './course.schema';
 import { User } from 'src/users/user.schema';
 import { progress } from '../progress/models/progress.schema';
 import { CreateCourseDto } from './CreateCourseDto';
@@ -206,62 +206,116 @@ async searchByKeyword(keyword: string): Promise<any> {
    */
   async updateCourse(id: string, updateCourseDto: UpdateCourseDto): Promise<courses> {
     try {
-      // Update the course in the database
+      // ✅ Step 1: Update the course in the database
       const updatedCourse = await this.courseModel.findByIdAndUpdate(
         id,
         updateCourseDto,
-        { new: true }, // Return the updated document
+        { new: true } // Return the updated document
       ).exec();
 
       if (!updatedCourse) {
         throw new NotFoundException('Course not found.');
       }
 
-      // Notify enrolled students about the course update
-      for (const studentId of updatedCourse.enrolled_student_ids) {
-        const roomName = `user:${studentId}`;
-        const roomMembers = this.notificationGateway.server.sockets.adapter.rooms.get(roomName);
+      console.log(`✅ Course updated successfully: ${updatedCourse.title}`);
 
-        // Log the room details
-        console.log(`Room Name: ${roomName}`);
-        console.log(`Room Members:`, roomMembers);
+      // ✅ Step 2: Fetch enrolled students explicitly
+      const populatedCourse = await this.courseModel
+        .findById(updatedCourse._id)
+        .populate('enrolled_student_ids', '_id')
+        .exec();
 
-        // Create notification payload
-        const notification = {
-          type: 'course-update',
-          content: `The course "${updatedCourse.title}" has been updated.`,
-          courseId: updatedCourse._id,
-          version: updatedCourse.version, // You can adjust if version is being tracked
-          read: false, // Mark as unread
-          timestamp: new Date(), // Add timestamp
-        };
-
-        // Send notification if room exists and has members
-        if (roomMembers) {
-          this.notificationGateway.server.to(roomName).emit('newNotification', notification);
-          console.log(`Notification sent to room: ${roomName}, notification:`, notification);
-        } else {
-          console.log(`Room ${roomName} does not exist or has no members.`);
-        }
-
-        // Save notification to the database
-        await this.notificationGateway.notificationService.createNotification(
-          studentId.toString(),
-          'course-update',
-          notification.content,
-          updatedCourse._id.toString(),
-        );
-        console.log(`Notification saved to the database for user: ${studentId}`);
+      if (!populatedCourse) {
+        throw new NotFoundException('Course not found after update.');
       }
 
-      // Return the updated course
+      console.log('🔍 Enrolled Student IDs:', populatedCourse.enrolled_student_ids);
+
+      // ✅ Step 3: Extract Enrolled Student IDs
+      // ✅ Extract Enrolled Student IDs Correctly
+      const enrolledStudentIds = Array.isArray(updatedCourse.enrolled_student_ids)
+        ? updatedCourse.enrolled_student_ids.map((studentId: any) => {
+          // Check if the studentId is an object with _id
+          if (studentId && typeof studentId === 'object' && studentId._id) {
+            return studentId._id.toString();
+          }
+          // Check if it's already an ObjectId
+          if (mongoose.Types.ObjectId.isValid(studentId)) {
+            return studentId.toString();
+          }
+          console.warn(`⚠️ Invalid studentId format:`, studentId);
+          return null;
+        }).filter((id: string | null) => id !== null)
+        : [];
+
+
+      if (!enrolledStudentIds.length) {
+        console.warn('⚠️ No students are currently enrolled in this course.');
+        return updatedCourse;
+      }
+
+      console.log('✅ Final Enrolled Student IDs:', enrolledStudentIds);
+
+      // ✅ Step 4: Create notification payload
+      const notification = {
+        type: 'course-update',
+        content: `The course "${updatedCourse.title}" has been updated.`,
+        courseId: updatedCourse._id,
+        version: updatedCourse.version || 1,
+        read: false,
+        timestamp: new Date(),
+      };
+
+      // ✅ Step 5: Notify Enrolled Students
+      for (const studentId of enrolledStudentIds) {
+        try {
+          const roomName = `user:${studentId}`;
+          const roomMembers = this.notificationGateway.server.sockets.adapter.rooms.get(roomName);
+
+          console.log(`🔔 Room Name: ${roomName}`);
+          console.log(`👥 Room Members:`, roomMembers);
+
+          const notification = {
+            type: 'course-update',
+            content: `The course "${updatedCourse.title}" has been updated.`,
+            courseId: updatedCourse._id.toString(),
+            version: updatedCourse.version || 1,
+            read: false,
+            timestamp: new Date(),
+          };
+
+          // ✅ Emit notification only if room exists
+          if (roomMembers && roomMembers.size > 0) {
+            this.notificationGateway.server.to(roomName).emit('newNotification', notification);
+            console.log(`📡 Notification sent to room: ${roomName}`);
+          } else {
+            console.warn(`⚠️ Room ${roomName} does not exist or has no members.`);
+          }
+
+          // ✅ Save Notification to Database
+          await this.notificationGateway.notificationService.createNotification(
+            studentId,
+            'course-update',
+            notification.content,
+            updatedCourse._id.toString()
+          );
+          console.log(`💾 Notification saved to database for user: ${studentId}`);
+        } catch (notifError) {
+          console.error(`❌ Failed to notify student (${studentId}):`, notifError.message);
+        }
+      }
+
+
+      // ✅ Return the updated course
       return updatedCourse;
 
     } catch (error) {
-      console.error('Error in updateCourse:', error.message);
+      console.error('❌ Error in updateCourse:', error.message);
       throw new BadRequestException('Failed to update course.');
     }
   }
+
+
 
   // /**
   //  * Delete a course

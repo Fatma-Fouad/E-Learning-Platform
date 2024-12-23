@@ -11,7 +11,6 @@ import { ModuleSchema } from 'src/modules/module.schema';
 
 @Module({
   imports: [
-    UserModule,
     MongooseModule.forFeature([
       { name: 'quizzes', schema: QuizSchema },
       { name: 'questionbank', schema: QuestionBankSchema, collection: 'questionbank'}, //so i can get the questions

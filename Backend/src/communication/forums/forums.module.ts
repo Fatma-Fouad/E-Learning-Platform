@@ -8,12 +8,14 @@ import { NotificationService } from '../notifications/notification.service'; // 
 import { Notification, NotificationSchema } from '../notifications/notifications.schema'; // Import Notification schema
 import { User, UserSchema } from '../../users/user.schema'; // Import users schema
 
+import { courses, CourseSchema } from '../../courses/course.schema';
 @Module({
     imports: [
         MongooseModule.forFeature([
             { name: 'Forum', schema: ForumSchema },
             { name: User.name, schema: UserSchema },
             { name: 'Notification', schema: NotificationSchema }, // Include Notification schema
+            { name: courses.name, schema: CourseSchema },
         ]),
     ],
     controllers: [ForumsController],

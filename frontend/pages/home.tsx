@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import axios from "axios";
+import { io, Socket } from "socket.io-client";
+import { getSocket } from "../utils/socket";
 
 const Home = () => {
   const router = useRouter();
-  const [user, setUser] = useState<{ name: string; role: string; email: string; gpa?: number } | null>(null);
+  const [user, setUser] = useState<{ name: string; role: string; email: string; userId: string } | null>(null);
+  const [notifications, setNotifications] = useState<{ type: string; content: string }[]>([]);
+  const [socket, setSocket] = useState<Socket | null>(null);
   const [gpa, setGpa] = useState(null);
   const token = localStorage.getItem("token");
   const storedUserId = localStorage.getItem("userId");
@@ -14,20 +18,18 @@ const Home = () => {
     const name = localStorage.getItem("name");
     const role = localStorage.getItem("role");
     const email = localStorage.getItem("email");
+    const userId = localStorage.getItem("userId");
 
     if (name || role) {
-      setUser({
-        name,
-        role,
-        email,
-      });
+      setUser({ name, role, email, userId });
+      // Establish WebSocket connection and join notifications room
+      const socket = getSocket(userId);
+      socket.emit("joinNotifications", { userId });
     } else {
-      // Redirect to login if no user info exists
       router.push("/login");
     }
   }, [router]);
 
-  // Fetch the GPA for students
   useEffect(() => {
     if (user?.role === "student") {
       const fetchStudentGPA = async () => {
@@ -61,7 +63,35 @@ const Home = () => {
 
       fetchStudentGPA();
     }
-  }, [user, storedUserId, token]);
+
+    if (user?.userId) {
+      const socketConnection = io("http://localhost:3000", {
+        query: { userId: user.userId },
+      });
+
+      // Join the notifications room
+      socketConnection.emit("joinNotifications", { userId: user.userId });
+
+      // Log events for debugging
+      socketConnection.on("connect", () => {
+        console.log("WebSocket connected:", socketConnection.id);
+      });
+
+      // Listen for notifications
+      socketConnection.on("newNotification", (notification) => {
+        console.log("New Notification Received:", notification); // Debugging log
+        setNotifications((prev) => [...prev, notification]);
+      });
+
+      setSocket(socketConnection);
+
+      // Cleanup on component unmount
+      return () => {
+        socketConnection.disconnect();
+      };
+    }
+  }, [user?.userId, storedUserId, token]);
+  
 
   // Handle logout
   const handleLogout = () => {
@@ -111,7 +141,7 @@ const Home = () => {
       </nav>
 
       {/* Content */}
-      <div>
+      <div style={{ padding: "20px" }}>
         <h1>Welcome to the Home Page!</h1>
         {user ? (
           <div style={styles.userInfo}>
@@ -133,6 +163,15 @@ const Home = () => {
         ) : (
           <p>Loading user information...</p>
         )}
+
+        {/* Notifications */}
+        <div style={notificationsContainerStyle}>
+          {notifications.map((notification, index) => (
+            <div key={index} style={notificationStyle}>
+              <strong>{notification.type}:</strong> {notification.content}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -140,6 +179,51 @@ const Home = () => {
 
 export default Home;
 
+const navbarStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  backgroundColor: "#0070f3",
+  color: "white",
+  padding: "1rem 2rem",
+};
+
+const logoStyle: React.CSSProperties = {
+  margin: 0,
+};
+
+const logoutButtonStyle: React.CSSProperties = {
+  backgroundColor: "#ff4d4f",
+  border: "none",
+  color: "white",
+  padding: "0.5rem 1rem",
+  cursor: "pointer",
+  fontSize: "1rem",
+  borderRadius: "5px",
+};
+
+const userInfoStyle: React.CSSProperties = {
+  marginTop: "1rem",
+  fontSize: "1.2rem",
+};
+
+const notificationsContainerStyle: React.CSSProperties = {
+  marginTop: "20px",
+  position: "fixed",
+  top: "10px",
+  right: "10px",
+  width: "300px",
+  zIndex: 1000,
+} as React.CSSProperties;
+
+const notificationStyle: React.CSSProperties = {
+  backgroundColor: "#0070f3",
+  color: "white",
+  padding: "10px",
+  marginBottom: "10px",
+  borderRadius: "5px",
+  boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+};
 // Inline styles for simplicity
 const styles = {
   navbar: {
@@ -165,5 +249,16 @@ const styles = {
   userInfo: {
     marginTop: "1rem",
     fontSize: "1.2rem",
+  },
+  button: {
+    padding: "15px 25px",
+    fontSize: "1.1rem",
+    backgroundColor: "#9fcdff", // Light pastel blue
+    color: "#ffffff",
+    border: "none",
+    borderRadius: "8px",
+    cursor: "pointer",
+    transition: "all 0.3s ease",
+    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
   },
 };
