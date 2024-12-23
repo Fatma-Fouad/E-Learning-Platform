@@ -29,20 +29,20 @@ const AccessModulePage = () => {
           `http://localhost:3000/modules/${moduleId}/student`,
           {
             params: {
-              user_id: userId, // Send user_id as a query param
+              user_id: userId,
             },
             headers: {
-              Authorization: `Bearer ${token}`, // Include the token if necessary
+              Authorization: `Bearer ${token}`,
             },
           }
         );
 
-        const module = response.data?.module?.module; // Access the nested data
+        const module = response.data?.module?.module;
         console.log('Module Data Retrieved:', module);
 
         if (module) {
           setModuleData(module);
-          setInfoMessage(''); // Clear any previous message
+          setInfoMessage('');
         } else {
           const message = response.data?.module?.message;
           setInfoMessage(message || 'You cannot access this module at the moment.');
@@ -91,7 +91,27 @@ const AccessModulePage = () => {
           <p><strong>Order:</strong> {moduleData.module_order || 'Not specified'}</p>
           <p><strong>Notes Enabled:</strong> {moduleData.notesEnabled ? 'Yes' : 'No'}</p>
           <p><strong>Created At:</strong> {new Date(moduleData.created_at).toLocaleDateString()}</p>
+          
+          {/* Take Quiz Button */}
           <button onClick={() => router.push(`/modules/${moduleId}/take-quiz`)}>Take Quiz</button>
+          
+          {/* Notes Button (Conditional Rendering) */}
+          {moduleData.notesEnabled && (
+            <button 
+              onClick={() => router.push(`/modules/${moduleId}/notes`)}
+              style={{
+                marginTop: '10px',
+                padding: '10px 15px',
+                background: 'green',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              Go to Notes
+            </button>
+          )}
         </div>
       ) : (
         <p style={{ color: 'red' }}>

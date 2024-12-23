@@ -1,3 +1,4 @@
+
 import { IsNotEmpty, IsString } from 'class-validator';
 
 export class CreateNoteDto {
@@ -7,7 +8,7 @@ export class CreateNoteDto {
 
   @IsNotEmpty()
   @IsString()
-  coursetitle: string;
+  module_id: string;
 
   @IsNotEmpty()
   @IsString()

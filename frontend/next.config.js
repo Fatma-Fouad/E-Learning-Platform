@@ -11,4 +11,14 @@ const nextConfig = {
     },
   };
   
-  module.exports = nextConfig;
+  module.exports = {
+    async rewrites() {
+      return [
+        {
+          source: '/modules/:moduleId/notes/note-title/:noteTitle',
+          destination: '/modules/[moduleId]/notes/[noteTitle]',
+        },
+      ];
+    },
+  };
+  
