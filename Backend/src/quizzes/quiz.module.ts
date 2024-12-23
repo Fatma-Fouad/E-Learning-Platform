@@ -1,4 +1,4 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { QuizSchema } from './quiz.schema';
 import { QuizController } from './quiz.controller';
@@ -10,13 +10,12 @@ import { ProgressSchema } from '../progress/models/progress.schema';
 
 @Module({
   imports: [
-    UserModule,
     MongooseModule.forFeature([
       { name: 'quizzes', schema: QuizSchema },
       { name: 'questionbank', schema: QuestionBankSchema, collection: 'questionbank'}, //so i can get the questions
       { name: 'progress', schema: ProgressSchema, collection: 'progress' },
     ]),
-    forwardRef(() => UserModule), // Handle circular dependency
+    UserModule,
     ProgressModule,
   ],
   exports: [MongooseModule],
