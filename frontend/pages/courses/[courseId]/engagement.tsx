@@ -110,7 +110,7 @@ const EngagementReport = () => {
   };
 
   return (
-    <div>
+    <div className="reportContainer">
       <button style={{
           display: "block",
           margin: "10px auto 20px auto",
@@ -137,7 +137,7 @@ const EngagementReport = () => {
       </button>
     
     <div id="report" style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-      <h1>Engagement Report</h1>
+      <h1 className="reportTitle"> Engagement Report</h1>
       <section style={{ margin: "20px 0" }}>
         <h2>Summary</h2>
         <p>Total Enrolled Students: {engagementData.totalEnrolledStudents}</p>
@@ -209,17 +209,64 @@ const EngagementReport = () => {
         </table>
       </section>
 
+      <div className="chartContainer">
       <section style={{ display: "flex", justifyContent: "space-around" }}>
-        <div style={{ maxWidth: "45%" }}>
+      <div className="chart">
           <h3>Engagement Metrics</h3>
           <Bar data={barData} />
         </div>
-        <div style={{ maxWidth: "45%" }}>
+
+        <div className="chart">
           <h3>Performance Metrics</h3>
           <Pie data={pieData} />
         </div>
       </section>
+      </div>
     </div>
+    <style jsx>{`
+        .reportContainer {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 20px;
+          text-align: center;
+          background-color: #f9f9f9;
+          min-height: 100vh;
+        }
+
+        .reportTitle {
+          font-size: 2rem;
+          font-weight: bold;
+          color: #333;
+          margin-bottom: 10px;
+        }
+
+        .reportDetails {
+          font-size: 1.2rem;
+          color: #555;
+          margin: 5px 0;
+        }
+
+        .chartContainer {
+          display: flex;
+          justify-content: space-around;
+          width: 100%;
+          max-width: 1200px;
+          margin-top: 30px;
+          flex-wrap: wrap;
+        }
+
+        .chart {
+          flex: 1;
+          min-width: 300px;
+          max-width: 500px;
+          margin: 20px;
+          padding: 20px;
+          border: 2px solid #ddd;
+          border-radius: 10px;
+          background-color: white;
+        }
+      `}</style>
     </div>
   );
 };

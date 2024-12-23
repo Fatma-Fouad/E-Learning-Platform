@@ -70,6 +70,18 @@ const MyCoursesPage = () => {
 
   return (
     <div>
+      <button style={{
+          display: "block",
+          margin: "10px auto 20px auto",
+          padding: "10px 20px",
+          backgroundColor: "#9fcdff", // Light pastel blue
+          color: "black",
+          border: "none",
+          borderRadius: "5px",
+          cursor: "pointer",
+        }} onClick={() => router.push(`/home`)}>
+        Return to Home
+      </button>
       <h1>My Courses</h1>
 
       {error && <p style={{ color: "red" }}>{error}</p>}

@@ -43,7 +43,7 @@ const ContentEffectivenessReport = () => {
   }, [courseId]);
 
   const generatePDF = () => {
-    const reportElement = document.getElementById("report"); // ID of the report container
+    const reportElement = document.getElementById("report");
     if (!reportElement) return;
 
     html2canvas(reportElement, { scale: 2 }).then((canvas) => {
@@ -60,103 +60,171 @@ const ContentEffectivenessReport = () => {
   if (loading) return <p>Loading...</p>;
   if (error) return <p style={{ color: "red" }}>{error}</p>;
 
-  const moduleTitles = contentData.modules.map((mod) => mod.details.moduleName);
-  const moduleRatings = contentData.modules.map((mod) => mod.details.moduleRating);
-  const performanceMetrics = contentData.modules.reduce((acc, mod) => {
-    acc[mod.details.performanceMetric] =
-      (acc[mod.details.performanceMetric] || 0) + 1;
-    return acc;
-  }, {});
-
-  const performanceLabels = Object.keys(performanceMetrics);
-  const performanceCounts = Object.values(performanceMetrics);
+  const hasValidModules =
+    contentData.modules &&
+    contentData.modules.length > 0 &&
+    !contentData.modules.some((mod) => mod.title === "No modules available for this course.");
 
   return (
-    <div>
-      <button style={{
-          display: "block",
-          margin: "10px auto 20px auto",
+    <div className="reportContainer">
+      <button
+        style={{
+          marginBottom: "20px",
           padding: "10px 20px",
-          backgroundColor: "#9fcdff", // Light pastel blue
+          backgroundColor: "#9fcdff",
           color: "black",
           border: "none",
           borderRadius: "5px",
           cursor: "pointer",
-        }} onClick={generatePDF}>
+        }}
+        onClick={generatePDF}
+      >
         Download as PDF
       </button>
-      <button style={{
-          display: "block",
-          margin: "10px auto 20px auto",
+      <button
+        style={{
+          marginBottom: "20px",
           padding: "10px 20px",
-          backgroundColor: "#9fcdff", // Light pastel blue
+          backgroundColor: "#9fcdff",
           color: "black",
           border: "none",
           borderRadius: "5px",
           cursor: "pointer",
-        }} onClick={() => router.push(`/courses/${courseId}`)}>
+        }}
+        onClick={() => router.push(`/courses/${courseId}`)}
+      >
         Return to Course
       </button>
-      
-      <div id="report"> {/* Wrapping the report content for PDF generation */}
-        <h1>Content Effectiveness Report</h1>
-        <p>Course Rating: {contentData.courseRating}</p>
-        <p>Instructor Rating: {contentData.instructorRating}</p>
 
-        <h2>Module Details</h2>
-        <table border={1} style={{ width: "100%", marginBottom: "20px" }}>
-          <thead>
-            <tr>
-              <th>Module Name</th>
-              <th>Order</th>
-              <th>Rating</th>
-              <th>Performance</th>
-            </tr>
-          </thead>
-          <tbody>
-            {contentData.modules.map((mod, index) => (
-              <tr key={index}>
-                <td>{mod.details.moduleName}</td>
-                <td>{mod.details.moduleOrder}</td>
-                <td>{mod.details.moduleRating}</td>
-                <td>{mod.details.performanceMetric}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div id="report">
+        <h1 className="reportTitle">Content Effectiveness Report</h1>
+        <p className="reportDetails">Course Rating: {contentData.courseRating}</p>
+        <p className="reportDetails">Instructor Rating: {contentData.instructorRating}</p>
 
-        <div style={{ display: "flex", justifyContent: "space-around" }}>
-          <div style={{ width: "45%" }}>
-            <h3>Module Ratings</h3>
-            <Bar
-              data={{
-                labels: moduleTitles,
-                datasets: [
-                  {
-                    label: "Module Ratings",
-                    data: moduleRatings,
-                    backgroundColor: "rgba(75, 192, 192, 0.6)",
-                  },
-                ],
-              }}
-            />
-          </div>
-          <div style={{ width: "45%" }}>
-            <h3>Performance Metrics Distribution</h3>
-            <Pie
-              data={{
-                labels: performanceLabels,
-                datasets: [
-                  {
-                    data: performanceCounts,
-                    backgroundColor: ["#FFD700", "#FF8C00", "#DA70D6", "#9370DB"],
-                  },
-                ],
-              }}
-            />
-          </div>
-        </div>
+        {hasValidModules ? (
+          <>
+            <h2 className="reportTitle">Module Details</h2>
+            <table border={1} style={{ width: "100%", marginBottom: "20px" }}>
+              <thead>
+                <tr>
+                  <th>Module Name</th>
+                  <th>Order</th>
+                  <th>Rating</th>
+                  <th>Performance</th>
+                </tr>
+              </thead>
+              <tbody>
+                {contentData.modules.map((mod, index) => (
+                  <tr key={index}>
+                    <td>{mod.details?.moduleName || "Unknown"}</td>
+                    <td>{mod.details?.moduleOrder || "Unknown"}</td>
+                    <td>{mod.details?.moduleVersion|| "Unknown"}</td>
+                    <td>{mod.details?.moduleRating || "No rating yet"}</td>
+                    <td>{mod.details?.performanceMetric || "Unknown"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div className="chartContainer">
+              <div className="chart">
+                <h3 className="reportTitle">Module Ratings</h3>
+                <Bar
+                  data={{
+                    labels: contentData.modules.map(
+                      (mod) => mod.details?.moduleName || "Unknown"
+                    ),
+                    datasets: [
+                      {
+                        label: "Module Ratings",
+                        data: contentData.modules.map(
+                          (mod) => mod.details?.moduleRating || 0
+                        ),
+                        backgroundColor: "rgba(75, 192, 192, 0.6)",
+                      },
+                    ],
+                  }}
+                />
+              </div>
+              <div className="chart">
+                <h3 className="reportTitle">Performance Metrics Distribution</h3>
+                <Pie
+                  data={{
+                    labels: Object.keys(
+                      contentData.modules.reduce((acc, mod) => {
+                        const metric = mod.details?.performanceMetric || "Unknown";
+                        acc[metric] = (acc[metric] || 0) + 1;
+                        return acc;
+                      }, {})
+                    ),
+                    datasets: [
+                      {
+                        data: Object.values(
+                          contentData.modules.reduce((acc, mod) => {
+                            const metric = mod.details?.performanceMetric || "Unknown";
+                            acc[metric] = (acc[metric] || 0) + 1;
+                            return acc;
+                          }, {})
+                        ),
+                        backgroundColor: ["#FFD700", "#FF8C00", "#DA70D6", "#9370DB"],
+                      },
+                    ],
+                  }}
+                />
+              </div>
+            </div>
+          </>
+        ) : (
+          <p style={{ color: "red", textAlign: "center", marginTop: "20px" }}>
+            No modules available for this course.
+          </p>
+        )}
       </div>
+
+      <style jsx>{`
+        .reportContainer {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 20px;
+          text-align: center;
+          background-color: #f9f9f9;
+          min-height: 100vh;
+        }
+
+        .reportTitle {
+          font-size: 2rem;
+          font-weight: bold;
+          color: #333;
+          margin-bottom: 10px;
+        }
+
+        .reportDetails {
+          font-size: 1.2rem;
+          color: #555;
+          margin: 5px 0;
+        }
+
+        .chartContainer {
+          display: flex;
+          justify-content: space-around;
+          width: 100%;
+          max-width: 1200px;
+          margin-top: 30px;
+          flex-wrap: wrap;
+        }
+
+        .chart {
+          flex: 1;
+          min-width: 300px;
+          max-width: 500px;
+          margin: 20px;
+          padding: 20px;
+          border: 2px solid #ddd;
+          border-radius: 10px;
+          background-color: white;
+        }
+      `}</style>
     </div>
   );
 };

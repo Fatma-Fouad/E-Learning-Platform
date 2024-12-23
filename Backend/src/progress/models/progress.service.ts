@@ -82,66 +82,81 @@ async getStudentsEngagementReport(courseId: string) {
   
 
 
-// Reports on Content Effectiveness; Ratings and Comments
-async getContentEffectivenessReport(courseId: string) {
-  // Fetch the course details
-  const course = await this.courseModel.findById(courseId).exec();
-  if (!course) throw new NotFoundException('Course not found.');
-
-  // Fetch all modules associated with the course and sort them by `module_order`
-  const modules = await this.moduleModel.find({ course_id: courseId }).sort({ module_order: 1 }).exec();
-  if (!modules.length) throw new NotFoundException('No modules found for this course.');
-
-  // Calculate average course rating
-  const validModuleRatings = modules
-    .map((module) => module.module_rating)
-    .filter((rating) => rating !== null); // Exclude null ratings
-
-  const totalRatings = validModuleRatings.reduce((sum, rating) => sum + rating, 0);
-  const averageCourseRating =
-    validModuleRatings.length > 0 ? totalRatings / validModuleRatings.length : 0;
-
-  // Prepare detailed module data
-  const moduleDetails = modules.map((module) => {
-    const moduleRating = module.module_rating ?? 0;
-    let performanceMetric: string;
-
-    // Determine performance category for the module
-    if (moduleRating < averageCourseRating * 0.5) {
-      performanceMetric = 'Below Average';
-    } else if (moduleRating >= averageCourseRating * 0.5 && moduleRating < averageCourseRating) {
-      performanceMetric = 'Average';
-    } else if (moduleRating >= averageCourseRating && moduleRating < averageCourseRating * 1.2) {
-      performanceMetric = 'Above Average';
+  async getContentEffectivenessReport(courseId: string) {
+    // Fetch the course details
+    const course = await this.courseModel.findById(courseId).exec();
+    if (!course) throw new NotFoundException('Course not found.');
+  
+    // Fetch all modules associated with the course and sort them by `module_order`
+    const modules = await this.moduleModel.find({ course_id: courseId }).sort({ module_order: 1 }).exec();
+  
+    // Handle the case when no modules are found
+    let moduleDetails = [];
+    let averageCourseRating: string | number = 'No rating yet'; // Allow both string and number types
+  
+    if (modules.length > 0) {
+      // Calculate average course rating
+      const validModuleRatings = modules
+        .map((module) => module.module_rating)
+        .filter((rating) => rating !== null); // Exclude null ratings
+  
+      const totalRatings = validModuleRatings.reduce((sum, rating) => sum + rating, 0);
+      averageCourseRating =
+        validModuleRatings.length > 0 ? parseFloat((totalRatings / validModuleRatings.length).toFixed(2)) : 'No rating yet';
+  
+      // Prepare detailed module data
+      moduleDetails = modules.map((module) => {
+        const moduleRating = module.module_rating ?? 0;
+        let performanceMetric: string;
+  
+        // Determine performance category for the module
+        if (moduleRating < (typeof averageCourseRating === 'number' ? averageCourseRating * 0.5 : 0)) {
+          performanceMetric = 'Below Average';
+        } else if (
+          moduleRating >= (typeof averageCourseRating === 'number' ? averageCourseRating * 0.5 : 0) &&
+          moduleRating < (typeof averageCourseRating === 'number' ? averageCourseRating : 0)
+        ) {
+          performanceMetric = 'Average';
+        } else if (
+          moduleRating >= (typeof averageCourseRating === 'number' ? averageCourseRating : 0) &&
+          moduleRating < (typeof averageCourseRating === 'number' ? averageCourseRating * 1.2 : 0)
+        ) {
+          performanceMetric = 'Above Average';
+        } else {
+          performanceMetric = 'Excellent';
+        }
+  
+        return {
+          title: `Module ${module.module_order}`, // Title for each module based on its order
+          details: {
+            moduleName: module.title,
+            moduleOrder: module.module_order,
+            moduleVersion: module.module_version,
+            moduleRating: module.module_rating || 'No rating yet',
+            performanceMetric,
+          },
+        };
+      });
     } else {
-      performanceMetric = 'Excellent';
+      // No modules present
+      moduleDetails.push({ title: 'No modules available for this course.' });
     }
-
+  
+    // Retrieve course comments
+    const comments = course.comments && course.comments.length > 0
+      ? course.comments
+      : ['No comments on the course!'];
+  
+    // Compile the final report
     return {
-      title: `Module ${module.module_order}`, // Title for each module based on its order
-      details: {
-        moduleName: module.title,
-        moduleOrder: module.module_order,
-        moduleRating: module.module_rating || 'No rating yet',
-        performanceMetric,
-      },
+      courseRating: averageCourseRating,
+      instructorRating: course.instructor_rating || 'No rating yet',
+      comments, // Include comments or a default message
+      modules: moduleDetails, // Each module with its title or default message
     };
-  });
-
-  // Retrieve course comments
-  const comments = course.comments && course.comments.length > 0
-    ? course.comments
-    : ['No comments on the course!'];
-
-  // Compile the final report
-  return {
-    courseRating: parseFloat(averageCourseRating.toFixed(2)) || 'No rating yet',
-    instructorRating: course.instructor_rating || 'No rating yet',
-    comments, // Include comments or a default message
-    modules: moduleDetails, // Each module with its title
-  };
-}
-
+  }
+  
+  
 
   
 
@@ -191,90 +206,81 @@ async getQuizResultsReport(courseId: string) {
 }
 
   
-// Reports on Individual Students
-async getStudentReport(userId: string) {
+// Reports on Individual Students by userId and courseId
+async getStudentReport(userId: string, courseId: string) {
   // Fetch the user details
   const user = await this.userModel.findById(userId).exec();
   if (!user) {
     throw new NotFoundException(`User with ID: ${userId} not found.`);
   }
 
-  // Fetch all progress records for the student
-  const studentProgress = await this.progressModel.find({ user_id: userId }).exec();
-  if (!studentProgress || studentProgress.length === 0) {
-    throw new NotFoundException(`No progress data found for student with ID: ${userId}.`);
+  // Fetch the progress record for the specific course
+  const studentProgress = await this.progressModel.findOne({ user_id: userId, course_id: courseId }).exec();
+  if (!studentProgress) {
+    throw new NotFoundException(`No progress data found for student with ID: ${userId} in course ID: ${courseId}.`);
   }
 
   // Extract the student's name and GPA from the user record
   const studentName = user.name;
-  const studentGpa = user.gpa || 'Not Available'; // Default to 'Not Available' if GPA is missing
+  const studentGpa = user.gpa || 'Not Available';
 
-  // Map over the progress records to generate a detailed report for each course
-  const courseReports = await Promise.all(
-    studentProgress.map(async (progress) => {
-      // Fetch the course associated with the progress
-      const course = await this.courseModel.findById(progress.course_id).exec();
-      if (!course) {
-        throw new NotFoundException(`Course with ID: ${progress.course_id} not found.`);
-      }
+  // Fetch the course associated with the progress
+  const course = await this.courseModel.findById(courseId).exec();
+  if (!course) {
+    throw new NotFoundException(`Course with ID: ${courseId} not found.`);
+  }
 
-      // Fetch all progress records for this course to calculate the course-wide average
-      const courseProgress = await this.progressModel.find({ course_id: course._id }).exec();
+  // Fetch all progress records for this course to calculate the course-wide average
+  const courseProgress = await this.progressModel.find({ course_id: courseId }).exec();
 
-      // Calculate the average quiz score for the course
-      const validScores = courseProgress
-        .map((record) => record.avg_score)
-        .filter((score) => score !== null); // Exclude null scores
+  // Calculate the average quiz score for the course
+  const validScores = courseProgress
+    .map((record) => record.avg_score)
+    .filter((score) => score !== null); // Exclude null scores
 
-      const totalAvgScore = validScores.reduce((sum, score) => sum + score, 0);
-      const averageCourseScore = validScores.length > 0 ? totalAvgScore / validScores.length : 0;
+  const totalAvgScore = validScores.reduce((sum, score) => sum + score, 0);
+  const averageCourseScore = validScores.length > 0 ? totalAvgScore / validScores.length : 0;
 
-      // Determine the student's performance metric
-      const avgScore = progress.avg_score || 0;
-      let performanceMetric: string;
-      if (avgScore < averageCourseScore * 0.5) {
-        performanceMetric = 'Below Average';
-      } else if (avgScore >= averageCourseScore * 0.5 && avgScore < averageCourseScore) {
-        performanceMetric = 'Average';
-      } else if (avgScore >= averageCourseScore && avgScore < averageCourseScore * 1.2) {
-        performanceMetric = 'Above Average';
-      } else {
-        performanceMetric = 'Excellent';
-      }
+  // Determine the student's performance metric
+  const avgScore = studentProgress.avg_score || 0;
+  let performanceMetric: string;
+  if (avgScore < averageCourseScore * 0.5) {
+    performanceMetric = 'Below Average';
+  } else if (avgScore >= averageCourseScore * 0.5 && avgScore < averageCourseScore) {
+    performanceMetric = 'Average';
+  } else if (avgScore >= averageCourseScore && avgScore < averageCourseScore * 1.2) {
+    performanceMetric = 'Above Average';
+  } else {
+    performanceMetric = 'Excellent';
+  }
 
-      // Quiz details from progress
-      const quizzesTaken = progress.quizzes_taken || 0;
-      const lastQuizScore = progress.last_quiz_score || 0;
+  // Quiz details from progress
+  const quizzesTaken = studentProgress.quizzes_taken || 0;
+  const lastQuizScore = studentProgress.last_quiz_score || 0;
 
-      const quizGradesDetails = (progress.quiz_grades || []).map((grade, index) => ({
-        quizNumber: index + 1, // Quiz number (1-based)
-        grade: grade !== null ? grade : 'Not Attempted', // Show "Not Attempted" if null
-      }));
+  const quizGradesDetails = (studentProgress.quiz_grades || []).map((grade, index) => ({
+    quizNumber: index + 1, // Quiz number (1-based)
+    grade: grade !== null ? grade : 'Not Attempted', // Show "Not Attempted" if null
+  }));
 
-      // Prepare course-specific report
-      return {
-        courseId: course._id,
-        courseName: course.title,
-        progress: {
-          completionPercentage: progress.completion_percentage,
-          quizzesTaken,
-          lastQuizScore,
-          avgScore,
-        },
-        quizGrades: quizGradesDetails, // Include detailed quiz grades
-        averageCourseScore: parseFloat(averageCourseScore.toFixed(2)), // Course-wide average score
-        performanceMetric, // Student's performance relative to the course
-      };
-    })
-  );
+  // Prepare course-specific report
+  const courseReport = {
+    courseName: course.title,
+    progress: {
+      completionPercentage: studentProgress.completion_percentage,
+      quizzesTaken,
+      lastQuizScore,
+      avgScore,
+    },
+    quizGrades: quizGradesDetails, // Include detailed quiz grades
+    performanceMetric, // Student's performance relative to the course
+  };
 
-  // Compile the full student report
+  // Compile the tailored student report
   return {
-    userId,
-    studentName, // Use the user name from the user schema
-    gpa: studentGpa, // Include the GPA from the user schema
-    totalCourses: courseReports.length,
-    courses: courseReports,
+    studentName,
+    gpa: studentGpa,
+    course: courseReport,
   };
 }
 
