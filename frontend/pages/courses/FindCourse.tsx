@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter } from "next/router";
 
@@ -18,19 +18,50 @@ const FindCoursePage = () => {
   const [results, setResults] = useState<Course[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const [userRole, setUserRole] = useState<string>("guest");
+  const [token, setToken] = useState<string | null>(null); // Add token state
 
   const router = useRouter();
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const user = JSON.parse(localStorage.getItem("userData") || "{}") || { role: "guest" };
+      const storedToken = localStorage.getItem("token");
+      setUserRole(user.role);
+      setToken(storedToken); // Save token from localStorage to state
+      console.log("User object:", user);
+      console.log("Retrieved Token:", storedToken);
+
+      if (!storedToken) {
+        setError("Unauthorized access. Redirecting to login...");
+        router.push("/login");
+      }
+    }
+  }, [router]);
+
+  const clearPreviousState = () => {
+    setResults([]);
+    setError(null);
+    setSearchByCreator("");
+    setSearchByTitle("");
+    setSearchByKeyword("");
+  };
 
   const handleSearchByCreator = async () => {
     if (!searchByCreator.trim()) {
       setError("Please enter a creator name to search.");
       return;
     }
+    clearPreviousState();
     setLoading(true);
-    setError(null);
     try {
       const response = await axios.get(
-        `http://localhost:3000/courses/course-by-creator/${searchByCreator}`
+        `http://localhost:3000/courses/course-by-creator/${searchByCreator}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       setResults(response.data.courses || []);
     } catch (err: any) {
@@ -38,6 +69,7 @@ const FindCoursePage = () => {
       setError(err.response?.data?.message || "Failed to fetch courses by creator.");
     } finally {
       setLoading(false);
+      setSearchByCreator("");
     }
   };
 
@@ -46,11 +78,16 @@ const FindCoursePage = () => {
       setError("Please enter a course title to search.");
       return;
     }
+    clearPreviousState();
     setLoading(true);
-    setError(null);
     try {
       const response = await axios.get(
-        `http://localhost:3000/courses/course-by-Name/${searchByTitle}`
+        `http://localhost:3000/courses/course-by-Name/${searchByTitle}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       setResults(response.data.courses || []);
     } catch (err: any) {
@@ -58,6 +95,7 @@ const FindCoursePage = () => {
       setError(err.response?.data?.message || "Failed to fetch courses by title.");
     } finally {
       setLoading(false);
+      setSearchByTitle("");
     }
   };
 
@@ -66,11 +104,16 @@ const FindCoursePage = () => {
       setError("Please enter a keyword to search.");
       return;
     }
+    clearPreviousState();
     setLoading(true);
-    setError(null);
     try {
       const response = await axios.get(
-        `http://localhost:3000/courses/search-by-keyword?keyword=${searchByKeyword}`
+        `http://localhost:3000/courses/search-by-keyword?keyword=${searchByKeyword}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       setResults(response.data.courses || []);
     } catch (err: any) {
@@ -78,15 +121,89 @@ const FindCoursePage = () => {
       setError(err.response?.data?.message || "Failed to fetch courses by keyword.");
     } finally {
       setLoading(false);
+      setSearchByKeyword("");
     }
   };
 
-  const handleDeleteCourse = (courseId: string) => {
-    router.push(`/courses/${courseId}/delete`);
+  const handleDeleteCourse = async (courseId: string) => {
+    if (userRole === "instructor" || userRole === "admin") {
+      try {
+        console.log("Attempting to delete course:", courseId); // Debugging
+        const response = await axios.delete(
+          `http://localhost:3000/courses/delete-course/${courseId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`, // Optional: remove if not needed
+            },
+          }
+        );
+        if (response.status === 200) {
+          alert("Course deleted successfully.");
+          router.reload(); // Reload the page to refresh results
+        } else {
+          console.error("Unexpected response status:", response.status); // Debugging
+          alert("Failed to delete the course. Please try again.");
+        }
+      } catch (err: any) {
+        console.error("Error deleting course:", err.response || err.message);
+        if (err.response) {
+          alert(`Error: ${err.response.status} - ${err.response.data.message}`);
+        } else {
+          alert("An unknown error occurred while deleting the course.");
+        }
+      }
+    } else {
+      console.error("Only instructors or admins can delete courses.");
+      alert("You are not authorized to delete this course.");
+    }
+  };
+
+  const handleEnrollCourse = (courseId: string) => {
+    if (userRole === "student") {
+      router.push("/student/enrollcourse")
+      console.log(`Student enrolled in course: ${courseId}`);
+    } else {
+      console.error("Only students can enroll in courses.");
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.clear();
+    router.push("/login");
+  };
+
+  const handleMyCourses = () => {
+    if (userRole === "instructor") {
+      router.push("/courses/MyCourses_in");
+    } else if (userRole === "student") {
+      router.push("/courses/MyCourses_st");
+    }
+  };
+
+  const handleHome = () => {
+    router.push("/home"); // Change this to your home page route
   };
 
   return (
     <div>
+      {/* Navbar */}
+      <nav style={styles.navbar}>
+        <h2 style={styles.logo}>E-Learning Platform</h2>
+        <div style={styles.buttonContainer}>
+          {userRole !== "admin" && (
+            <button onClick={handleMyCourses} style={styles.navButton}>
+              My Courses
+            </button>
+          )}
+          <button onClick={handleLogout} style={styles.navButton}>
+            Logout
+          </button>
+          <button onClick={handleHome} style={styles.navButton}>
+            Home
+          </button>
+        </div>
+      </nav>
+
       <h1>Find a Course</h1>
 
       {/* Search by Creator */}
@@ -150,10 +267,16 @@ const FindCoursePage = () => {
                 <p>
                   <strong>Created By:</strong> {course.created_by}
                 </p>
-                <button onClick={() => handleDeleteCourse(course.course_id)}>
-                  Delete Course
-                </button>
-                <button>Enroll Course</button>
+                {(userRole === "instructor" || userRole === "admin") && (
+                  <button onClick={() => handleDeleteCourse(course.course_id)}>
+                    Delete Course
+                  </button>
+                )}
+                {userRole === "student" && (
+                  <button onClick={() => handleEnrollCourse(course.course_id)}>
+                    Enroll Course
+                  </button>
+                )}
               </li>
             ))}
           </ul>
@@ -163,6 +286,35 @@ const FindCoursePage = () => {
       )}
     </div>
   );
+};
+
+const styles = {
+  navbar: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#ADD8E6", // Light blue background
+    padding: "10px 20px",
+    borderBottom: "2px solid #ccc",
+  },
+  logo: {
+    color: "#000",
+    fontSize: "24px",
+    fontWeight: "bold",
+  },
+  buttonContainer: {
+    display: "flex",
+    gap: "10px",
+  },
+  navButton: {
+    backgroundColor: "#000",
+    color: "#fff",
+    border: "none",
+    borderRadius: "5px",
+    padding: "8px 15px",
+    cursor: "pointer",
+    transition: "background-color 0.3s ease",
+  },
 };
 
 export default FindCoursePage;

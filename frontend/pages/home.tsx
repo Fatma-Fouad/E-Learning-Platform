@@ -1,23 +1,98 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+import axios from "axios";
+import { io, Socket } from "socket.io-client";
+import { getSocket } from "../utils/socket";
 
 const Home = () => {
   const router = useRouter();
-  const [user, setUser] = useState<{ name: string; role: string; email: string } | null>(null);
+  const [user, setUser] = useState<{ name: string; role: string; email: string; userId: string; gpa: string } | null>(null);
+  const [notifications, setNotifications] = useState<{ type: string; content: string }[]>([]);
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [gpa, setGpa] = useState(null);
+  const token = localStorage.getItem("token");
+  const storedUserId = localStorage.getItem("userId");
 
   // Fetch user information from localStorage
   useEffect(() => {
     const name = localStorage.getItem("name");
     const role = localStorage.getItem("role");
     const email = localStorage.getItem("email");
+    const userId = localStorage.getItem("userId");
+    const gpa = localStorage.getItem("gpa") + "";
 
-    if (name && role && email) {
-      setUser({ name, role, email });
+    if (name || role) {
+      setUser({ name, role, email, userId, gpa });
+      // Establish WebSocket connection and join notifications room
+      const socket = getSocket(userId);
+      socket.emit("joinNotifications", { userId });
     } else {
-      // Redirect to login if no user info exists
       router.push("/login");
     }
   }, [router]);
+
+  useEffect(() => {
+    if (user?.role === "student") {
+      const fetchStudentGPA = async () => {
+        if (!storedUserId) {
+          console.error("No student ID found in local storage.");
+          return;
+        }
+
+        try {
+          const response = await axios.get(
+            `http://localhost:3000/user/${storedUserId}/profile`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          console.log("Student data:", response.data); // Log the student data
+
+          const fetchedGpa = response.data?.gpa; // Assuming GPA is under data.gpa
+          if (fetchedGpa !== undefined) {
+            console.log("Fetched GPA:", fetchedGpa);
+            setGpa(fetchedGpa);
+          } else {
+            console.error("GPA not found for the student.");
+          }
+        } catch (err) {
+          console.error("Error fetching student data:", err);
+        }
+      };
+
+      fetchStudentGPA();
+    }
+
+    if (user?.userId) {
+      const socketConnection = io("http://localhost:3000", {
+        query: { userId: user.userId },
+      });
+
+      // Join the notifications room
+      socketConnection.emit("joinNotifications", { userId: user.userId });
+
+      // Log events for debugging
+      socketConnection.on("connect", () => {
+        console.log("WebSocket connected:", socketConnection.id);
+      });
+
+      // Listen for notifications
+      socketConnection.on("newNotification", (notification) => {
+        console.log("New Notification Received:", notification); // Debugging log
+        setNotifications((prev) => [...prev, notification]);
+      });
+
+      setSocket(socketConnection);
+
+      // Cleanup on component unmount
+      return () => {
+        socketConnection.disconnect();
+      };
+    }
+  }, [user?.userId, storedUserId, token]);
+  
 
   // Handle logout
   const handleLogout = () => {
@@ -32,7 +107,7 @@ const Home = () => {
     } else if (user?.role === "instructor") {
       router.push("/instructor/dashborad");
     } else if (user?.role === "admin") {
-      router.push("/admin/[adminId]/dashboard");
+      router.push("/admin/dashboard");
     }
   };
 
@@ -43,50 +118,51 @@ const Home = () => {
 
   // Handle Find-Course
   const Find_Course = () => {
-    router.push("/courses/FindCourse");
+    router.push("courses/FindCourse");
   };
 
-  // Handle Student Courses
   const handleStudentCourses = () => {
     router.push("/courses/MyCourses_st");
   };
 
-  // Handle Instructor Courses
   const handleInstructorCourses = () => {
     router.push("/courses/MyCourses_in");
   };
+  
+  const backup = () => {
+    router.push("/backup/");
+  };
+
 
   return (
     <div>
       {/* Navbar */}
       <nav style={styles.navbar}>
         <h2 style={styles.logo}>E-Learning Platform</h2>
-        <button onClick={Find_Course} style={styles.button}>
-          Find a Course
-        </button>
-        {user?.role === "student" && (
-          <button style={styles.button} onClick={handleStudentCourses}>
-            My Courses (Student)
-          </button>
-        )}
-        {user?.role === "instructor" && (
-          <button style={styles.button} onClick={handleInstructorCourses}>
-            My Courses (Instructor)
-          </button>
-        )}
-        {user && (
-          <button onClick={handleDashboardRedirect} style={styles.dashboardButton}>
-            Go to {user.role.charAt(0).toUpperCase() + user.role.slice(1)} Dashboard
-          </button>
-        )}
         <button onClick={handleLogout} style={styles.logoutButton}>
           Logout
         </button>
+        <button onClick={Find_Course} style={styles.logoutButton}>
+          Find a course
+        </button>
+        {user?.role === "student" && (
+          <button style={styles.logoutButton} onClick={handleStudentCourses}>
+            My Courses
+          </button>
+        )}
+        {user?.role === "instructor" && (
+          <button style={styles.logoutButton} onClick={handleInstructorCourses}>
+            My Courses
+          </button>
+        )}
+        {user?.role === "admin" && (<button onClick={backup} style={styles.logoutButton}>
+          Backup Data
+        </button>)}
       </nav>
 
       {/* Content */}
-      <div style={styles.content}>
-        <h1 style={styles.textCenter}>Welcome to the Home Page!</h1>
+      <div style={{ padding: "20px" }}>
+        <h1>Welcome to the Home Page!</h1>
         {user ? (
           <div style={styles.userInfo}>
             <p>
@@ -98,10 +174,24 @@ const Home = () => {
             <p>
               <strong>Role:</strong> {user.role}
             </p>
+            {user?.role === "student" && (
+              <p>
+                <strong>GPA:</strong> {gpa !== null ? gpa : "Loading..."}
+              </p>
+            )}
           </div>
         ) : (
           <p>Loading user information...</p>
         )}
+
+        {/* Notifications */}
+        <div style={notificationsContainerStyle}>
+          {notifications.map((notification, index) => (
+            <div key={index} style={notificationStyle}>
+              <strong>{notification.type}:</strong> {notification.content}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -109,6 +199,51 @@ const Home = () => {
 
 export default Home;
 
+const navbarStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  backgroundColor: "#0070f3",
+  color: "white",
+  padding: "1rem 2rem",
+};
+
+const logoStyle: React.CSSProperties = {
+  margin: 0,
+};
+
+const logoutButtonStyle: React.CSSProperties = {
+  backgroundColor: "#ff4d4f",
+  border: "none",
+  color: "white",
+  padding: "0.5rem 1rem",
+  cursor: "pointer",
+  fontSize: "1rem",
+  borderRadius: "5px",
+};
+
+const userInfoStyle: React.CSSProperties = {
+  marginTop: "1rem",
+  fontSize: "1.2rem",
+};
+
+const notificationsContainerStyle: React.CSSProperties = {
+  marginTop: "20px",
+  position: "fixed",
+  top: "10px",
+  right: "10px",
+  width: "300px",
+  zIndex: 1000,
+} as React.CSSProperties;
+
+const notificationStyle: React.CSSProperties = {
+  backgroundColor: "#0070f3",
+  color: "white",
+  padding: "10px",
+  marginBottom: "10px",
+  borderRadius: "5px",
+  boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+};
 // Inline styles for simplicity
 const styles: { [key: string]: React.CSSProperties } = {
   navbar: {

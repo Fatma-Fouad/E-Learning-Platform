@@ -6,4 +6,5 @@ export class RegisterUserDto {
     password:string;
     enrolled_courses?: string[];
     completed_courses?: string[];
+    gpa?: number;
 }

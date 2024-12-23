@@ -1,0 +1,56 @@
+.reportContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    text-align: center;
+    background-color: #f9f9f9;
+    min-height: 100vh;
+  }
+  
+  .reportTitle {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 10px;
+  }
+  
+  .reportDetails {
+    font-size: 1.2rem;
+    color: #555;
+    margin: 5px 0;
+  }
+  
+  .chartContainer {
+    display: flex;
+    justify-content: space-around;
+    width: 100%;
+    max-width: 1200px;
+    margin-top: 30px;
+    flex-wrap: wrap;
+  }
+  
+  .chart {
+    flex: 1;
+    min-width: 300px;
+    max-width: 500px;
+    margin: 20px;
+    padding: 20px;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    background-color: white;
+  }
+  
+  .quizGradesList {
+    list-style-type: none;
+    padding: 0;
+  }
+  
+  .quizGradesList li {
+    font-size: 1rem;
+    color: #333;
+    margin: 5px 0;
+  }
+
+
+  

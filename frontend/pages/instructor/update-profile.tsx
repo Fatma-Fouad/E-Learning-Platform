@@ -4,40 +4,36 @@ import { useRouter } from 'next/router';
 
 const UpdateProfile = () => {
   const router = useRouter();
-  const userId = localStorage.getItem("userId"); // Get instructor userId from localStorage
-  const token = localStorage.getItem("token"); // Get the token from localStorage
+  const userId = localStorage.getItem('userId'); // Get userId from localStorage
 
   const [profile, setProfile] = useState<any>(null);
   const [name, setName] = useState('');
   const [profilePicture, setProfilePicture] = useState('');
-  const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Fetch the instructor's current profile data
+  // Fetch the user's current profile data
   useEffect(() => {
-    if (!userId || !token) return; // Ensure we have userId and token
+    if (!userId) return; // Ensure we have userId
 
     const fetchProfile = async () => {
       try {
-        const response = await axios.get(`/api/user/${userId}/profile`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await axios.get(`http://localhost:3000/user/${userId}/profile`);
         setProfile(response.data);
         setName(response.data.name);
-        setProfilePicture(response.data.profile_picture); // Assuming profile_picture is part of the response
+        setProfilePicture(response.data.profile_picture);
         setEmail(response.data.email);
         setPhoneNumber(response.data.phone_number);
       } catch (err: any) {
-        setError('Failed to fetch profile data');
+        console.error(err);
+        setError(err.response?.data?.message || 'Failed to fetch profile data.');
       }
     };
 
     fetchProfile();
-  }, [userId, token]);
+  }, [userId]);
 
   // Handle form submission to update the profile
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,23 +42,24 @@ const UpdateProfile = () => {
     const updateData = {
       name,
       profile_picture: profilePicture,
-      email,
       phone_number: phoneNumber,
     };
 
     try {
-      const response = await axios.put(`/api/user/${userId}/profile`, updateData, {
-        headers: {
-          Authorization: `Bearer ${token}`, // Send token for authentication
-        },
-      });
+      const response = await axios.put(
+        `http://localhost:3000/user/${userId}/profile`,
+        updateData
+      );
       setSuccessMessage('Profile updated successfully!');
       setError('');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to update profile');
+      console.error(err);
+      setError(err.response?.data?.message || 'Failed to update profile.');
       setSuccessMessage('');
     }
   };
+
+
 
   return (
     <div style={{ padding: '2rem', maxWidth: '900px', margin: 'auto' }}>
@@ -115,13 +112,14 @@ const UpdateProfile = () => {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
+                readOnly
                 style={{
                   width: '100%',
                   padding: '8px',
                   borderRadius: '5px',
                   border: '1px solid #ccc',
+                  backgroundColor: '#f5f5f5',
+                  cursor: 'not-allowed',
                 }}
               />
             </label>

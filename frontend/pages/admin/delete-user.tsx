@@ -22,7 +22,7 @@ const DeleteAccount = () => {
 
     try {
       const response = await axios.delete(
-        `http://localhost:4000/user/accounts/${role}/${userId}`,
+        `http://localhost:3000/user/accounts/${role}/${userId}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`,

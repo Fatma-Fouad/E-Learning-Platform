@@ -12,18 +12,26 @@ import { ProgressModule } from './progress/models/progress.module';
 import { ForumModule } from './communication/forums/forums.module';
 import { ChatModule } from './communication/chats/chats.module';
 import { NotificationModule } from './communication/notifications/notification.module';import { AuthModule } from './authentication/auth.module';
-import { NoteModule } from './notes/note.module';
+import { AuthGuard } from './authentication/auth.guard';
+import { BackupService } from './backup/backup.service';
+import { BackupController } from './backup/backup.controller';
 import { ResponseModule } from './responses/response.module';
 import { BackupModule } from './backup/backup.module';
+import { JwtModule } from '@nestjs/jwt';
+//import { NoteModule } from './notes/note.module';
 
 @Module({
-  imports: [QuizModule,
+  imports:
+    
+    [JwtModule.register({
+      secret: process.env.JWT_SECRET,  // Ensure you are loading the correct secret from your .env file
+      signOptions: { expiresIn: '1h' },  // Optional: Set token expiration time
+    }),
+      QuizModule,
     QuestionBankModule,
-    NoteModule,
     AuthModule,
     ModulesModule,
     CourseModule,
-    ModulesModule,
     ProgressModule,
     UserModule,
     ForumModule, // Add ForumsModule here

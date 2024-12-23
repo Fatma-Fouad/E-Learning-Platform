@@ -5,13 +5,13 @@ import { NoteService } from './note.service';
 import { CreateNoteDto } from './createnote.dto';
 import {UpdateNoteDto} from './updatenote.dto';
 import { NoteDocument, notes } from './note.schema'; // Ensure this import matches your schema file
-//import { AuthGuard } from 'src/authentication/auth.guard';
-//import { Roles, Role } from 'src/authentication/roles.decorator';
-//import { RolesGuard } from 'src/authentication/roles.guard';
+import { AuthGuard } from 'src/authentication/auth.guard';
+import { Roles, Role } from 'src/authentication/roles.decorator';
+import { RolesGuard } from 'src/authentication/roles.guard';
 
 @Controller('notes') // Base route: /notes
-//@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
-//@Roles('admin' as Role, 'student' as Role)
+@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+@Roles('admin' as Role, 'student' as Role)
 export class NoteController {
   constructor(private readonly noteService: NoteService) {}
 

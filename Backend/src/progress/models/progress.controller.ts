@@ -68,17 +68,17 @@ export class ProgressController {
  }
 
 // student
-// Individual Student Report
-@Get('student-report/:studentId')
+// Individual Student Report by Course
+@Get('student-report/:studentId/:courseId')
 // @UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
 // @Roles('admin' as Role, 'student' as Role)
-  async getStudentReport(@Param('studentId') studentId: string) {
+  async getStudentReport(@Param('studentId') studentId: string, @Param('courseId') courseId: string) {
     try {
-      const report = await this.progressService.getStudentReport(studentId);
+      const report = await this.progressService.getStudentReport(studentId, courseId);
       return report;
     } catch (error) {
       if (error.message.includes('No progress data found')) {
-        throw new NotFoundException(`No progress data found for student with ID: ${studentId}.`);
+        throw new NotFoundException(`No progress data found for student with ID: ${studentId} in course ID: ${courseId}.`);
       }
       if (error.message.includes('Course with ID')) {
         throw new NotFoundException(error.message);

@@ -35,7 +35,13 @@ const EnrollStudent = () => {
 
     try {
       const response = await axios.post(
-        `http://localhost:3000/user/${instructorId}/enroll-student/${studentId}/${courseId}`
+        `http://localhost:3000/user/${instructorId}/enroll-student/${studentId}/${courseId}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
       );
 
       setSuccessMessage(response.data.message || 'Student enrolled successfully!');

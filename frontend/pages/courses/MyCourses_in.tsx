@@ -15,13 +15,11 @@ const AllCoursesPage = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [instructorId, setInstructorId] = useState<string>("");
-
   const [newCourse, setNewCourse] = useState({
     title: "",
     description: "",
     category: "",
-    difficulty_level: "",
+    difficulty_level: "Beginner",
     created_by: "",
     version: 1,
     course_rating: 0,
@@ -38,27 +36,44 @@ const AllCoursesPage = () => {
 
   const router = useRouter();
 
-  const fetchCoursesByInstructor = async () => {
-    if (!instructorId.trim()) {
-      setError("Please provide a valid instructor ID.");
+  const token = localStorage.getItem("token");
+  const storedUserId = localStorage.getItem("userId");
+  const storedUserName = localStorage.getItem("name");
+
+  useEffect(() => {
+    if (!token || !storedUserId) {
+      setError("Unauthorized access. Redirecting to login...");
+      router.push("/login");
       return;
     }
 
-    setLoading(true);
-    setError(null);
+    const fetchCoursesByInstructor = async () => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const response = await axios.get(
-        `http://localhost:3000/courses/instructor-courses/${instructorId}`
-      );
-      setCourses(response.data.courses);
-    } catch (err: any) {
-      console.error("Error fetching courses by instructor:", err);
-      setError(err.response?.data?.message || "Failed to fetch courses. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+      try {
+        const response = await axios.get(
+          `http://localhost:3000/courses/instructor-courses/${storedUserId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        if (response.data.courses.length === 0) {
+          setError("No courses found for this instructor.");
+        }
+        setCourses(response.data.courses || []);
+      } catch (err: any) {
+        console.error("Error fetching courses by instructor:", err);
+        setError(err.response?.data?.message || "Failed to fetch courses. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCoursesByInstructor();
+  }, [router, token, storedUserId]);
 
   const handleViewDetails = (courseId: string) => {
     localStorage.setItem("courseId", courseId);
@@ -79,32 +94,23 @@ const AllCoursesPage = () => {
       nom_of_modules: Number(newCourse.nom_of_modules || 0),
       course_rating: Number(newCourse.course_rating || 0),
       ratingCount: Number(newCourse.ratingCount || 0),
+      created_by: storedUserName,
+      instructor_id: storedUserId,
     };
 
-    if (
-      !payload.title ||
-      !payload.description ||
-      !payload.category ||
-      !payload.difficulty_level ||
-      !payload.created_by ||
-      !payload.instructor_id ||
-      payload.enrolled_students < 0 ||
-      payload.version < 1
-    ) {
-      setCreateError("All required fields must be correctly filled.");
-      setCreateLoading(false);
-      return;
-    }
-
     try {
-      const response = await axios.post("http://localhost:3000/courses", payload);
+      const response = await axios.post("http://localhost:3000/courses", payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (response.status === 201 || response.status === 200) {
         setCourses((prevCourses) => [...prevCourses, response.data]);
         setNewCourse({
           title: "",
           description: "",
           category: "",
-          difficulty_level: "",
+          difficulty_level: "Beginner",
           created_by: "",
           version: 1,
           course_rating: 0,
@@ -126,23 +132,34 @@ const AllCoursesPage = () => {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.clear();
+    router.push("/login");
+  };
+
+  const handleHome = () => {
+    router.push("/home");
+  };
+
   if (loading) return <p>Loading courses...</p>;
-  if (error) return <p style={{ color: "red" }}>{error}</p>;
+  if (error && courses.length === 0) return <p style={{ color: "red" }}>{error}</p>;
 
   return (
     <div>
-      <h1>All Courses for: ${instructorId}</h1>
+      {/* Navbar */}
+      <nav style={styles.navbar}>
+        <h2 style={styles.logo}>E-Learning Platform</h2>
+        <div style={styles.buttonContainer}>
+          <button onClick={handleHome} style={styles.navButton}>
+            Home
+          </button>
+          <button onClick={handleLogout} style={styles.navButton}>
+            Logout
+          </button>
+        </div>
+      </nav>
 
-      <div>
-        <h2>Search by Instructor ID</h2>
-        <input
-          type="text"
-          placeholder="Enter Instructor ID"
-          value={instructorId}
-          onChange={(e) => setInstructorId(e.target.value)}
-        />
-        <button onClick={fetchCoursesByInstructor}>Search</button>
-      </div>
+      <h1>All Courses</h1>
 
       {courses.length > 0 ? (
         <ul>
@@ -161,12 +178,11 @@ const AllCoursesPage = () => {
           ))}
         </ul>
       ) : (
-        <p>No courses available for the instructor at the moment.</p>
+        <p style={{ color: "orange" }}>Warning: This instructor currently has no courses listed.</p>
       )}
 
       <h2>Create a New Course</h2>
       <form onSubmit={handleCreateCourse}>
-        {/* The form fields for creating a new course */}
         <label>
           Title:
           <input
@@ -198,32 +214,15 @@ const AllCoursesPage = () => {
         <br />
         <label>
           Difficulty Level:
-          <input
-            type="text"
+          <select
             value={newCourse.difficulty_level}
             onChange={(e) => setNewCourse({ ...newCourse, difficulty_level: e.target.value })}
             required
-          />
-        </label>
-        <br />
-        <label>
-          Created By:
-          <input
-            type="text"
-            value={newCourse.created_by}
-            onChange={(e) => setNewCourse({ ...newCourse, created_by: e.target.value })}
-            required
-          />
-        </label>
-        <br />
-        <label>
-          Instructor ID:
-          <input
-            type="text"
-            value={newCourse.instructor_id}
-            onChange={(e) => setNewCourse({ ...newCourse, instructor_id: e.target.value })}
-            required
-          />
+          >
+            <option value="Beginner">Beginner</option>
+            <option value="Intermediate">Intermediate</option>
+            <option value="Advanced">Advanced</option>
+          </select>
         </label>
         <br />
         <button type="submit" disabled={createLoading}>
@@ -233,6 +232,35 @@ const AllCoursesPage = () => {
       {createError && <p style={{ color: "red" }}>{createError}</p>}
     </div>
   );
+};
+
+const styles = {
+  navbar: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#ADD8E6",
+    padding: "10px 20px",
+    borderBottom: "2px solid #ccc",
+  },
+  logo: {
+    color: "#000",
+    fontSize: "24px",
+    fontWeight: "bold",
+  },
+  buttonContainer: {
+    display: "flex",
+    gap: "10px",
+  },
+  navButton: {
+    backgroundColor: "#000",
+    color: "#fff",
+    border: "none",
+    borderRadius: "5px",
+    padding: "8px 15px",
+    cursor: "pointer",
+    transition: "background-color 0.3s ease",
+  },
 };
 
 export default AllCoursesPage;

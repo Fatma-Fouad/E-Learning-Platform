@@ -1,8 +1,8 @@
 
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model } from 'mongoose';
-import { Chat, ChatDocument, Message } from './chats.schema';
+import { Chat, ChatDocument } from './chats.schema';
 import { User, UserDocument } from './../../users/user.schema';
 
 @Injectable()
@@ -12,37 +12,67 @@ export class ChatService {
         @InjectModel(User.name) private userModel: Model<UserDocument>
     ) { }
 
+    async getUserFromDatabase(userId: string): Promise<UserDocument> {
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            throw new BadRequestException('Invalid user ID');
+        }
+
+        const user = await this.userModel.findById(userId).exec();
+        if (!user) {
+            throw new NotFoundException(`User with ID ${userId} not found`);
+        }
+
+        return user;
+    }
+
+
     async getAllChats(): Promise<Chat[]> {
         return this.chatModel.find().exec();
     }
 
-    async createChat(chatName: string, participantIds: string[], courseId: string): Promise<Chat> {
-        console.log('Creating chat with:', { chatName, participantIds, courseId });
+    async createChat(
+        chatName: string,
+        participantIds: string[],
+        courseId: string,
+        userId: string,
+        type: 'student' | 'group' | 'mixed'
+    ): Promise<Chat> {
+        console.log('Creating chat with:', { chatName, participantIds, courseId, userId, type });
 
-        if (!chatName || !participantIds || !courseId) {
-            throw new Error('Missing required fields: chatName, participantIds, or courseId.');
+        if (!chatName || !participantIds || !courseId || !userId || !type) {
+            throw new BadRequestException('Missing required fields: chatName, participantIds, courseId, userId, or type.');
         }
 
+        // Validate creator's existence
+        const creator = await this.userModel.findById(userId);
+        if (!creator) {
+            throw new NotFoundException(`User with ID ${userId} not found.`);
+        }
+
+        // Validate participant IDs
         const participants = await this.userModel
             .find({ _id: { $in: participantIds } }, 'role')
             .exec();
 
-        const type = participants.some(participant => participant.role === 'instructor')
-            ? 'mixed'
-            : 'student';
+        if (!participants || participants.length !== participantIds.length) {
+            throw new BadRequestException('One or more participant IDs are invalid.');
+        }
 
+        // Explicitly use the passed type
+        const chatType = type;
+
+        // Create the chat
         const newChat = new this.chatModel({
             chatName,
-            participants: participantIds,
-            type,
+            participants: participantIds.map(id => new mongoose.Types.ObjectId(id)),
             courseId: new mongoose.Types.ObjectId(courseId),
+            type: chatType,
+            creatorId: new mongoose.Types.ObjectId(userId),
         });
 
         return newChat.save();
     }
-
-
-
+  
 
     async getChatsByCourse(courseId: string): Promise<Chat[]> {
         return this.chatModel.find({ courseId: new mongoose.Types.ObjectId(courseId) }).exec();
@@ -86,30 +116,63 @@ export class ChatService {
     async getChatHistory(chatId: string): Promise<any> {
         console.log(`Validating chatId: ${chatId}`);
         if (!mongoose.Types.ObjectId.isValid(chatId)) {
-            console.error('Invalid chatId format');
+            console.error('❌ Invalid chatId format');
             throw new Error('Invalid chatId');
         }
 
-        const chat = await this.chatModel.findById(chatId).populate('participants').exec();
-        console.log('Chat retrieved:', chat);
+        // Populate both participants and message senders
+        const chat = await this.chatModel
+            .findById(chatId)
+            .populate('participants', 'name') // Populate participants with their names
+            .populate({
+                path: 'messages.sender', // Populate sender in messages
+                select: 'name', // Only fetch the 'name' field of the sender
+            })
+            .exec();
+
+        console.log('✅ Chat retrieved:', chat);
 
         if (!chat) {
-            console.error('Chat not found');
+            console.error('❌ Chat not found');
             throw new Error('Chat not found');
         }
 
-        console.log('Returning messages:', chat.messages);
-        return chat.messages;
+        // Map messages to include sender's name explicitly
+        const messagesWithSenderName = chat.messages.map((msg: any) => ({
+            sender: msg.sender?._id || msg.sender, // Fallback to ID if name isn't populated
+            senderName: msg.sender?.name || 'Unknown User',
+            content: msg.content,
+            timestamp: msg.timestamp,
+        }));
+
+        console.log('✅ Returning messages with sender names:', messagesWithSenderName);
+        return messagesWithSenderName;
     }
 
 
     async getChatById(chatId: string | mongoose.Types.ObjectId): Promise<ChatDocument> {
-        const chat = await this.chatModel.findById(chatId).exec();
+        const chat = await this.chatModel
+            .findById(chatId)
+            .populate({
+                path: 'messages.sender',  // Populate sender details
+                select: 'name'            // Only fetch the name field
+            })
+            .populate({
+                path: 'participants',     // Populate participant details
+                select: '_id'             // Only fetch the _id field
+            })
+            .exec();
+
         if (!chat) {
             throw new Error('Chat not found');
         }
+
+        // Map participants to their string IDs
+        chat.participants = chat.participants.map((participant: any) => participant._id.toString());
+
         return chat;
     }
+
 
 
     async addParticipantToChat(chatId: string, participantId: string): Promise<void> {

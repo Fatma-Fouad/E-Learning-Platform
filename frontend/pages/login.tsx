@@ -2,7 +2,18 @@ import React, { useState } from "react";
 import { useRouter } from "next/router";
 import axios from "axios";
 
-const backend_url = "http://localhost:3000/auth"; // Backend running on port 3000
+// Backend URL
+const backend_url = "http://localhost:3000/auth";
+
+// Interface for the response
+interface LoginResponse {
+  user: {
+    userid: string; // Ensure this matches your backend field names
+    role: string;
+    name: string;
+    email: string;
+  };
+}
 
 const Login = () => {
   const router = useRouter();
@@ -51,6 +62,7 @@ const Login = () => {
         localStorage.setItem("role",response.data.user.role)
         localStorage.setItem("name",response.data.user.name)
         localStorage.setItem("email",response.data.user.email)
+        if(localStorage.getItem("role") === "student"){localStorage.setItem("gpa",response.data.user.gpa)}
         setSuccess("Login successful. Redirecting...");
         console.log("User Data:", response.data.user); // Optional: log user data
         setTimeout(() => router.push("/home"), 1000); // Redirect to home page

@@ -1,5 +1,3 @@
-// pages/admin/create-account.tsx
-
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
@@ -13,7 +11,6 @@ const CreateAccount = () => {
   const [success, setSuccess] = useState('');
   const router = useRouter();
 
-  // Handle form submission
   const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -25,9 +22,10 @@ const CreateAccount = () => {
     }
 
     try {
+      // Replace `password` with `password_hash` if required by the backend
       const response = await axios.post(
-        `http://localhost:4000/user/accounts/${role}`,
-        { name, email, password, role },
+        `http://localhost:3000/user/accounts/${role}`,
+        { name, email, password_hash: password, role }, // Update key if needed
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`,
@@ -41,7 +39,7 @@ const CreateAccount = () => {
       setPassword('');
       setRole('student'); // Reset to default role
     } catch (err: any) {
-      console.error(err);
+      console.error('Error creating user:', err);
       setError(err.response?.data?.message || 'Failed to create account.');
     }
   };
@@ -50,7 +48,6 @@ const CreateAccount = () => {
     <div style={{ padding: '2rem', maxWidth: '600px', margin: 'auto' }}>
       <h1>🛠️ Create User Account</h1>
       <form onSubmit={handleCreateAccount}>
-        {/* Name Input */}
         <div style={{ marginBottom: '1rem' }}>
           <label>Name:</label>
           <input
@@ -63,7 +60,6 @@ const CreateAccount = () => {
           />
         </div>
 
-        {/* Email Input */}
         <div style={{ marginBottom: '1rem' }}>
           <label>Email:</label>
           <input
@@ -76,7 +72,6 @@ const CreateAccount = () => {
           />
         </div>
 
-        {/* Password Input */}
         <div style={{ marginBottom: '1rem' }}>
           <label>Password:</label>
           <input
@@ -89,7 +84,6 @@ const CreateAccount = () => {
           />
         </div>
 
-        {/* Role Selection */}
         <div style={{ marginBottom: '1rem' }}>
           <label>Role:</label>
           <select
@@ -103,7 +97,6 @@ const CreateAccount = () => {
           </select>
         </div>
 
-        {/* Submit Button */}
         <button
           type="submit"
           style={{
@@ -122,12 +115,10 @@ const CreateAccount = () => {
         </button>
       </form>
 
-      {/* Success Message */}
       {success && (
         <p style={{ color: 'green', marginTop: '1rem', textAlign: 'center' }}>{success}</p>
       )}
 
-      {/* Error Message */}
       {error && (
         <p style={{ color: 'red', marginTop: '1rem', textAlign: 'center' }}>{error}</p>
       )}
