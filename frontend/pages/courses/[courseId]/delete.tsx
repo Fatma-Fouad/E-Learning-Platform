@@ -27,7 +27,7 @@ const DeleteCoursePage = () => {
       if (response.status === 200) {
         setSuccessMessage("Course deleted successfully.");
         setTimeout(() => {
-          router.push("/courses"); // Redirect to the courses page
+          router.push("/courses/MyCourses_in"); // Explicitly redirect to MyCourses_in.tsx
         }, 2000); // Redirect after 2 seconds
       } else {
         setError("Unexpected response from the server.");
@@ -57,7 +57,7 @@ const DeleteCoursePage = () => {
       <button onClick={handleDelete} disabled={loading}>
         {loading ? "Deleting..." : "Confirm Delete"}
       </button>
-      <button onClick={() => router.back()} disabled={loading}>
+      <button onClick={() => router.push("/courses/MyCourses_in")} disabled={loading}>
         Cancel
       </button>
     </div>

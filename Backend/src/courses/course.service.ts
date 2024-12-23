@@ -55,7 +55,11 @@ export class CoursesService {
   
       if (!courses || courses.length === 0) {
         console.log('Service: No courses found for student:', studentId);
-        throw new NotFoundException(`No courses found for student: ${studentId}`);
+        // Return an empty array instead of throwing an exception
+        return {
+          message: 'No courses found for the student.',
+          courses: [],
+        };
       }
   
       console.log('Service: Found courses:', courses);
@@ -71,47 +75,52 @@ export class CoursesService {
       };
     } catch (error) {
       console.error('Service: Error in findCoursesByStudent:', error.message);
-      throw new BadRequestException(error.message || 'Failed to retrieve courses by student ID.');
+      throw new BadRequestException(
+        error.message || 'Failed to retrieve courses by student ID.'
+      );
     }
   }
-
+  
   
   /**
  * Retrieve all courses of a specific instructor by instructor_id
  */
-async findCoursesByInstructor(instructorId: string): Promise<any> {
-  try {
-    console.log('Service: Searching for courses by instructor:', instructorId);
-
-    const courses = await this.courseModel
-      .find({ instructor_id: instructorId, isAvailable: true }) // Find courses with the given instructor_id and availability
-      .exec();
-
-    if (!courses || courses.length === 0) {
-      console.log('Service: No courses found for instructor:', instructorId);
-      throw new NotFoundException(`No courses found for instructor: ${instructorId}`);
+  async findCoursesByInstructor(instructorId: string): Promise<any> {
+    try {
+      console.log('Service: Searching for courses by instructor:', instructorId);
+  
+      const courses = await this.courseModel
+        .find({ instructor_id: instructorId, isAvailable: true }) // Find courses with the given instructor_id and availability
+        .exec();
+  
+      if (!courses || courses.length === 0) {
+        console.log('Service: No courses found for instructor:', instructorId);
+        return {
+          message: 'No courses found for the instructor.',
+          courses: [],
+        };
+      }
+  
+      console.log('Service: Found courses:', courses);
+  
+      return {
+        message: 'Courses retrieved successfully for the instructor.',
+        courses: courses.map((course) => ({
+          ...course.toObject(),
+          course_id: course._id.toString(), // Convert ObjectId to string
+          enrolled_students: course.enrolled_student_ids.map((student) =>
+            student.toString()
+          ), // Convert enrolled student ObjectIds to strings
+        })),
+      };
+    } catch (error) {
+      console.error('Service: Error in findCoursesByInstructor:', error.message);
+      throw new BadRequestException(
+        error.message || 'Failed to retrieve courses by instructor.'
+      );
     }
-
-    console.log('Service: Found courses:', courses);
-
-    return {
-      message: 'Courses retrieved successfully for the instructor.',
-      courses: courses.map((course) => ({
-        ...course.toObject(),
-        course_id: course._id.toString(), // Convert ObjectId to string
-        enrolled_students: course.enrolled_student_ids.map((student) =>
-          student.toString()
-        ), // Convert enrolled student ObjectIds to strings
-      })),
-    };
-  } catch (error) {
-    console.error('Service: Error in findCoursesByInstructor:', error.message);
-    throw new BadRequestException(
-      error.message || 'Failed to retrieve courses by instructor.'
-    );
   }
-}
-
+  
 
 
   

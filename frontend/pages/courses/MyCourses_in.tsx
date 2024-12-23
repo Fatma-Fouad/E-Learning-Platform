@@ -37,7 +37,8 @@ const AllCoursesPage = () => {
   const router = useRouter();
 
   const token = localStorage.getItem("token");
-  const storedUserId = localStorage.getItem("userId"); // Fetch user ID from local storage
+  const storedUserId = localStorage.getItem("userId");
+  const storedUserName = localStorage.getItem("name") // Fetch user ID from local storage
 
   useEffect(() => {
     if (!token || !storedUserId) {
@@ -95,7 +96,7 @@ const AllCoursesPage = () => {
       nom_of_modules: Number(newCourse.nom_of_modules || 0),
       course_rating: Number(newCourse.course_rating || 0),
       ratingCount: Number(newCourse.ratingCount || 0),
-      created_by: storedUserId, // Use user ID from local storage
+      created_by: storedUserName, // Use user ID from local storage
       instructor_id: storedUserId, // Use user ID from local storage
     };
 

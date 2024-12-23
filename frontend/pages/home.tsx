@@ -31,6 +31,12 @@ const Home = () => {
     router.push("/login");
   };
 
+  // Handle Courses
+  const Courses = () => {
+    router.push("/courses");
+  };
+
+  // Handle Find-Course
   const Find_Course = () => {
     router.push("courses/FindCourse");
   };
@@ -121,5 +127,16 @@ const styles = {
   userInfo: {
     marginTop: "1rem",
     fontSize: "1.2rem",
+  },
+  button: {
+    padding: "15px 25px",
+    fontSize: "1.1rem",
+    backgroundColor: "#9fcdff", // Light pastel blue
+    color: "#ffffff",
+    border: "none",
+    borderRadius: "8px",
+    cursor: "pointer",
+    transition: "all 0.3s ease",
+    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
   },
 };
