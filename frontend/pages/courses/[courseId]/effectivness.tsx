@@ -103,12 +103,13 @@ const ContentEffectivenessReport = () => {
 
         {hasValidModules ? (
           <>
-            <h2 className="reportTitle">Module Details</h2>
+            <h2 className="reportTitle">Module Ratings</h2>
             <table border={1} style={{ width: "100%", marginBottom: "20px" }}>
               <thead>
                 <tr>
                   <th>Module Name</th>
                   <th>Order</th>
+                  <th>Version</th>
                   <th>Rating</th>
                   <th>Performance</th>
                 </tr>

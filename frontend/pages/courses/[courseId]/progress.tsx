@@ -33,9 +33,10 @@ interface StudentReport {
       completionPercentage: number;
       quizzesTaken: number;
       lastQuizScore: number;
+      avgScore: number;
+
     };
     quizGrades: { quizNumber: number; grade: string | number }[];
-    averageCourseScore: number;
     performanceMetric: string;
   };
 }
@@ -138,7 +139,7 @@ const StudentCourseReport: React.FC = () => {
         Return to Course
       </button>
       <h1 className={styles.reportTitle}>Your Dashboard for {report.course.courseName}</h1>
-      <p className={styles.reportDetails}>Average Score in the Subject: {report.course.averageCourseScore}</p>
+      <p className={styles.reportDetails}>Average Score in the Subject: {report.course.progress.avgScore}</p>
       <p className={styles.reportDetails}>Quizzes Taken: {report.course.progress.quizzesTaken}</p>
       <p className={styles.reportDetails}>Last Quiz's Score: {report.course.progress.lastQuizScore}</p>
       <p className={styles.reportDetails}>Overall Performance: {report.course.performanceMetric || 'No performance data available'}</p>

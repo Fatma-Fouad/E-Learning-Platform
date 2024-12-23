@@ -241,18 +241,30 @@ async getStudentReport(userId: string, courseId: string) {
   const totalAvgScore = validScores.reduce((sum, score) => sum + score, 0);
   const averageCourseScore = validScores.length > 0 ? totalAvgScore / validScores.length : 0;
 
-  // Determine the student's performance metric
-  const avgScore = studentProgress.avg_score || 0;
-  let performanceMetric: string;
-  if (avgScore < averageCourseScore * 0.5) {
+ // Determine the student's performance metric
+const avgScore = studentProgress.avg_score || 0;
+let performanceMetric: string;
+
+if (typeof averageCourseScore === 'number') {
+  const lowerBoundary = averageCourseScore * 0.5; // Below Average threshold
+  const averageBoundary = averageCourseScore; // Average threshold
+  const aboveAverageBoundary = averageCourseScore * 1.2; // Above Average threshold
+  const maxScore = 100; // Maximum possible score
+
+  // Define thresholds with dynamic adjustments
+  if (avgScore < lowerBoundary) {
     performanceMetric = 'Below Average';
-  } else if (avgScore >= averageCourseScore * 0.5 && avgScore < averageCourseScore) {
+  } else if (avgScore >= lowerBoundary && avgScore < averageBoundary) {
     performanceMetric = 'Average';
-  } else if (avgScore >= averageCourseScore && avgScore < averageCourseScore * 1.2) {
+  } else if (avgScore >= averageBoundary && avgScore < Math.min(aboveAverageBoundary, maxScore)) {
     performanceMetric = 'Above Average';
   } else {
     performanceMetric = 'Excellent';
   }
+} else {
+  performanceMetric = 'Unknown';
+}
+
 
   // Quiz details from progress
   const quizzesTaken = studentProgress.quizzes_taken || 0;
