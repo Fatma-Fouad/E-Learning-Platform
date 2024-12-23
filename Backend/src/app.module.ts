@@ -15,10 +15,10 @@ import { NotificationModule } from './communication/notifications/notification.m
 import { AuthGuard } from './authentication/auth.guard';
 import { BackupService } from './backup/backup.service';
 import { BackupController } from './backup/backup.controller';
-
 import { ResponseModule } from './responses/response.module';
 import { JwtModule } from '@nestjs/jwt';
-
+//import { NoteModule } from './notes/note.module';
+import { BackupModule } from './backup/backup.module';
 
 @Module({
   imports:
@@ -38,8 +38,8 @@ import { JwtModule } from '@nestjs/jwt';
     ChatModule,
     NotificationModule,
     ResponseModule,
-      MongooseModule.forRoot('mongodb+srv://softwareproject:sp123@clustersp.wvdbq.mongodb.net/EduLink')],
-  
+    BackupModule,
+    MongooseModule.forRoot('mongodb+srv://softwareproject:sp123@clustersp.wvdbq.mongodb.net/EduLink') ],
     controllers: [AppController],
   providers: [AppService],
 }) 
