@@ -51,7 +51,6 @@ const MyProfilePage = () => {
           <p><strong>Role:</strong> {userProfile.role}</p>
           <p><strong>Profile Pic:</strong> {userProfile.profile_picture_url}</p>
           <p><strong>Created At:</strong> {userProfile.created_at}</p>
-          <p><strong>Password Hash:</strong> {userProfile.password_hash}</p>
           {userProfile.profile_picture_url && (
             <img
               src={userProfile.profile_picture_url}

@@ -11,6 +11,7 @@
     "@nestjs/passport": "^10.0.3",
     "@nestjs/platform-express": "^10.4.15",
     "axios": "^1.7.9",
+    "bcryptjs": "^2.4.3",
     "chart.js": "^4.4.7",
     "html2canvas": "^1.4.1",
     "jspdf": "^2.5.2",
