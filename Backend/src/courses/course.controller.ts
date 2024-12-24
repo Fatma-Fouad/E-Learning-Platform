@@ -31,10 +31,10 @@ import { RolesGuard } from 'src/authentication/roles.guard';
     //*
 // Get all courses for a specific student
 //*
-
+//hannah made it instructor too 
     @Get('student-courses/:studentId')
     @UseGuards(AuthGuard, RolesGuard)
-    @Roles('student' as Role)
+    @Roles('student' as Role, 'instructor' as Role)
 async getCoursesByStudent(@Param('studentId') studentId: string) {
   try {
     if (!studentId) {
@@ -391,6 +391,26 @@ async findCourseByCreator(@Param('created_by') createdBy: string) {
       throw new BadRequestException(
         error.message || 'Failed to delete course.'
       );
+    }
+  }
+  //hannah
+
+  @Get('instructor/completed-courses')
+  @UseGuards(AuthGuard,RolesGuard)
+  @Roles('instructor' as Role)
+  async trackCompletedCourses(@Query('instructor_id') instructorId: string) {
+    if (!instructorId) {
+      throw new BadRequestException('Instructor identifier (instructor_id) is required.');
+    }
+
+    try {
+      const result = await this.coursesService.trackInstructorCompletedCourses(instructorId);
+      return {
+        message: 'Completed courses tracked successfully.',
+        ...result,
+      };
+    } catch (error) {
+      throw new BadRequestException(error.message || 'Failed to track completed courses.');
     }
   }
 

@@ -323,14 +323,33 @@ async updateUserProfile(userId: string, updateData: Partial<User>): Promise<User
       throw new BadRequestException('Error creating user.');
     }
   }
-  //admin
+ //admin
+  //hannah just edited
   async updateUser(userId: string, updateData: Partial<User>): Promise<User> {
-    const user = await this.userModel.findByIdAndUpdate(userId, updateData, { new: true }).exec();
-    if (!user) {
-      throw new NotFoundException('User not found.');
+    // Validate userId format
+    if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
+      throw new BadRequestException('Invalid user ID format');
     }
-    return user; // Return updated user
-  }
+  
+      // Remove email and role from the updateData to prevent them from being updated
+    const { role, gpa, completed_courses, enrolled_courses, ...filteredUpdateData } = updateData;
+  
+  
+      try {
+        const user = await this.userModel.findByIdAndUpdate(
+          userId,
+          { $set: filteredUpdateData }, // Update the fields provided in filteredUpdateData
+          { new: true } // Return the updated document
+        ).exec();
+  
+        if (!user) {
+          throw new NotFoundException('User not found');
+        }
+        return user;
+      } catch (error) {
+        throw new BadRequestException(error.message);
+      }
+    }
   //admin
   async deleteUser(userId: string, isSelfDeletion = false): Promise<void> {
     const user = await this.userModel.findById(userId).exec();
@@ -482,35 +501,7 @@ async enrollStudentInCourse(
 
 
 // number of students that completed each course the instructor give
-  async trackInstructorCompletedCourses(createdBy: string): Promise<any> {
-    // Validate `createdBy` is provided
-    if (!createdBy) {
-      throw new BadRequestException('Instructor identifier (created_by) is required.');
-    }
-  
-    try {
-      // Fetch courses created by this instructor
-      const courses = await this.courseModel.find({ created_by: createdBy }).exec();
-  
-      if (!courses || courses.length === 0) {
-        throw new NotFoundException('No courses found for the specified instructor.');
-      }
-  
-      // Map the courses to include only relevant data
-      const result = courses.map(course => ({
-        course_id: course._id.toString(),
-        title: course.title,
-        completed_students: course.completed_students,
-      }));
-  
-      return {
-        instructor: createdBy,
-        courses: result,
-      };
-    } catch (error) {
-      throw new BadRequestException(error.message || 'Failed to track completed courses.');
-    }
-  }
+//removed by hannah
 
 
   // instructor search for students

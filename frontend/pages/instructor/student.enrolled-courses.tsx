@@ -1,113 +1,107 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { useRouter } from "next/router";
 
-const StudentEnrolledCourses = () => {
-  const [studentId, setStudentId] = useState('');
-  const [instructorId, setInstructorId] = useState(''); // Replace with real instructor ID from auth/session
-  const [enrolledCourses, setEnrolledCourses] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+interface Course {
+  _id: string;
+  title: string;
+  description: string;
+  category: string;
+  difficulty_level: string;
+  isAvailable: boolean;
+}
 
-  const handleFetchEnrolledCourses = async () => {
-    if (!studentId || !instructorId) {
-      setError('Instructor ID and Student ID are required.');
-      return;
-    }
+const MyCoursesPage = () => {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState<boolean>(false); // Initially loading
+  const [error, setError] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string>(''); // State to store user ID
+  const router = useRouter();
 
-    setLoading(true);
-    setError('');
-    try {
-      const token = localStorage.getItem('token'); // Retrieve the token from localStorage
+  useEffect(() => {
+    if (!userId) return; // Do not fetch courses if userId is not provided
 
-      const response = await axios.get(
-        `/api/user/${instructorId}/student/${studentId}/enrolled-courses`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`, // Include the token in the Authorization header
-          },
+    const fetchCourses = async () => {
+      setLoading(true);
+      setError(null); // Reset error on each request
+
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setError("Unauthorized access. Please login.");
+          router.push("/login");
+          return;
         }
-      );
 
-      setEnrolledCourses(response.data.enrolledCourses || []);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch enrolled courses.');
-    } finally {
-      setLoading(false);
-    }
+        const response = await axios.get(
+          `http://localhost:3000/courses/student-courses/${userId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        setCourses(response.data.courses || []);
+      } catch (err: any) {
+        console.error("Error fetching courses:", err);
+        setError(err.response?.data?.message || "Failed to fetch courses.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, [userId, router]); // Fetch courses whenever the userId changes
+
+  const handleViewModules = (courseId: string) => {
+    router.push(`/courses/${courseId}/modules_st`);
   };
 
+  const handleUserIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUserId(e.target.value); // Update userId state when input changes
+  };
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p style={{ color: "red" }}>{error}</p>;
+
   return (
-    <div style={{ padding: '2rem', maxWidth: '800px', margin: 'auto' }}>
-      <h1>📚 Student Enrolled Courses</h1>
-      <p>View the enrolled courses of a specific student.</p>
+    <div>
+      <h1>student Courses</h1>
 
+      {/* Input field to enter userId */}
       <div style={{ marginBottom: '1rem' }}>
-        <label htmlFor="instructorId">Instructor ID:</label>
+        <label htmlFor="userId">Enter User ID:</label>
         <input
           type="text"
-          id="instructorId"
-          value={instructorId}
-          onChange={(e) => setInstructorId(e.target.value)}
-          placeholder="Enter your Instructor ID"
-          style={{ width: '100%', padding: '8px', marginTop: '5px' }}
+          id="userId"
+          value={userId}
+          onChange={handleUserIdChange}
+          placeholder="Enter the student ID"
+          style={{ padding: '10px', width: '100%', marginTop: '5px' }}
         />
       </div>
 
-      <div style={{ marginBottom: '1rem' }}>
-        <label htmlFor="studentId">Student ID:</label>
-        <input
-          type="text"
-          id="studentId"
-          value={studentId}
-          onChange={(e) => setStudentId(e.target.value)}
-          placeholder="Enter Student ID"
-          style={{ width: '100%', padding: '8px', marginTop: '5px' }}
-        />
-      </div>
-
-      <button
-        onClick={handleFetchEnrolledCourses}
-        style={{
-          backgroundColor: '#0070f3',
-          color: 'white',
-          padding: '10px',
-          width: '100%',
-          border: 'none',
-          cursor: 'pointer',
-          fontSize: '1rem',
-          borderRadius: '5px',
-          marginTop: '10px',
-        }}
-        disabled={loading}
-      >
-        {loading ? 'Fetching...' : 'Get Enrolled Courses'}
-      </button>
-
-      {error && <p style={{ color: 'red', marginTop: '1rem' }}>{error}</p>}
-
-      <div style={{ marginTop: '2rem' }}>
-        {enrolledCourses.length > 0 ? (
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            {enrolledCourses.map((course: any, index: number) => (
-              <li
-                key={index}
-                style={{
-                  border: '1px solid #ccc',
-                  padding: '10px',
-                  margin: '10px 0',
-                  borderRadius: '5px',
-                }}
-              >
-                <h3>Course ID: {course}</h3>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          !loading && <p>No enrolled courses found for this student.</p>
-        )}
-      </div>
+      {courses.length > 0 ? (
+        <ul>
+          {courses.map((course) => (
+            <li key={course._id}>
+              <h3>{course.title}</h3>
+              <p>{course.description}</p>
+              <p>
+                <strong>Category:</strong> {course.category}
+              </p>
+              <button onClick={() => handleViewModules(course._id)}>
+                View Modules
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>No courses found for this student.</p>
+      )}
     </div>
   );
 };
 
-export default StudentEnrolledCourses;
+export default MyCoursesPage;

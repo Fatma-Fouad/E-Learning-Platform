@@ -1,49 +1,41 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
 
 const EnrollCourse = () => {
   const router = useRouter();
-  const [studentId, setStudentId] = useState<string | null>(null);
   const [courseInput, setCourseInput] = useState<string>(''); // Input for course ID
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Fetch the studentId from localStorage
-  useEffect(() => {
-    const storedStudentId = localStorage.getItem('userId');
-    if (storedStudentId) {
-      setStudentId(storedStudentId);
-    } else {
-      setError('Student ID is not available.');
-    }
-  }, []); // Runs once after the component is mounted
+  // Fetch studentId from localStorage
+  const studentId = localStorage.getItem('userId'); 
 
   const handleEnrollCourse = async () => {
     if (!studentId || !courseInput) {
-      setError('Please enter a valid course ID.');
+      setError('Please enter a valid course ID and ensure you are logged in.');
       return;
     }
 
-    console.log('Student ID:', studentId); // Debugging line
-    console.log('Course ID:', courseInput); // Debugging line
+    // Fetch token from localStorage
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError('Authentication token not found. Please log in.');
+      return;
+    }
 
     try {
       setLoading(true);
-      const token = localStorage.getItem('token'); // Retrieve the token from localStorage
       const response = await axios.post(
         `http://localhost:3000/user/${studentId}/enroll-course/${courseInput}`,
-        {},
+        {}, // No body needed, so an empty object
         {
           headers: {
-            Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+            Authorization: `Bearer ${token}`, // Add token in the Authorization header
           },
         }
       );
-
-      console.log('Response:', response); // Debugging line
-      console.log('Response Data:', response.data); // Debugging line
 
       if (response.data && response.data.message) {
         setSuccessMessage(response.data.message);
@@ -53,7 +45,6 @@ const EnrollCourse = () => {
 
       setCourseInput(''); // Clear the input field after successful enrollment
     } catch (err: any) {
-      console.error('Error enrolling course:', err); // Debugging line
       setError(err.response?.data?.message || 'Failed to enroll in the course.');
     } finally {
       setLoading(false);

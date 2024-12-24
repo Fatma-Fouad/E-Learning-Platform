@@ -628,9 +628,42 @@ async findCourseByName(Name: string): Promise<any> {
           );
         }
       }
+      //hannah
+      async trackInstructorCompletedCourses(instructorId: string): Promise<any> {
+        // Validate the ObjectId format for instructorId
+        if (!instructorId.match(/^[0-9a-fA-F]{24}$/)) {
+          throw new BadRequestException('Invalid instructor ID format. Must be a valid ObjectId.');
+        }
+    
+        try {
+          // Fetch courses where the instructor_id matches the provided instructorId
+          const courses = await this.courseModel.find({ instructor_id: instructorId }).exec();
+    
+          if (!courses || courses.length === 0) {
+            throw new NotFoundException('No courses found for the specified instructor.');
+          }
+    
+          // Map the courses to include only relevant data
+          const result = courses.map(course => ({
+            course_id: course._id.toString(),
+            title: course.title,
+            completed_students: course.completed_students,
+          }));
+    
+          return {
+            instructor: instructorId,
+            courses: result,
+          };
+        } catch (error) {
+          throw new BadRequestException(error.message || 'Failed to track completed courses.');
+        }
+      }
       
       
 }
     
+
+    
+
 
     

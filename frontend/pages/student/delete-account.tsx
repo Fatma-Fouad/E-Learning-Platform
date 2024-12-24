@@ -34,8 +34,7 @@ const DeleteAccountPage = () => {
         }, 2000);
       } catch (error: any) {
         setError(error.response?.data?.message || 'Failed to delete account.');
-      }
-    };
+      }    };
 
     deleteAccount(); // Call the function to delete the account
   }, [router]);

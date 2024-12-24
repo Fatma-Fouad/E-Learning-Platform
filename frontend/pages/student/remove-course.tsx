@@ -1,93 +1,103 @@
-import React, { useEffect, useState } from 'react';
-import CourseList from '../../components/Courselist';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useRouter } from 'next/router';
 
-const RemoveCourse: React.FC = () => {
-  const [enrolledCourses, setEnrolledCourses] = useState<any[]>([]);
+const RemoveCourse = () => {
+  const router = useRouter();
+  const [userId, setUserId] = useState<string | null>(null); // State for userId
+  const [courseId, setCourseId] = useState<string>(''); // Input for course ID
   const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string>('');
-  const [successMessage, setSuccessMessage] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Fetch enrolled courses on component mount
+  // Fetch the userId from localStorage when the component mounts
   useEffect(() => {
-    const fetchEnrolledCourses = async () => {
-      setLoading(true);
-      setError('');
-      setSuccessMessage('');
+    const storedUserId = localStorage.getItem('userId'); // Retrieve userId from localStorage
+    if (storedUserId) {
+      setUserId(storedUserId);
+    } else {
+      setError('User ID is not available.');
+    }
+  }, []); // Runs once after the component is mounted
 
-      try {
-        const token = localStorage.getItem('token');
-        const userId = localStorage.getItem('userId');
+  const handleRemoveCourse = async () => {
+    if (!userId || !courseId) {
+      setError('Please enter both user ID and course ID.');
+      return;
+    }
 
-        if (!token || !userId) {
-          throw new Error('User not authenticated. Please log in again.');
-        }
+    // Fetch the token from localStorage
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError('Authentication token not found. Please log in.');
+      return;
+    }
 
-        const response = await axios.get(
-          `http://localhost:3000/user/${userId}/enrolled-courses`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        setEnrolledCourses(response.data);
-      } catch (err: any) {
-        console.error(err);
-        setError(err.response?.data?.message || 'Failed to fetch enrolled courses.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchEnrolledCourses();
-  }, []);
-
-  // Handle removing a course
-  const handleRemoveCourse = async (courseId: string) => {
+    setLoading(true);
     setError('');
     setSuccessMessage('');
 
     try {
-      const token = localStorage.getItem('token');
-      const userId = localStorage.getItem('userId');
-
-      if (!token || !userId) {
-        throw new Error('User not authenticated. Please log in again.');
-      }
-
-      await axios.delete(
-        `http://localhost:4000/user/${userId}/remove-course/${courseId}`,
+      const response = await axios.delete(
+        `http://localhost:3000/user/${userId}/remove-course/${courseId}`,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token}`, // Include token in the Authorization header
           },
         }
       );
 
-      setEnrolledCourses((prevCourses) =>
-        prevCourses.filter((course: any) => course.id !== courseId)
-      );
-      setSuccessMessage('Course removed successfully.');
+      setSuccessMessage('Successfully removed the course from enrolled courses.');
+      setCourseId(''); // Clear the course ID input
     } catch (err: any) {
-      console.error(err);
       setError(err.response?.data?.message || 'Failed to remove the course.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '800px', margin: 'auto' }}>
-      <h1>🗑️ Remove Enrolled Course</h1>
-      {loading && <p>Loading courses...</p>}
+    <div style={{ padding: '2rem', maxWidth: '900px', margin: 'auto' }}>
+      <h1>📝 Remove Course from Enrolled Courses</h1>
       {error && <p style={{ color: 'red' }}>{error}</p>}
       {successMessage && <p style={{ color: 'green' }}>{successMessage}</p>}
+      {loading && <p>Loading...</p>}
 
-      {enrolledCourses.length > 0 ? (
-        <CourseList courses={enrolledCourses} onCourseClick={handleRemoveCourse} />
-      ) : (
-        <p>No enrolled courses available to remove.</p>
-      )}
+      {/* Course ID Input */}
+      <div style={{ marginTop: '1rem' }}>
+        <label htmlFor="courseId">Course ID:</label>
+        <input
+          type="text"
+          id="courseId"
+          value={courseId}
+          onChange={(e) => setCourseId(e.target.value)}
+          placeholder="Enter course ID"
+          style={{
+            width: '100%',
+            padding: '8px',
+            marginTop: '5px',
+          }}
+        />
+      </div>
+
+      {/* Remove Course Button */}
+      <button
+        onClick={handleRemoveCourse}
+        disabled={loading}
+        style={{
+          backgroundColor: '#ff4d4f',
+          color: 'white',
+          padding: '10px',
+          width: '100%',
+          border: 'none',
+          cursor: 'pointer',
+          fontSize: '1rem',
+          borderRadius: '5px',
+          marginTop: '10px',
+        }}
+      >
+        {loading ? 'Removing Course...' : 'Remove Course'}
+      </button>
     </div>
   );
 };

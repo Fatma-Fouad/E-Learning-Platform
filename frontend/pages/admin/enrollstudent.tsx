@@ -1,105 +1,111 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
 
-const EnrollStudent = () => {
-  const [studentId, setStudentId] = useState('');
-  const [courseId, setCourseId] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [loading, setLoading] = useState(false);
+const EnrollCourse = () => {
   const router = useRouter();
+  const [studentId, setStudentId] = useState<string>(''); // Student ID input
+  const [courseInput, setCourseInput] = useState<string>(''); // Input for course ID
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const handleEnrollStudent = async () => {
-    const instructorId = localStorage.getItem('userId');  // Get the instructorId from localStorage
-    const token = localStorage.getItem('token');  // Get the token from localStorage
-    const studentIdInput = studentId; 
-
-    if (!instructorId || !token) {
-      setErrorMessage('Instructor ID or Token not found. Please login.');
+  const handleEnrollCourse = async () => {
+    if (!studentId || !courseInput) {
+      setError('Please enter both student ID and course ID.');
       return;
     }
 
-    if (!studentIdInput || !courseId) {
-      setErrorMessage('Please fill in all the fields.');
+    // Fetch token from localStorage
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError('Authentication token not found. Please log in.');
       return;
     }
-
-    setLoading(true);
-    setErrorMessage('');
 
     try {
-      // Making the POST request to enroll the student in the course
+      setLoading(true);
       const response = await axios.post(
-        `http://localhost:3000/user/${instructorId}/enroll-student/${studentId}/${courseId}`,
-        {},
+        `http://localhost:3000/user/${studentId}/enroll-course/${courseInput}`,
+        {}, // No body needed, so an empty object
         {
           headers: {
-            Authorization: `Bearer ${token}`, // Sending the token for authorization
+            Authorization: `Bearer ${token}`, // Add token in the Authorization header
           },
         }
       );
 
-      setSuccessMessage(`Successfully enrolled in the course: ${response.data.message}`);
-      setStudentId(''); // Clear the studentId input
-      setCourseId(''); // Clear the courseId input
+      if (response.data && response.data.message) {
+        setSuccessMessage(response.data.message);
+      } else {
+        setSuccessMessage('Successfully enrolled in the course.');
+      }
+
+      setCourseInput(''); // Clear the input field after successful enrollment
     } catch (err: any) {
-      setErrorMessage(err.response?.data?.message || 'Failed to enroll student.');
+      setError(err.response?.data?.message || 'Failed to enroll in the course.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '600px', margin: 'auto' }}>
-      <h1>Enroll Student in a Course</h1>
-
-      {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
+    <div style={{ padding: '2rem', maxWidth: '900px', margin: 'auto' }}>
+      <h1>🎓 Enroll in a New Course</h1>
+      {error && <p style={{ color: 'red' }}>{error}</p>}
       {successMessage && <p style={{ color: 'green' }}>{successMessage}</p>}
+      {loading && <p>Loading...</p>}
 
+      {/* Input for Student ID */}
       <div>
-        <label htmlFor="studentId">Student ID:</label>
+        <h2>Enter Student ID</h2>
         <input
           type="text"
-          id="studentId"
           value={studentId}
           onChange={(e) => setStudentId(e.target.value)}
-          placeholder="Enter student ID"
-          style={{ width: '100%', padding: '8px', marginTop: '5px' }}
+          placeholder="Enter the student ID"
+          style={{
+            padding: '10px',
+            width: '100%',
+            marginBottom: '20px',
+            borderRadius: '5px',
+            border: '1px solid #ccc',
+          }}
         />
       </div>
 
-      <div style={{ marginTop: '1rem' }}>
-        <label htmlFor="courseId">Course ID:</label>
+      {/* Input for Course Enrollment */}
+      <div>
+        <h2>Enter Course ID</h2>
         <input
           type="text"
-          id="courseId"
-          value={courseId}
-          onChange={(e) => setCourseId(e.target.value)}
-          placeholder="Enter course ID"
-          style={{ width: '100%', padding: '8px', marginTop: '5px' }}
+          value={courseInput}
+          onChange={(e) => setCourseInput(e.target.value)}
+          placeholder="Enter the course ID"
+          style={{
+            padding: '10px',
+            width: '100%',
+            marginBottom: '20px',
+            borderRadius: '5px',
+            border: '1px solid #ccc',
+          }}
         />
+        <button
+          onClick={handleEnrollCourse}
+          style={{
+            backgroundColor: '#0070f3',
+            color: 'white',
+            padding: '10px',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            width: '100%',
+          }}
+        >
+          Enroll in Course
+        </button>
       </div>
-
-      <button
-        onClick={handleEnrollStudent}
-        disabled={loading}
-        style={{
-          backgroundColor: '#0070f3',
-          color: 'white',
-          padding: '10px',
-          width: '100%',
-          border: 'none',
-          cursor: 'pointer',
-          fontSize: '1rem',
-          borderRadius: '5px',
-          marginTop: '10px',
-        }}
-      >
-        {loading ? 'Enrolling...' : 'Enroll Student'}
-      </button>
     </div>
   );
 };
 
-export default EnrollStudent;
+export default EnrollCourse;

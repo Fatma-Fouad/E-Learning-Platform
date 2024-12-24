@@ -106,6 +106,7 @@ const SearchInstructor: React.FC = () => {
                 <strong>Name:</strong> {instructor.name}
                 <br />
                 <strong>Email:</strong> {instructor.email}
+              
               </li>
             ))}
           </ul>

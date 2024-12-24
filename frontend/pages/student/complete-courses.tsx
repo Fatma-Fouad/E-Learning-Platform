@@ -17,9 +17,15 @@ const CompletedCourses = () => {
 
   useEffect(() => {
     const fetchCompletedCourses = async () => {
+      // Fetch token and userId from localStorage
       const token = localStorage.getItem('token');
       const userId = localStorage.getItem('userId');
 
+      // Log the token and userId to the console for debugging
+      console.log('Token:', token);
+      console.log('User ID:', userId);
+
+      // Check if token or userId is missing
       if (!token || !userId) {
         setError('Unauthorized access. Redirecting to login...');
         router.push('/login');
@@ -35,12 +41,12 @@ const CompletedCourses = () => {
           `http://localhost:3000/user/${userId}/completed-courses`,
           {
             headers: {
-              Authorization: `Bearer ${token}`,
+              Authorization: `Bearer ${token}`, // Add token in the Authorization header
             },
           }
         );
 
-        const courseIds = response.data; // Array of course IDs
+        const courseIds = response.data;
 
         if (courseIds.length === 0) {
           setError('No completed courses found.');
@@ -48,22 +54,20 @@ const CompletedCourses = () => {
           return;
         }
 
-        // Fetch the details of the completed courses using the course IDs
+        // Fetch course details for each course ID
         const coursesPromises = courseIds.map((courseId: string) =>
           axios.get(`http://localhost:3000/courses/${courseId}`,{
             headers: {
-              Authorization: `Bearer ${token}`,
+              Authorization: `Bearer ${token}`, // Add token in the Authorization header
             },
           })
+        
         );
 
-        // Wait for all course details to be fetched
         const coursesResponses = await Promise.all(coursesPromises);
 
-        // Set the completed courses with the full course details
         setCompletedCourses(coursesResponses.map((res) => res.data));
       } catch (err: any) {
-        console.error('Error fetching completed courses:', err);
         setError(err.response?.data?.message || 'Failed to fetch completed courses');
       } finally {
         setLoading(false);

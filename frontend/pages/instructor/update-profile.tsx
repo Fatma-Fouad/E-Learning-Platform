@@ -4,7 +4,6 @@ import { useRouter } from 'next/router';
 
 const UpdateProfile = () => {
   const router = useRouter();
-  const userId = localStorage.getItem('userId'); // Get userId from localStorage
 
   const [profile, setProfile] = useState<any>(null);
   const [name, setName] = useState('');
@@ -13,34 +12,49 @@ const UpdateProfile = () => {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [userId, setUserId] = useState<string | null>(null); // state for userId
+  const [token, setToken] = useState<string | null>(null); // state for token
+
+  // Fetch user ID and token from localStorage only on the client side
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedUserId = localStorage.getItem('userId');
+      const storedToken = localStorage.getItem('token');
+
+      if (!storedUserId || !storedToken) {
+        setError('No token or userId, please login');
+        router.push('/login'); // Redirect to login page if no token or userId
+      } else {
+        setUserId(storedUserId);
+        setToken(storedToken);
+      }
+    }
+  }, [router]);
 
   // Fetch the user's current profile data
   useEffect(() => {
-    if (!userId) return; // Ensure we have userId
+    if (userId && token) {
+      const fetchProfile = async () => {
+        try {
+          const response = await axios.get(`http://localhost:3000/user/${userId}/profile`, {
+            headers: {
+              Authorization: `Bearer ${token}`, // Include token in the request header
+            },
+          });
+          setProfile(response.data);
+          setName(response.data.name);
+          setProfilePicture(response.data.profile_picture);
+          setEmail(response.data.email);
+          setPhoneNumber(response.data.phone_number);
+        } catch (err: any) {
+          console.error(err);
+          setError(err.response?.data?.message || 'Failed to fetch profile data.');
+        }
+      };
 
-    const fetchProfile = async () => {
-      try {
-        const token = localStorage.getItem('token'); // Retrieve the token from localStorage
-
-        const response = await axios.get(`http://localhost:3000/user/${userId}/profile`, {
-          headers: {
-            Authorization: `Bearer ${token}`, // Include the token in the Authorization header
-          },
-        });
-
-        setProfile(response.data);
-        setName(response.data.name);
-        setProfilePicture(response.data.profile_picture);
-        setEmail(response.data.email);
-        setPhoneNumber(response.data.phone_number);
-      } catch (err: any) {
-        console.error(err);
-        setError(err.response?.data?.message || 'Failed to fetch profile data.');
-      }
-    };
-
-    fetchProfile();
-  }, [userId]);
+      fetchProfile();
+    }
+  }, [userId, token]);
 
   // Handle form submission to update the profile
   const handleSubmit = async (e: React.FormEvent) => {
@@ -53,14 +67,12 @@ const UpdateProfile = () => {
     };
 
     try {
-      const token = localStorage.getItem('token'); // Retrieve the token from localStorage
-
       const response = await axios.put(
         `http://localhost:3000/user/${userId}/profile`,
         updateData,
         {
           headers: {
-            Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+            Authorization: `Bearer ${token}`, // Include token in the request header
           },
         }
       );
@@ -132,24 +144,6 @@ const UpdateProfile = () => {
                   border: '1px solid #ccc',
                   backgroundColor: '#f5f5f5',
                   cursor: 'not-allowed',
-                }}
-              />
-            </label>
-          </div>
-
-          <div style={{ marginBottom: '1rem' }}>
-            <label>
-              Phone Number:
-              <input
-                type="tel"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                placeholder="Enter your phone number"
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  borderRadius: '5px',
-                  border: '1px solid #ccc',
                 }}
               />
             </label>

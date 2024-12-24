@@ -36,6 +36,11 @@ const InstructorDashboard = () => {
             </Link>
           </li>
           <li>
+            <Link href="/instructor/my-profile">
+              <button style={buttonStyle}>My Profile</button>
+            </Link>
+          </li>
+          <li>
             <Link href="/instructor/delete-profile">
               <button style={deleteButtonStyle}>Delete Account</button>
             </Link>

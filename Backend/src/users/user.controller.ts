@@ -1,4 +1,4 @@
-import { Controller, Get,Req, Put,Query, Post, Delete, Param, BadRequestException, Body , UseGuards} from '@nestjs/common';
+import { Controller, Get,Req, Put,Query, Post, Delete, Param, BadRequestException, Body , UseGuards, Patch} from '@nestjs/common';
 import { AuthGuard } from '../authentication/auth.guard';
 import { UserService } from './user.service';
 import { RolesGuard } from '../authentication/roles.guard';
@@ -32,9 +32,10 @@ export class UserController {
   }
   
 // hana
+//admin , instructor, student
 @Post(':id/enroll-course/:courseId')
 @UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
-@Roles('admin' as Role, 'student' as Role)
+@Roles('admin' as Role, 'student' as Role, 'instructor' as Role)
   async enrollCourse(
   @Param('id') userId: string,
   @Param('courseId') courseId: string 
@@ -52,9 +53,10 @@ export class UserController {
 }
  
 
-//admin 
+//instructor , student
 @Get(':id/profile')
 @UseGuards(AuthGuard)
+// Require authentication and specific roles
  // Require authentication and specific roles
 async getUserProfile(@Param('id') userId: string) {
   try {
@@ -116,11 +118,11 @@ async updateUserProfile(@Param('id') userId: string, @Body() updateData: any) {
     }
   }
 
-//admin , student
+//, student
   // Get completed courses for a user
   @Get(':id/completed-courses')
-  //@UseGuards(AuthGuard, RolesGuard)
-  //@Roles('admin' as Role, 'student' as Role)
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles( 'student' as Role)
   async getCompletedCourses(@Param('id') userId: string) {
     try {
       return await this.userService.getCompletedCourses(userId);
@@ -142,21 +144,33 @@ async createAccount(@Param('role') role: string, @Body() createUserDto: any) {
   }
 }
 
+//hannah edited
 // Update an existing account -admin
-@Put('/accounts/:role/:id')
+@Patch(':id/profiles')
 @UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
 @Roles('admin' as Role)  // Only admins can access this route
-async updateAccount(
-  @Param('role') role: string,
-  @Param('id') userId: string,
-  @Body() updateData: any,
-) {
-  try {
-    return await this.userService.updateUser(userId, updateData);
-  } catch (error) {
-    throw new BadRequestException(error.message);
+async updateAccount(@Param('id') userId: string, @Body() updateData: any) {
+  if (Object.keys(updateData).length === 0) {
+    throw new BadRequestException('Update data cannot be empty');
   }
-}
+
+  // Optional: Validate if only allowed fields (other than email and role) are passed
+  const {role,created_at,completed_courses,enrolled_courses,gpa,...filteredUpdateData } = updateData;
+  if ( role || created_at || completed_courses||enrolled_courses|| gpa ) {
+    throw new BadRequestException('cannot be updated ');
+  }
+  
+
+    try {
+      const updatedUser = await this.userService.updateUser(userId, filteredUpdateData);
+      if (!updatedUser) {
+        throw new NotFoundException('User not found');
+      }
+      return updatedUser;
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
 
 // Delete an account - admin
 @Delete('/accounts/:role/:id')
@@ -205,9 +219,11 @@ async deleteSelf(@Param('userId') userId: string) {
       throw new BadRequestException(error.message);
     }
   }
-  //all-
+
+  //student
   @Delete(':id/remove-course/:courseId')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('student' as Role)
   async removeEnrolledCourse(
     @Param('id') userId: string,
     @Param('courseId') courseId: string,
@@ -231,25 +247,7 @@ async deleteSelf(@Param('userId') userId: string) {
     return this.LoginAttempt.find().sort({ timestamp: -1 }).exec();
   }
 
-  @Get('instructor/completed-courses')
-async trackCompletedCourses(
-  @Query('created_by') createdBy: string,
-) {
-  try {
-    if (!createdBy) {
-      throw new BadRequestException('Instructor identifier (created_by) is required.');
-    }
-
-    const result = await this.userService.trackInstructorCompletedCourses(createdBy);
-
-    return {
-      message: 'Completed courses tracked successfully.',
-      ...result,
-    };
-  } catch (error) {
-    throw new BadRequestException(error.message || 'Failed to track completed courses.');
-  }
-}
+//removed by hannah
 
 
 
