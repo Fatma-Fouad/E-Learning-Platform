@@ -396,8 +396,8 @@ async findCourseByCreator(@Param('created_by') createdBy: string) {
   //hannah
 
   @Get('instructor/completed-courses')
-  //@UseGuards(AuthGuard,RolesGuard)
- // @Roles('instructor' as Role)
+  @UseGuards(AuthGuard,RolesGuard)
+  @Roles('instructor' as Role)
   async trackCompletedCourses(@Query('instructor_id') instructorId: string) {
     if (!instructorId) {
       throw new BadRequestException('Instructor identifier (instructor_id) is required.');
