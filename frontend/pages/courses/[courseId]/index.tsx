@@ -117,6 +117,12 @@ const CoursePage = () => {
           >
             Go to Course Chats
           </button>
+          <button
+            style={styles.button}
+            onClick={() => router.push(`/courses/MyCourses_in`)} // Ensure id is passed correctly
+          >
+            Back to My Courses
+          </button>
         </div>
       </div>
     </div>

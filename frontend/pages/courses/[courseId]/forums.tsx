@@ -84,6 +84,14 @@ const CourseForumsPage = () => {
                 const data = await fetchForumsByCourse(normalizedCourseId, userId);
                 setForums(data);
                 setError(null); // Clear previous errors
+                if (data.length === 0) {
+                    if (userRole === 'instructor') {
+                      toast.info('No forums found for this course. Redirecting to create a forum.');
+                      router.push(`/courses/${courseId}/createforum`);
+                    } else {
+                      setError('No forums available for this course.');
+                    }
+                  }
             } catch (err: any) {
                 console.error('❌ Error fetching forums:', err.message);
                 setError('Failed to fetch forums for this course.');
