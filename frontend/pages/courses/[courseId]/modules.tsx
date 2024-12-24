@@ -54,11 +54,14 @@ const ModulesPage = () => {
     fetchModules();
   }, [courseId]);
 
+  useEffect(() => {
+    if (noModulesFound) {
+      router.push(`/courses/createmodule`); // Redirect to createmodule page when no modules are found
+    }
+  }, [noModulesFound, router]);
+
   if (loading) return <p>Loading modules...</p>;
   if (error) return <p style={{ color: 'red' }}>{error}</p>;
-
-  // Handle no modules found
-  if (noModulesFound) return <p style={{ color: 'blue' }}>No modules found for this course.</p>;
 
   // Separate active and outdated modules
   const activeModules = modules.filter((module) => !module.isModuleOutdated);
