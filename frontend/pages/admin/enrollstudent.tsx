@@ -16,10 +16,23 @@ const EnrollCourse = () => {
       return;
     }
 
+    // Fetch token from localStorage
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError('Authentication token not found. Please log in.');
+      return;
+    }
+
     try {
       setLoading(true);
       const response = await axios.post(
-        `http://localhost:3000/user/${studentId}/enroll-course/${courseInput}`
+        `http://localhost:3000/user/${studentId}/enroll-course/${courseInput}`,
+        {}, // No body needed, so an empty object
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Add token in the Authorization header
+          },
+        }
       );
 
       if (response.data && response.data.message) {

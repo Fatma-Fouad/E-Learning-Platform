@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 
 const UpdateProfile = () => {
   const router = useRouter();
-  const [userId, setUserId] = useState<string>(''); // User ID entered by the user
+  const [userId, setUserId] = useState<string>(''); // User ID entered by the admin
   const [profile, setProfile] = useState<any>(null);
   const [name, setName] = useState('');
   const [profilePicture, setProfilePicture] = useState('');
@@ -12,14 +12,22 @@ const UpdateProfile = () => {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
   // Fetch the user's current profile data when the userId is entered
   useEffect(() => {
     if (!userId) return; // Ensure we have a userId
+    const token = localStorage.getItem('token');
+
 
     const fetchProfile = async () => {
       try {
-        const response = await axios.get(`http://localhost:3000/user/${userId}/profile`);
+        setLoading(true);
+        const response = await axios.get(`http://localhost:3000/user/${userId}/profile`,{
+          headers: {
+            Authorization: `Bearer ${token}`, // Add token in the Authorization header
+          },
+        })
         setProfile(response.data);
         setName(response.data.name);
         setProfilePicture(response.data.profile_picture_url);
@@ -27,6 +35,8 @@ const UpdateProfile = () => {
         setPhoneNumber(response.data.phone_number);
       } catch (err: any) {
         setError(err.response?.data?.message || 'Failed to fetch profile data.');
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -37,29 +47,47 @@ const UpdateProfile = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!userId) {
+      setError('User ID is required.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setSuccessMessage('');
+
     const updateData = {
       name,
       profile_picture_url: profilePicture,
       phone_number: phoneNumber,
       email, // Include email in the update data
     };
+    const token = localStorage.getItem('token');
 
     try {
-      const response = await axios.put(
-        `http://localhost:3000/user/${userId}/profiles`,
+      // Send request to update profile data of the specified user
+      const response = await axios.patch(
+        `http://localhost:3000/user/${userId}/profiles`, // Adjust endpoint to match your API
         updateData
-      );
+     ,{
+            headers: {
+              Authorization: `Bearer ${token}`, // Add token in the Authorization header
+            },
+          })
+
       setSuccessMessage('Profile updated successfully!');
       setError('');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to update profile.');
       setSuccessMessage('');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div style={{ padding: '2rem', maxWidth: '900px', margin: 'auto' }}>
-      <h1>Update Your Profile</h1>
+      <h1>Update Profile</h1>
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
       {successMessage && <p style={{ color: 'green' }}>{successMessage}</p>}
@@ -72,7 +100,7 @@ const UpdateProfile = () => {
             type="text"
             value={userId}
             onChange={(e) => setUserId(e.target.value)}
-            placeholder="Enter your user ID"
+            placeholder="Enter the user ID to update"
             style={{
               width: '100%',
               padding: '8px',
@@ -140,7 +168,6 @@ const UpdateProfile = () => {
             </label>
           </div>
 
-      
           <button
             type="submit"
             style={{
@@ -153,8 +180,9 @@ const UpdateProfile = () => {
               fontSize: '1rem',
               borderRadius: '5px',
             }}
+            disabled={loading}
           >
-            Save Changes
+            {loading ? 'Updating...' : 'Update Profile'}
           </button>
         </form>
       ) : (

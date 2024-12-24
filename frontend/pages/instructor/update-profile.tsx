@@ -4,7 +4,6 @@ import { useRouter } from 'next/router';
 
 const UpdateProfile = () => {
   const router = useRouter();
-  const userId = localStorage.getItem('userId'); // Get userId from localStorage
 
   const [profile, setProfile] = useState<any>(null);
   const [name, setName] = useState('');
@@ -13,27 +12,49 @@ const UpdateProfile = () => {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [userId, setUserId] = useState<string | null>(null); // state for userId
+  const [token, setToken] = useState<string | null>(null); // state for token
+
+  // Fetch user ID and token from localStorage only on the client side
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedUserId = localStorage.getItem('userId');
+      const storedToken = localStorage.getItem('token');
+
+      if (!storedUserId || !storedToken) {
+        setError('No token or userId, please login');
+        router.push('/login'); // Redirect to login page if no token or userId
+      } else {
+        setUserId(storedUserId);
+        setToken(storedToken);
+      }
+    }
+  }, [router]);
 
   // Fetch the user's current profile data
   useEffect(() => {
-    if (!userId) return; // Ensure we have userId
+    if (userId && token) {
+      const fetchProfile = async () => {
+        try {
+          const response = await axios.get(`http://localhost:3000/user/${userId}/profile`, {
+            headers: {
+              Authorization: `Bearer ${token}`, // Include token in the request header
+            },
+          });
+          setProfile(response.data);
+          setName(response.data.name);
+          setProfilePicture(response.data.profile_picture);
+          setEmail(response.data.email);
+          setPhoneNumber(response.data.phone_number);
+        } catch (err: any) {
+          console.error(err);
+          setError(err.response?.data?.message || 'Failed to fetch profile data.');
+        }
+      };
 
-    const fetchProfile = async () => {
-      try {
-        const response = await axios.get(`http://localhost:3000/user/${userId}/profile`);
-        setProfile(response.data);
-        setName(response.data.name);
-        setProfilePicture(response.data.profile_picture);
-        setEmail(response.data.email);
-        setPhoneNumber(response.data.phone_number);
-      } catch (err: any) {
-        console.error(err);
-        setError(err.response?.data?.message || 'Failed to fetch profile data.');
-      }
-    };
-
-    fetchProfile();
-  }, [userId]);
+      fetchProfile();
+    }
+  }, [userId, token]);
 
   // Handle form submission to update the profile
   const handleSubmit = async (e: React.FormEvent) => {
@@ -48,7 +69,12 @@ const UpdateProfile = () => {
     try {
       const response = await axios.put(
         `http://localhost:3000/user/${userId}/profile`,
-        updateData
+        updateData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Include token in the request header
+          },
+        }
       );
       setSuccessMessage('Profile updated successfully!');
       setError('');
@@ -58,8 +84,6 @@ const UpdateProfile = () => {
       setSuccessMessage('');
     }
   };
-
-
 
   return (
     <div style={{ padding: '2rem', maxWidth: '900px', margin: 'auto' }}>

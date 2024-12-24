@@ -11,15 +11,21 @@ const MyProfilePage = () => {
   useEffect(() => {
     const fetchUserProfile = async () => {
       const userId = localStorage.getItem('userId'); // Get the user ID from local storage
+      const token = localStorage.getItem('token'); // Get the token from local storage
 
-      if (!userId) {
-        setError('User ID is not available.');
+      if (!userId || !token) {
+        setError('User ID or token is not available.');
         return;
       }
 
       try {
         const response = await axios.get(
-          `http://localhost:3000/user/${userId}/profile`
+          `http://localhost:3000/user/${userId}/profile`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`, // Add the token to the Authorization header
+            },
+          }
         );
         setUserProfile(response.data); // Assuming the response contains the user profile data
       } catch (err: any) {
@@ -44,8 +50,8 @@ const MyProfilePage = () => {
           <p><strong>Email:</strong> {userProfile.email}</p>
           <p><strong>Role:</strong> {userProfile.role}</p>
           <p><strong>Profile Pic:</strong> {userProfile.profile_picture_url}</p>
-          <p><strong>created_at:</strong> {userProfile.created_at}</p>
-          <p><strong>password_hash:</strong> {userProfile.password_hash}</p>
+          <p><strong>Created At:</strong> {userProfile.created_at}</p>
+          <p><strong>Password Hash:</strong> {userProfile.password_hash}</p>
           {userProfile.profile_picture_url && (
             <img
               src={userProfile.profile_picture_url}

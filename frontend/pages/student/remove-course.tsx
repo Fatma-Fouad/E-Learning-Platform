@@ -26,13 +26,25 @@ const RemoveCourse = () => {
       return;
     }
 
+    // Fetch the token from localStorage
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError('Authentication token not found. Please log in.');
+      return;
+    }
+
     setLoading(true);
     setError('');
     setSuccessMessage('');
 
     try {
       const response = await axios.delete(
-        `http://localhost:3000/user/${userId}/remove-course/${courseId}`
+        `http://localhost:3000/user/${userId}/remove-course/${courseId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Include token in the Authorization header
+          },
+        }
       );
 
       setSuccessMessage('Successfully removed the course from enrolled courses.');
@@ -50,8 +62,6 @@ const RemoveCourse = () => {
       {error && <p style={{ color: 'red' }}>{error}</p>}
       {successMessage && <p style={{ color: 'green' }}>{successMessage}</p>}
       {loading && <p>Loading...</p>}
-
-      {/* User ID input is not needed anymore because it's automatically taken from localStorage */}
 
       {/* Course ID Input */}
       <div style={{ marginTop: '1rem' }}>

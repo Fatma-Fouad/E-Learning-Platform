@@ -1,4 +1,4 @@
-import { Controller, Get,Req, Put,Query, Post, Delete, Param, BadRequestException, Body , UseGuards} from '@nestjs/common';
+import { Controller, Get,Req, Put,Query, Post, Delete, Param, BadRequestException, Body , UseGuards, Patch} from '@nestjs/common';
 import { AuthGuard } from '../authentication/auth.guard';
 import { UserService } from './user.service';
 import { RolesGuard } from '../authentication/roles.guard';
@@ -56,9 +56,7 @@ export class UserController {
 //instructor , student
 @Get(':id/profile')
 @UseGuards(AuthGuard)
-@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
-@Roles('instructor' as Role ,'student' as Role )
-
+// Require authentication and specific roles
  // Require authentication and specific roles
 async getUserProfile(@Param('id') userId: string) {
   try {
@@ -123,8 +121,8 @@ async updateUserProfile(@Param('id') userId: string, @Body() updateData: any) {
 //, student
   // Get completed courses for a user
   @Get(':id/completed-courses')
-  //@UseGuards(AuthGuard, RolesGuard)
-  //@Roles( 'student' as Role)
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles( 'student' as Role)
   async getCompletedCourses(@Param('id') userId: string) {
     try {
       return await this.userService.getCompletedCourses(userId);
@@ -148,9 +146,9 @@ async createAccount(@Param('role') role: string, @Body() createUserDto: any) {
 
 //hannah edited
 // Update an existing account -admin
-@Put(':id/profiles')
-//@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
-//@Roles('admin' as Role)  // Only admins can access this route
+@Patch(':id/profiles')
+@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+@Roles('admin' as Role)  // Only admins can access this route
 async updateAccount(@Param('id') userId: string, @Body() updateData: any) {
   if (Object.keys(updateData).length === 0) {
     throw new BadRequestException('Update data cannot be empty');
