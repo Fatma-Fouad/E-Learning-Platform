@@ -1,7 +1,7 @@
 
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Error } from 'mongoose';
+import { Model, Error , ObjectId , Types} from 'mongoose';
 import { User, UserDocument } from './user.schema';
 import { ResponseDocument, ResponseSchema } from '../responses/response.schema';
 import { courses, CourseDocument } from '../courses/course.schema';
@@ -476,35 +476,7 @@ async enrollStudentInCourse(
 
 
 // number of students that completed each course the instructor give
-  async trackInstructorCompletedCourses(createdBy: string): Promise<any> {
-    // Validate `createdBy` is provided
-    if (!createdBy) {
-      throw new BadRequestException('Instructor identifier (created_by) is required.');
-    }
-  
-    try {
-      // Fetch courses created by this instructor
-      const courses = await this.courseModel.find({ created_by: createdBy }).exec();
-  
-      if (!courses || courses.length === 0) {
-        throw new NotFoundException('No courses found for the specified instructor.');
-      }
-  
-      // Map the courses to include only relevant data
-      const result = courses.map(course => ({
-        course_id: course._id.toString(),
-        title: course.title,
-        completed_students: course.completed_students,
-      }));
-  
-      return {
-        instructor: createdBy,
-        courses: result,
-      };
-    } catch (error) {
-      throw new BadRequestException(error.message || 'Failed to track completed courses.');
-    }
-  }
+//hannah deleted the track complete
 
 
   // instructor search for students

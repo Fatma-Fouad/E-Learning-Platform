@@ -33,8 +33,8 @@ import { RolesGuard } from 'src/authentication/roles.guard';
 //*
 
     @Get('student-courses/:studentId')
-    @UseGuards(AuthGuard, RolesGuard)
-    @Roles('student' as Role)
+    //@UseGuards(AuthGuard, RolesGuard)
+    //@Roles('student' as Role)
 async getCoursesByStudent(@Param('studentId') studentId: string) {
   try {
     if (!studentId) {
@@ -402,6 +402,27 @@ async findCourseByCreator(@Param('created_by') createdBy: string) {
       );
     }
   }
+  
+
+  @Get('instructor/completed-courses')
+  async trackCompletedCourses(@Query('instructor_id') instructorId: string) {
+    if (!instructorId) {
+      throw new BadRequestException('Instructor identifier (instructor_id) is required.');
+    }
+
+    try {
+      const result = await this.coursesService.trackInstructorCompletedCourses(instructorId);
+      return {
+        message: 'Completed courses tracked successfully.',
+        ...result,
+      };
+    } catch (error) {
+      throw new BadRequestException(error.message || 'Failed to track completed courses.');
+    }
+  }
+
+
+
 
 }
 

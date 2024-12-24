@@ -7,7 +7,11 @@ import { LoginAttempt } from '../authentication/login.schema';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
+<<<<<<< Updated upstream
 
+=======
+import { Types , ObjectId } from 'mongoose'; 
+>>>>>>> Stashed changes
 
 
 @Controller('user')
@@ -25,8 +29,8 @@ export class UserController {
   }
 
   @Get('admin')
-  @UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
-  @Roles('admin' as Role)  // Only admins can access this route
+  //@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+  //@Roles('admin' as Role)  // Only admins can access this route
   getAdminData() {
     return { message: 'This is an admin-only route' };
   }
@@ -56,7 +60,11 @@ export class UserController {
 @Get(':id/profile')
 //@UseGuards(AuthGuard)
 //@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+<<<<<<< Updated upstream
 @Roles('admin' as Role)
+=======
+//@Roles('admin' as Role)
+>>>>>>> Stashed changes
  // Require authentication and specific roles
 async getUserProfile(@Param('id') userId: string) {
   try {
@@ -105,8 +113,13 @@ async getAllUser() {
 //admin , student 
   // Get enrolled courses for a user
   @Get(':id/enrolled-courses')
+<<<<<<< Updated upstream
  // @UseGuards(AuthGuard, RolesGuard)
  // @Roles('admin' as Role, 'student' as Role)
+=======
+  //@UseGuards(AuthGuard, RolesGuard)
+  //@Roles('admin' as Role, 'student' as Role)
+>>>>>>> Stashed changes
   async getEnrolledCourses(@Param('id') userId: string) {
     try {
       return await this.userService.getEnrolledCourses(userId);
@@ -130,9 +143,15 @@ async getAllUser() {
 
 
 // Create a new account (student/instructor) - admin
+<<<<<<< Updated upstream
 @UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
 //@Roles('admin' as Role)  // Only admins can access this route
 //@Post('/accounts/:role')
+=======
+//@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+//@Roles('admin' as Role)  // Only admins can access this route
+@Post('/accounts/:role')
+>>>>>>> Stashed changes
 async createAccount(@Param('role') role: string, @Body() createUserDto: any) {
   try {
     return await this.userService.createUser(createUserDto);
@@ -205,7 +224,7 @@ async deleteSelf(@Req() request: any) {
   }
   //all-
   @Delete(':id/remove-course/:courseId')
-  @UseGuards(AuthGuard)
+  //@UseGuards(AuthGuard)
   async removeEnrolledCourse(
     @Param('id') userId: string,
     @Param('courseId') courseId: string,
@@ -223,12 +242,13 @@ async deleteSelf(@Req() request: any) {
 
   // fatma
   @Get('login-attempts')
-  @UseGuards(AuthGuard, RolesGuard) 
-  @Roles('admin' as Role)
+  //@UseGuards(AuthGuard, RolesGuard) 
+  //@Roles('admin' as Role)
   async getLoginAttempts() {
     return this.LoginAttempt.find().sort({ timestamp: -1 }).exec();
   }
 
+<<<<<<< Updated upstream
   @Get('instructor/completed-courses')
 async trackCompletedCourses(
   @Query('created_by') createdBy: string,
@@ -248,10 +268,14 @@ async trackCompletedCourses(
     throw new BadRequestException(error.message || 'Failed to track completed courses.');
   }
 }
+=======
+  //hannah deleted the tarck complete
+
+>>>>>>> Stashed changes
 // Get enrolled courses of a specific student (for instructors)
 @Get(':instructorId/student/:studentId/enrolled-courses')
-@UseGuards(AuthGuard, RolesGuard)
-@Roles('instructor' as Role, 'admin' as Role) // Restricted to instructors or admins
+//@UseGuards(AuthGuard, RolesGuard)
+//@Roles('instructor' as Role, 'admin' as Role) // Restricted to instructors or admins
 async getStudentEnrolledCourses(
   @Param('instructorId') instructorId: string,
   @Param('studentId') studentId: string,
@@ -269,8 +293,8 @@ async getStudentEnrolledCourses(
 }
 
 @Get('instructor/search-students')
-  @UseGuards(AuthGuard, RolesGuard)
-  @Roles('instructor' as Role)
+ // @UseGuards(AuthGuard, RolesGuard)
+  //@Roles('instructor' as Role)
   async findStudentByName(
     @Param('instructorId') instructorId: string,
     @Query('name') name: string,
