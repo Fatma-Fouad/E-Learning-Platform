@@ -22,7 +22,7 @@ import { RolesGuard } from 'src/authentication/roles.guard';
      * Retrieve all courses for (all)  
      */
     @Get('available-courses')
-    // @UseGuards(AuthGuard)
+    @UseGuards(AuthGuard)
     async findAll() {
       return this.coursesService.findAll();
     }
@@ -95,9 +95,7 @@ async findCoursesByInstructor(
  * Search for courses by keyword (Instructor + Student)
  */
 @Get('search-by-keyword')
-@UseGuards(AuthGuard,RolesGuard)
-@Roles('student' as Role)
-@Roles('instructor' as Role)
+@UseGuards(AuthGuard)
 async searchCoursesByKeyword(@Query('keyword') keyword: string) {
   try {
     if (!keyword) {
@@ -288,9 +286,7 @@ async rateInstructor(
    */
 
 @Get()
-@UseGuards(AuthGuard,RolesGuard)
-@Roles('student' as Role)
-@Roles('instructor' as Role)
+@UseGuards(AuthGuard)
   async findCourseByModuleTitle(@Query('title') title: string) {
     try {
       if (!title) {
@@ -315,9 +311,7 @@ async rateInstructor(
 
 
    @Get('course-by-creator/:created_by')
-   @UseGuards(AuthGuard,RolesGuard)
-   @Roles('student' as Role)
-   @Roles('instructor' as Role)
+   @UseGuards(AuthGuard)
 async findCourseByCreator(@Param('created_by') createdBy: string) {
   try {
     if (!createdBy) {
@@ -347,9 +341,7 @@ async findCourseByCreator(@Param('created_by') createdBy: string) {
    * Find Course details By the course name (Student and instructor)
    */
       @Get('course-by-Name/:title') // Route with :title as parameter
-      @Roles('student' as Role)
-      @Roles('instructor' as Role)
-      @UseGuards(AuthGuard,RolesGuard)
+      @UseGuards(AuthGuard)
       async findCourseByName(@Param('title') Name: string) {
         try {
           if (!Name) {
@@ -379,8 +371,7 @@ async findCourseByCreator(@Param('created_by') createdBy: string) {
     //  */
 
   @Delete('delete-course/:id')
-   @Roles('instructor' as Role)
-   @Roles('admin' as Role)
+   @Roles('instructor' as Role,'admin' as Role)
    @UseGuards(AuthGuard,RolesGuard)
   async softDeleteCourse(@Param('id') courseId: string) {
     try {

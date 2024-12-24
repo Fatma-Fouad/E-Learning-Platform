@@ -75,7 +75,6 @@ const AccessModulePage = () => {
     return (
       <div>
         <p style={{ color: 'orange' }}>{infoMessage}</p>
-        <button onClick={() => router.push(`/modules/${moduleId}/take-quiz`)}>Take Quiz</button>
       </div>
     );
   }
@@ -92,6 +91,23 @@ const AccessModulePage = () => {
           <p><strong>Notes Enabled:</strong> {moduleData.notesEnabled ? 'Yes' : 'No'}</p>
           <p><strong>Created At:</strong> {new Date(moduleData.created_at).toLocaleDateString()}</p>
           <button onClick={() => router.push(`/modules/${moduleId}/take-quiz`)}>Take Quiz</button>
+          {/* Notes Button (Conditional Rendering) */}
+          {moduleData.notesEnabled && (
+            <button 
+              onClick={() => router.push(`/modules/${moduleId}/notes`)}
+              style={{
+                marginTop: '10px',
+                padding: '10px 15px',
+                background: 'green',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              Go to Notes
+            </button>
+          )}
         </div>
       ) : (
         <p style={{ color: 'red' }}>

@@ -83,7 +83,7 @@ const CoursePage = () => {
           </button>
           <button
             style={styles.button}
-            onClick={() => router.push(`/courses/${courseId}/effectiveness`)}
+            onClick={() => router.push(`/courses/${courseId}/effectivness`)}
           >
             Content Effectiveness Report
           </button>

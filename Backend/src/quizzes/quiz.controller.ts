@@ -69,8 +69,6 @@ export class QuizController {
     };
   }
 
-  @Get('student')
-  @Roles('student' as Role)
   @Get('module/:moduleId')
   @Roles('admin' as Role, 'instructor' as Role)
     async getQuizByModuleId(@Param('moduleId') moduleId: string) {
