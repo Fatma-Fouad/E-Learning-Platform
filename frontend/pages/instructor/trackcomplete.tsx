@@ -9,6 +9,7 @@ const TrackCompletedCourses = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
+   
     // Get the instructor ID from localStorage
     const storedInstructorId = localStorage.getItem('userId');
     if (storedInstructorId) {
@@ -27,11 +28,16 @@ const TrackCompletedCourses = () => {
     setLoading(true);
     setError(null);
     setSuccessMessage(null);
-
+    const token = localStorage.getItem('token');
     try {
       // Make the GET request to fetch the courses
       const response = await axios.get(`http://localhost:3000/courses/instructor/completed-courses`, {
-        params: { instructor_id: instructorId }, // Send the instructor ID as a query param
+        params: { instructor_id: instructorId },
+         headers: {
+          Authorization: `Bearer ${token}`, // Add token in the Authorization header
+        },
+        
+         // Send the instructor ID as a query param
       });
 
       // Set the response data
