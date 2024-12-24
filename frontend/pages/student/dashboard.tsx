@@ -20,12 +20,28 @@ const StudentDashboard = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
+        const token = localStorage.getItem('token'); // Retrieve the token from localStorage
+
         // Fetch user profile
-        const profileRes = await axios.get(`http://localhost:3000/user/profile/${studentId}`);
+        const profileRes = await axios.get(
+          `http://localhost:3000/user/profile/${studentId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`, // Include token in the Authorization header
+            },
+          }
+        );
         setProfile(profileRes.data);
 
         // Fetch enrolled courses
-        const enrolledRes = await axios.get(`http://localhost:3000/user/enrolled-courses/${studentId}`);
+        const enrolledRes = await axios.get(
+          `http://localhost:3000/user/enrolled-courses/${studentId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`, // Include token in the Authorization header
+            },
+          }
+        );
         setEnrolledCourses(enrolledRes.data);
       } catch (err: any) {
         setError(err.response?.data?.message || 'Failed to fetch data.');
@@ -47,7 +63,16 @@ const StudentDashboard = () => {
   // Remove a course
   const handleRemoveCourse = async (courseId: string) => {
     try {
-      await axios.delete(`http://localhost:3000/user/remove-course/${studentId}/${courseId}`);
+      const token = localStorage.getItem('token'); // Retrieve the token from localStorage
+
+      await axios.delete(
+        `http://localhost:3000/user/remove-course/${studentId}/${courseId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Include token in the Authorization header
+          },
+        }
+      );
       setEnrolledCourses((prev) =>
         prev.filter((course: any) => course.id !== courseId)
       );

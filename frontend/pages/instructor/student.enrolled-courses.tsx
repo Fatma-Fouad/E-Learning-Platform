@@ -17,8 +17,15 @@ const StudentEnrolledCourses = () => {
     setLoading(true);
     setError('');
     try {
+      const token = localStorage.getItem('token'); // Retrieve the token from localStorage
+
       const response = await axios.get(
-        `/api/user/${instructorId}/student/${studentId}/enrolled-courses`
+        `/api/user/${instructorId}/student/${studentId}/enrolled-courses`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+          },
+        }
       );
 
       setEnrolledCourses(response.data.enrolledCourses || []);

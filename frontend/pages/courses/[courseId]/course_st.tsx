@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import React from 'react';
+import React from "react";
 import { useRouter } from "next/router";
 import axios from "axios";
 
@@ -18,7 +18,13 @@ const CoursePage = () => {
       setError(null);
 
       try {
-        const response = await axios.get(`http://localhost:3000/courses/${courseId}`);
+        const token = localStorage.getItem("token"); // Retrieve the token from localStorage
+
+        const response = await axios.get(`http://localhost:3000/courses/${courseId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+          },
+        });
         setCourseData(response.data);
       } catch (err) {
         setError(err.response?.data?.message || "Failed to fetch course data.");
@@ -44,20 +50,19 @@ const CoursePage = () => {
       </div>
 
       <div style={styles.buttonContainer}>
-      <button
-                onClick={() => router.push(`/courses/${courseId}/forums`)}
-                style={{ marginTop: '20px', padding: '10px', backgroundColor: '#0070f3', color: '#fff' }}
-            >
-                Go to Course Forums
-            </button>
-            <button
-                onClick={() => router.push(`/courses/${courseId}/chats`)} // Ensure `id` is passed correctly
-                style={{ marginLeft: '10px', padding: '10px', backgroundColor: '#0070f3', color: '#fff' }}
-            >
-                Go to Course Chats
-            </button>
-        <div style={styles.buttonGroup}>
-        </div>
+        <button
+          onClick={() => router.push(`/courses/${courseId}/forums`)}
+          style={{ marginTop: "20px", padding: "10px", backgroundColor: "#0070f3", color: "#fff" }}
+        >
+          Go to Course Forums
+        </button>
+        <button
+          onClick={() => router.push(`/courses/${courseId}/chats`)} // Ensure `id` is passed correctly
+          style={{ marginLeft: "10px", padding: "10px", backgroundColor: "#0070f3", color: "#fff" }}
+        >
+          Go to Course Chats
+        </button>
+        <div style={styles.buttonGroup}></div>
       </div>
     </div>
   );

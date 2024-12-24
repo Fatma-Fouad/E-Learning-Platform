@@ -11,8 +11,8 @@ export class ProgressController {
 // instructor
 // Student Engagement Report
 @Get('engagement/:courseId')
-// @UseGuards(AuthGuard, RolesGuard) 
-// @Roles('admin' as Role, 'instructor' as Role)
+@UseGuards(AuthGuard, RolesGuard) 
+@Roles('admin' as Role, 'instructor' as Role)
  async getStudentsEngagementReport(@Param('courseId') courseId: string) {
   try {
     const report = await this.progressService.getStudentsEngagementReport(courseId);
@@ -34,8 +34,8 @@ export class ProgressController {
 // instructor
 // Content Effectiveness Report
 @Get('effectiveness/:courseId')
-// @UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
-// @Roles('admin' as Role, 'instructor' as Role)
+@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+@Roles('admin' as Role, 'instructor' as Role)
  async getContentEffectivenessReport(@Param('courseId') courseId: string) {
   try {
     const report = await this.progressService.getContentEffectivenessReport(courseId);
@@ -53,8 +53,8 @@ export class ProgressController {
 // instructor
 // Assessment Results Report
 @Get('quiz-results/:courseId')
-// @UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
-// @Roles('admin' as Role, 'instructor' as Role)
+@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+@Roles('admin' as Role, 'instructor' as Role)
  async getQuizResultsReport(@Param('courseId') courseId: string) {
   try {
     const report = await this.progressService.getQuizResultsReport(courseId);
@@ -70,8 +70,8 @@ export class ProgressController {
 // student
 // Individual Student Report by Course
 @Get('student-report/:studentId/:courseId')
-// @UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
-// @Roles('admin' as Role, 'student' as Role)
+@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+@Roles('admin' as Role, 'student' as Role)
   async getStudentReport(@Param('studentId') studentId: string, @Param('courseId') courseId: string) {
     try {
       const report = await this.progressService.getStudentReport(studentId, courseId);

@@ -16,10 +16,17 @@ const NoteDetailsPage = () => {
       if (!moduleId || !noteTitle) return;
 
       try {
+        const token = localStorage.getItem('token'); // Retrieve the token from localStorage
+
         const response = await axios.get(
           `http://localhost:3000/notes/module/${moduleId}/notes/note-title/${encodeURIComponent(
             noteTitle as string
-          )}`
+          )}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+            },
+          }
         );
         setNote(response.data);
       } catch (err) {
@@ -35,7 +42,13 @@ const NoteDetailsPage = () => {
 
   const handleDelete = async () => {
     try {
-      await axios.delete(`http://localhost:3000/notes/title/${encodeURIComponent(noteTitle as string)}`);
+      const token = localStorage.getItem('token'); // Retrieve the token from localStorage
+
+      await axios.delete(`http://localhost:3000/notes/title/${encodeURIComponent(noteTitle as string)}`, {
+        headers: {
+          Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+        },
+      });
       setDeleteSuccess(true);
 
       // Automatically redirect after 2 seconds

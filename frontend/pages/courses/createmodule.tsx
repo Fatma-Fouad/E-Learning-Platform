@@ -21,7 +21,13 @@ const CreateModulePage = () => {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/courses/available-courses');
+        const token = localStorage.getItem('token'); // Retrieve the token from localStorage
+
+        const response = await axios.get('http://localhost:3000/courses/available-courses', {
+          headers: {
+            Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+          },
+        });
 
         if (Array.isArray(response.data)) {
           const uniqueCourses = response.data
@@ -63,7 +69,13 @@ const CreateModulePage = () => {
     setSuccessMessage('');
 
     try {
-      const response = await axios.post('http://localhost:3000/modules', formData);
+      const token = localStorage.getItem('token'); // Retrieve the token from localStorage
+
+      const response = await axios.post('http://localhost:3000/modules', formData, {
+        headers: {
+          Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+        },
+      });
 
       setSuccessMessage('Module created successfully!');
       console.log('Created module:', response.data);

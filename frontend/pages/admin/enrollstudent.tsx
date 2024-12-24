@@ -1,54 +1,50 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
 
 const EnrollStudent = () => {
   const [studentId, setStudentId] = useState('');
   const [courseId, setCourseId] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const [instructorId, setInstructorId] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // Fetch the instructor ID from localStorage
-  useEffect(() => {
-    const storedInstructorId = localStorage.getItem("userId"); 
-    localStorage.setItem("userId", instructorId);
-
-    if (storedInstructorId) {
-      setInstructorId(storedInstructorId);
-    } else {
-      setError('Instructor ID not found in localStorage.');
-    }
-  }, []);
-
   const handleEnrollStudent = async () => {
-    if (!instructorId) {
-      setError('Instructor ID is missing.');
+    const instructorId = localStorage.getItem('userId');  // Get the instructorId from localStorage
+    const token = localStorage.getItem('token');  // Get the token from localStorage
+    const studentIdInput = studentId; 
+
+    if (!instructorId || !token) {
+      setErrorMessage('Instructor ID or Token not found. Please login.');
       return;
     }
 
-    setError('');
-    setSuccessMessage('');
+    if (!studentIdInput || !courseId) {
+      setErrorMessage('Please fill in all the fields.');
+      return;
+    }
+
     setLoading(true);
+    setErrorMessage('');
 
     try {
+      // Making the POST request to enroll the student in the course
       const response = await axios.post(
         `http://localhost:3000/user/${instructorId}/enroll-student/${studentId}/${courseId}`,
         {},
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            Authorization: `Bearer ${token}`, // Sending the token for authorization
           },
         }
       );
 
-      setSuccessMessage(response.data.message || 'Student enrolled successfully!');
-      setStudentId('');
-      setCourseId('');
+      setSuccessMessage(`Successfully enrolled in the course: ${response.data.message}`);
+      setStudentId(''); // Clear the studentId input
+      setCourseId(''); // Clear the courseId input
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to enroll student.');
+      setErrorMessage(err.response?.data?.message || 'Failed to enroll student.');
     } finally {
       setLoading(false);
     }
@@ -56,39 +52,38 @@ const EnrollStudent = () => {
 
   return (
     <div style={{ padding: '2rem', maxWidth: '600px', margin: 'auto' }}>
-      <h1>📚 Enroll Student in Course</h1>
-      <p>Enter the student ID and course ID to enroll the student into the selected course.</p>
+      <h1>Enroll Student in a Course</h1>
 
-      <div style={{ marginBottom: '1rem' }}>
+      {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
+      {successMessage && <p style={{ color: 'green' }}>{successMessage}</p>}
+
+      <div>
         <label htmlFor="studentId">Student ID:</label>
         <input
           type="text"
           id="studentId"
           value={studentId}
           onChange={(e) => setStudentId(e.target.value)}
-          placeholder="Enter Student ID"
+          placeholder="Enter student ID"
           style={{ width: '100%', padding: '8px', marginTop: '5px' }}
         />
       </div>
 
-      <div style={{ marginBottom: '1rem' }}>
+      <div style={{ marginTop: '1rem' }}>
         <label htmlFor="courseId">Course ID:</label>
         <input
           type="text"
           id="courseId"
           value={courseId}
           onChange={(e) => setCourseId(e.target.value)}
-          placeholder="Enter Course ID"
+          placeholder="Enter course ID"
           style={{ width: '100%', padding: '8px', marginTop: '5px' }}
         />
       </div>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {successMessage && <p style={{ color: 'green' }}>{successMessage}</p>}
-      {loading && <p>Processing...</p>}
-
       <button
         onClick={handleEnrollStudent}
+        disabled={loading}
         style={{
           backgroundColor: '#0070f3',
           color: 'white',
@@ -100,26 +95,8 @@ const EnrollStudent = () => {
           borderRadius: '5px',
           marginTop: '10px',
         }}
-        disabled={loading}
       >
         {loading ? 'Enrolling...' : 'Enroll Student'}
-      </button>
-
-      <button
-        onClick={() => router.push('/instructor/dashboard')}
-        style={{
-          backgroundColor: '#ccc',
-          color: 'black',
-          padding: '10px',
-          width: '100%',
-          border: 'none',
-          cursor: 'pointer',
-          fontSize: '1rem',
-          borderRadius: '5px',
-          marginTop: '10px',
-        }}
-      >
-        Back to Dashboard
       </button>
     </div>
   );
