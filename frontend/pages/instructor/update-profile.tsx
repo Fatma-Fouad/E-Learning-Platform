@@ -149,24 +149,6 @@ const UpdateProfile = () => {
             </label>
           </div>
 
-          <div style={{ marginBottom: '1rem' }}>
-            <label>
-              Phone Number:
-              <input
-                type="tel"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                placeholder="Enter your phone number"
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  borderRadius: '5px',
-                  border: '1px solid #ccc',
-                }}
-              />
-            </label>
-          </div>
-
           <button
             type="submit"
             style={{
