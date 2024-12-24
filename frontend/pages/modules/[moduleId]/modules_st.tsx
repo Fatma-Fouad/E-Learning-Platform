@@ -75,7 +75,6 @@ const AccessModulePage = () => {
     return (
       <div>
         <p style={{ color: 'orange' }}>{infoMessage}</p>
-        <button onClick={() => router.push(`/modules/${moduleId}/take-quiz`)}>Take Quiz</button>
       </div>
     );
   }
