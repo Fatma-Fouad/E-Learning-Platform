@@ -27,15 +27,6 @@ const AdminDashboard = () => {
         </div>
       </section>
 
-      {/* User Profile Section */}
-      <section style={sectionStyle}>
-        <h2>📋 User Profiles</h2>
-        <div style={buttonContainerStyle}>
-          <Link href="/admin/view-profile">
-            <button style={buttonStyle}>View User Profile</button>
-          </Link>
-        </div>
-      </section>
 
       {/* Enrollment Section */}
       <section style={sectionStyle}>
@@ -47,15 +38,6 @@ const AdminDashboard = () => {
         </div>
       </section>
 
-      {/* System Monitoring Section */}
-      <section style={sectionStyle}>
-        <h2>📊 System Monitoring</h2>
-        <div style={buttonContainerStyle}>
-          <Link href="/admin/login-attempts">
-            <button style={buttonStyle}>View Login Attempts</button>
-          </Link>
-        </div>
-      </section>
 
       {/* Logout */}
       <div style={{ textAlign: 'center', marginTop: '3rem' }}>

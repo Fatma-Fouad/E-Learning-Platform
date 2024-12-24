@@ -1,69 +1,61 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const CompletedCourses = () => {
-  const [completedCourses, setCompletedCourses] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [createdBy, setCreatedBy] = useState(''); // Instructor ID will be retrieved from localStorage
+const TrackCompletedCourses = () => {
+  const [instructorId, setInstructorId] = useState<string | null>(null); // To hold the instructor ID
+  const [courses, setCourses] = useState<any[]>([]); // To hold the courses data
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const handleFetchCompletedCourses = async () => {
+  useEffect(() => {
+    // Get the instructor ID from localStorage
+    const storedInstructorId = localStorage.getItem('userId');
+    if (storedInstructorId) {
+      setInstructorId(storedInstructorId);
+    } else {
+      setError('Instructor ID is not available. Please login.');
+    }
+  }, []);
+
+  const handleTrackCourses = async () => {
+    if (!instructorId) {
+      setError('Instructor ID is required.');
+      return;
+    }
+
     setLoading(true);
-    setError('');
+    setError(null);
+    setSuccessMessage(null);
+
     try {
-      if (!createdBy) {
-        throw new Error('Instructor ID is required');
-      }
+      // Make the GET request to fetch the courses
+      const response = await axios.get(`http://localhost:3000/courses/instructor/completed-courses`, {
+        params: { instructor_id: instructorId }, // Send the instructor ID as a query param
+      });
 
-      const token = localStorage.getItem('token'); // Retrieve the token from localStorage
-
-      const response = await axios.get(
-        `http://localhost:3000/user/instructor/completed-courses?created_by=${createdBy}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`, // Include the token in the Authorization header
-          },
-        }
-      );
-
-      setCompletedCourses(response.data.courses || []);
+      // Set the response data
+      setCourses(response.data.courses);
+      setSuccessMessage('Courses tracked successfully.');
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Failed to fetch completed courses');
+      setError(err.response?.data?.message || 'Failed to track completed courses.');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    // Retrieve the instructorId from localStorage when the component mounts
-    const instructorId = localStorage.getItem('userId'); // Replace 'userId' with your actual key for instructor ID
-
-    if (instructorId) {
-      setCreatedBy(instructorId); // Set the createdBy state with the retrieved instructorId
-    } else {
-      setError('Instructor ID not found in localStorage');
-    }
-  }, []);
-
   return (
-    <div style={{ padding: '2rem', maxWidth: '800px', margin: 'auto' }}>
-      <h1>📊 Completed Courses</h1>
-      <p>View a list of students who have completed your courses.</p>
-      <div style={{ marginBottom: '1rem' }}>
-        <label htmlFor="createdBy">Instructor ID:</label>
-        <input
-          type="text"
-          id="createdBy"
-          value={createdBy}
-          onChange={(e) => setCreatedBy(e.target.value)}
-          placeholder="Instructor ID is auto-filled from localStorage"
-          style={{ width: '100%', padding: '8px', marginTop: '5px' }}
-          disabled // Making it read-only since it's fetched from localStorage
-        />
-      </div>
+    <div style={{ padding: '2rem', maxWidth: '900px', margin: 'auto' }}>
+      <h1>📊 Track Completed Courses</h1>
 
+      {/* Display success or error message */}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {successMessage && <p style={{ color: 'green' }}>{successMessage}</p>}
+
+      {/* Button to trigger tracking of courses */}
       <button
-        onClick={handleFetchCompletedCourses}
+        onClick={handleTrackCourses}
+        disabled={loading}
         style={{
           backgroundColor: '#0070f3',
           color: 'white',
@@ -75,39 +67,27 @@ const CompletedCourses = () => {
           borderRadius: '5px',
           marginTop: '10px',
         }}
-        disabled={loading}
       >
-        {loading ? 'Fetching...' : 'Fetch Completed Courses'}
+        {loading ? 'Tracking Courses...' : 'Track Completed Courses'}
       </button>
 
-      {error && <p style={{ color: 'red', marginTop: '1rem' }}>{error}</p>}
-
-      <div style={{ marginTop: '2rem' }}>
-        {completedCourses.length > 0 ? (
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            {completedCourses.map((course: any) => (
-              <li
-                key={course.course_id}
-                style={{
-                  border: '1px solid #ccc',
-                  padding: '10px',
-                  margin: '10px 0',
-                  borderRadius: '5px',
-                }}
-              >
+      {/* Display the list of courses */}
+      <div style={{ marginTop: '20px' }}>
+        {courses.length > 0 ? (
+          <ul>
+            {courses.map((course: any) => (
+              <li key={course.course_id}>
                 <h3>{course.title}</h3>
-                <p>
-                  <strong>Completed Students:</strong> {course.completed_students}
-                </p>
+                <p>Completed Students: {course.completed_students}</p>
               </li>
             ))}
           </ul>
         ) : (
-          !loading && <p>No completed courses found.</p>
+          <p>No completed courses found for this instructor.</p>
         )}
       </div>
     </div>
   );
 };
 
-export default CompletedCourses;
+export default TrackCompletedCourses;

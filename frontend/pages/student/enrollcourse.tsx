@@ -25,32 +25,25 @@ const EnrollCourse = () => {
       setError('Please enter a valid course ID.');
       return;
     }
-
+  
     console.log('Student ID:', studentId); // Debugging line
     console.log('Course ID:', courseInput); // Debugging line
-
+  
     try {
       setLoading(true);
-      const token = localStorage.getItem('token'); // Retrieve the token from localStorage
       const response = await axios.post(
-        `http://localhost:3000/user/${studentId}/enroll-course/${courseInput}`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`, // Include the token in the Authorization header
-          },
-        }
+        `http://localhost:3000/user/${studentId}/enroll-course/${courseInput}`
       );
-
+  
       console.log('Response:', response); // Debugging line
       console.log('Response Data:', response.data); // Debugging line
-
+  
       if (response.data && response.data.message) {
         setSuccessMessage(response.data.message);
       } else {
         setSuccessMessage('Successfully enrolled in the course.');
       }
-
+  
       setCourseInput(''); // Clear the input field after successful enrollment
     } catch (err: any) {
       console.error('Error enrolling course:', err); // Debugging line
@@ -59,6 +52,7 @@ const EnrollCourse = () => {
       setLoading(false);
     }
   };
+  
 
   return (
     <div style={{ padding: '2rem', maxWidth: '900px', margin: 'auto' }}>

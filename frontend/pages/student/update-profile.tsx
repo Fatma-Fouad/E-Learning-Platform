@@ -1,150 +1,151 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
 
-const UpdateProfile: React.FC = () => {
+const UpdateProfile = () => {
   const router = useRouter();
-  const [formData, setFormData] = useState({
-    name: '',
-    password: '',
-    confirmPassword: '',
-  });
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const userId = localStorage.getItem('userId'); // Get userId from localStorage
 
-  // Fetch current profile data
+  const [profile, setProfile] = useState<any>(null);
+  const [name, setName] = useState('');
+  const [profilePicture, setProfilePicture] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [email, setEmail] = useState('');
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+
+  // Fetch the user's current profile data
   useEffect(() => {
+    if (!userId) return; // Ensure we have userId
+
     const fetchProfile = async () => {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('User not authenticated. Please log in again.');
-        }
-
-        const response = await axios.get(`http://localhost:4000/user/profile`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        setFormData({
-          name: response.data.name || '',
-          password: '',
-          confirmPassword: '',
-        });
+        const response = await axios.get(`http://localhost:3000/user/${userId}/profile`);
+        setProfile(response.data);
+        setName(response.data.name);
+        setProfilePicture(response.data.profile_picture);
+        setEmail(response.data.email);
+        setPhoneNumber(response.data.phone_number);
       } catch (err: any) {
         console.error(err);
-        setError(err.response?.data?.message || 'Failed to fetch profile data');
+        setError(err.response?.data?.message || 'Failed to fetch profile data.');
       }
     };
 
     fetchProfile();
-  }, []);
+  }, [userId]);
 
-  // Handle input changes
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
-
-  // Handle form submission
+  // Handle form submission to update the profile
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
 
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
+    const updateData = {
+      name,
+      profile_picture: profilePicture,
+      phone_number: phoneNumber,
+    };
 
     try {
-      const token = localStorage.getItem('token');
-      const userId = router.query.id || localStorage.getItem('userId');
-
-      if (!token || !userId) {
-        throw new Error('User not authenticated. Please log in again.');
-      }
-
-      await axios.put(
-        `http://localhost:4000/user/${userId}/profile`,
-        {
-          name: formData.name,
-          password: formData.password,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      const response = await axios.put(
+        `http://localhost:3000/user/${userId}/profile`,
+        updateData
       );
-
-      setSuccess('Profile updated successfully');
+      setSuccessMessage('Profile updated successfully!');
+      setError('');
     } catch (err: any) {
       console.error(err);
-      setError(err.response?.data?.message || 'Failed to update profile');
+      setError(err.response?.data?.message || 'Failed to update profile.');
+      setSuccessMessage('');
     }
   };
 
+
+
   return (
-    <div style={{ padding: '2rem', maxWidth: '500px', margin: 'auto' }}>
-      <h2>🛠️ Update Profile</h2>
+    <div style={{ padding: '2rem', maxWidth: '900px', margin: 'auto' }}>
+      <h1>Update Your Profile</h1>
+
       {error && <p style={{ color: 'red' }}>{error}</p>}
-      {success && <p style={{ color: 'green' }}>{success}</p>}
-      <form onSubmit={handleSubmit}>
-        {/* Name Input */}
-        <div style={{ marginBottom: '1rem' }}>
-          <label>Name:</label>
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            style={{ width: '100%', padding: '8px', marginTop: '5px', borderRadius: '5px', border: '1px solid #ccc' }}
-          />
-        </div>
+      {successMessage && <p style={{ color: 'green' }}>{successMessage}</p>}
 
-        {/* Password Input */}
-        <div style={{ marginBottom: '1rem' }}>
-          <label>Password:</label>
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            style={{ width: '100%', padding: '8px', marginTop: '5px', borderRadius: '5px', border: '1px solid #ccc' }}
-          />
-        </div>
+      {profile ? (
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: '1rem' }}>
+            <label>
+              Name:
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter your full name"
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  borderRadius: '5px',
+                  border: '1px solid #ccc',
+                }}
+              />
+            </label>
+          </div>
 
-        {/* Confirm Password Input */}
-        <div style={{ marginBottom: '1rem' }}>
-          <label>Confirm Password:</label>
-          <input
-            type="password"
-            name="confirmPassword"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            style={{ width: '100%', padding: '8px', marginTop: '5px', borderRadius: '5px', border: '1px solid #ccc' }}
-          />
-        </div>
+          <div style={{ marginBottom: '1rem' }}>
+            <label>
+              Profile Picture URL:
+              <input
+                type="text"
+                value={profilePicture}
+                onChange={(e) => setProfilePicture(e.target.value)}
+                placeholder="Enter the URL for your profile picture"
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  borderRadius: '5px',
+                  border: '1px solid #ccc',
+                }}
+              />
+            </label>
+          </div>
 
-        {/* Submit Button */}
-        <button
-          type="submit"
-          style={{
-            backgroundColor: '#0070f3',
-            color: 'white',
-            padding: '10px',
-            width: '100%',
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: '1rem',
-            borderRadius: '5px',
-          }}
-        >
-          Update Profile
-        </button>
-      </form>
+          <div style={{ marginBottom: '1rem' }}>
+            <label>
+              Email:
+              <input
+                type="email"
+                value={email}
+                readOnly
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  borderRadius: '5px',
+                  border: '1px solid #ccc',
+                  backgroundColor: '#f5f5f5',
+                  cursor: 'not-allowed',
+                }}
+              />
+            </label>
+          </div>
+
+        
+
+          <button
+            type="submit"
+            style={{
+              backgroundColor: '#0070f3',
+              color: 'white',
+              padding: '10px',
+              width: '100%',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '1rem',
+              borderRadius: '5px',
+            }}
+          >
+            Save Changes
+          </button>
+        </form>
+      ) : (
+        <p>Loading profile data...</p>
+      )}
     </div>
   );
 };
