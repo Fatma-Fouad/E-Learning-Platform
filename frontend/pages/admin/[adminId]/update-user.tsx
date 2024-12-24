@@ -7,12 +7,19 @@ const AllUsers = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get('/api/user/admin');
+        const token = localStorage.getItem('token'); // Retrieve the token from localStorage
+
+        const response = await axios.get('/api/user/admin', {
+          headers: {
+            Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+          },
+        });
         setUsers(response.data);
       } catch (error) {
         console.error('Failed to fetch users:', error);
       }
     };
+
     fetchUsers();
   }, []);
 

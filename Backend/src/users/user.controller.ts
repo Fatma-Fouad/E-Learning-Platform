@@ -33,8 +33,8 @@ export class UserController {
   
 // hana
 @Post(':id/enroll-course/:courseId')
-//@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
-//@Roles('admin' as Role, 'student' as Role)
+@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
+@Roles('admin' as Role, 'student' as Role)
   async enrollCourse(
   @Param('id') userId: string,
   @Param('courseId') courseId: string 
@@ -80,8 +80,8 @@ async getAllUser() {
 //student, instrctor not admin
   // Update user profile with error handling
 @Put(':id/profile')
-//@UseGuards(AuthGuard, RolesGuard)
-//@Roles('instructor' as Role, 'student' as Role)
+@UseGuards(AuthGuard, RolesGuard)
+@Roles('instructor' as Role, 'student' as Role)
 async updateUserProfile(@Param('id') userId: string, @Body() updateData: any) {
   if (Object.keys(updateData).length === 0) {
     throw new BadRequestException('Update data cannot be empty');
@@ -173,8 +173,8 @@ async deleteAccount(@Param('role') role: string, @Param('id') userId: string) {
 }
 //
 @Delete(':userId/delete-account') 
-//@UseGuards(AuthGuard)
-//@Roles('student' as Role, 'instructor' as Role)
+@UseGuards(AuthGuard)
+@Roles('student' as Role, 'instructor' as Role)
 async deleteSelf(@Param('userId') userId: string) {
   try {
     // Use the userId passed as a parameter
@@ -190,8 +190,8 @@ async deleteSelf(@Param('userId') userId: string) {
 
 //admin , instrctor
 @Post(':instructorId/enroll-student/:studentId/:courseId')
-//@UseGuards(AuthGuard, RolesGuard)
-//@Roles('instructor' as Role, 'admin' as Role)
+@UseGuards(AuthGuard, RolesGuard)
+@Roles('instructor' as Role, 'admin' as Role)
   async enrollStudentInCourse(
     @Param('instructorId') instructorId: string,
     @Param('studentId') studentId: string,
@@ -298,8 +298,8 @@ async getStudentEnrolledCourses(
    * Accessible only by students
    */
   @Get('student/search-instructors')
-  //@UseGuards(AuthGuard, RolesGuard)
-  //@Roles('student' as Role)
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('student' as Role)
   async findInstructorByName(@Query('name') name: string) {
     if (!name) {
       throw new BadRequestException('Instructor name is required');

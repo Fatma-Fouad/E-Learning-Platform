@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import axios from "axios";
 import { Bar, Pie } from "react-chartjs-2";
@@ -28,8 +28,14 @@ const ContentEffectivenessReport = () => {
 
     const fetchContentData = async () => {
       try {
+        const token = localStorage.getItem("token"); // Retrieve token from localStorage
         const response = await axios.get(
-          `http://localhost:3000/progress/effectiveness/${courseId}`
+          `http://localhost:3000/progress/effectiveness/${courseId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+            },
+          }
         );
         setContentData(response.data || {});
       } catch (err) {
@@ -119,7 +125,7 @@ const ContentEffectivenessReport = () => {
                   <tr key={index}>
                     <td>{mod.details?.moduleName || "Unknown"}</td>
                     <td>{mod.details?.moduleOrder || "Unknown"}</td>
-                    <td>{mod.details?.moduleVersion|| "Unknown"}</td>
+                    <td>{mod.details?.moduleVersion || "Unknown"}</td>
                     <td>{mod.details?.moduleRating || "No rating yet"}</td>
                     <td>{mod.details?.performanceMetric || "Unknown"}</td>
                   </tr>

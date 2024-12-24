@@ -50,7 +50,11 @@ const CompletedCourses = () => {
 
         // Fetch the details of the completed courses using the course IDs
         const coursesPromises = courseIds.map((courseId: string) =>
-          axios.get(`http://localhost:3000/courses/${courseId}`)
+          axios.get(`http://localhost:3000/courses/${courseId}`,{
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          })
         );
 
         // Wait for all course details to be fetched

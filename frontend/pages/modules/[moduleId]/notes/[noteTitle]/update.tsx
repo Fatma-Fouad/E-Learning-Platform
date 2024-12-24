@@ -18,8 +18,17 @@ const UpdateNotePage = () => {
     const fetchNote = async () => {
       if (!moduleId || !noteTitle) return;
       try {
+        const token = localStorage.getItem('token'); // Retrieve the token from localStorage
+
         const response = await axios.get(
-          `http://localhost:3000/notes/module/${moduleId}/notes/note-title/${encodeURIComponent(noteTitle as string)}`
+          `http://localhost:3000/notes/module/${moduleId}/notes/note-title/${encodeURIComponent(
+            noteTitle as string
+          )}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+            },
+          }
         );
         setTitle(response.data.noteTitle);
         setContent(response.data.content);
@@ -37,13 +46,21 @@ const UpdateNotePage = () => {
     if (!moduleId || !noteTitle || !content.trim()) return;
 
     try {
+      const token = localStorage.getItem('token'); // Retrieve the token from localStorage
       setIsSaving(true);
       await axios.put(
-        `http://localhost:3000/notes/module/${moduleId}/title/${encodeURIComponent(noteTitle as string)}`,
+        `http://localhost:3000/notes/module/${moduleId}/title/${encodeURIComponent(
+          noteTitle as string
+        )}`,
         {
           noteTitle: title,
           content,
           isAutoSaved: true, // Indicate autosave
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+          },
         }
       );
       setIsSaving(false);
@@ -83,12 +100,20 @@ const UpdateNotePage = () => {
     setSuccess('');
 
     try {
+      const token = localStorage.getItem('token'); // Retrieve the token from localStorage
       await axios.put(
-        `http://localhost:3000/notes/module/${moduleId}/title/${encodeURIComponent(noteTitle as string)}`,
+        `http://localhost:3000/notes/module/${moduleId}/title/${encodeURIComponent(
+          noteTitle as string
+        )}`,
         {
           noteTitle: title,
           content,
           isAutoSaved: false, // Manual save
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+          },
         }
       );
 
@@ -136,11 +161,7 @@ const UpdateNotePage = () => {
         />
       </div>
 
-      <button
-        onClick={handleUpdate}
-        style={buttonStyle}
-        disabled={isSaving}
-      >
+      <button onClick={handleUpdate} style={buttonStyle} disabled={isSaving}>
         {isSaving ? 'Saving...' : 'Update Note'}
       </button>
     </div>

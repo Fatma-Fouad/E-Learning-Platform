@@ -32,12 +32,15 @@ const UploadMedia = () => {
     setUploadedFilePath(null);
 
     try {
+      const token = localStorage.getItem('token'); // Retrieve the token from localStorage
+
       const response = await axios.patch(
         `http://localhost:3000/modules/${moduleId}/upload`,
         formData,
         {
           headers: {
             'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${token}`, // Include the token in the Authorization header
           },
         }
       );
@@ -65,7 +68,7 @@ const UploadMedia = () => {
       {error && <p style={{ color: 'red' }}>{error}</p>}
       {uploadedFilePath && (
         <p>
-          File uploaded successfully. Access it here: {' '}
+          File uploaded successfully. Access it here:{' '}
           <a
             href={`http://localhost:3000/${uploadedFilePath.replace('\\', '/')}`}
             target="_blank"

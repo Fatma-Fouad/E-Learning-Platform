@@ -15,7 +15,7 @@ import {
   LineElement,
   PointElement,
 } from "chart.js";
-import { Bar, Pie, Line } from "react-chartjs-2";
+import { Bar, Pie } from "react-chartjs-2";
 
 ChartJS.register(
   CategoryScale,
@@ -45,8 +45,14 @@ const EngagementReport = () => {
       setError(null);
 
       try {
+        const token = localStorage.getItem("token"); // Retrieve token from localStorage
         const response = await axios.get(
-          `http://localhost:3000/progress/engagement/${courseId}`
+          `http://localhost:3000/progress/engagement/${courseId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`, // Include token in Authorization header
+            },
+          }
         );
         console.log("Fetched engagement data:", response.data);
         setEngagementData(response.data || {});
@@ -111,7 +117,8 @@ const EngagementReport = () => {
 
   return (
     <div className="reportContainer">
-      <button style={{
+      <button
+        style={{
           display: "block",
           margin: "10px auto 20px auto",
           padding: "10px 20px",
@@ -120,10 +127,13 @@ const EngagementReport = () => {
           border: "none",
           borderRadius: "5px",
           cursor: "pointer",
-        }} onClick={generatePDF}>
+        }}
+        onClick={generatePDF}
+      >
         Download as PDF
       </button>
-      <button style={{
+      <button
+        style={{
           display: "block",
           margin: "10px auto 20px auto",
           padding: "10px 20px",
@@ -132,98 +142,103 @@ const EngagementReport = () => {
           border: "none",
           borderRadius: "5px",
           cursor: "pointer",
-        }} onClick={() => router.push(`/courses/${courseId}`)}>
+        }}
+        onClick={() => router.push(`/courses/${courseId}`)}
+      >
         Return to Course
       </button>
-    
-    <div id="report" style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-      <h1 className="reportTitle"> Engagement Report</h1>
-      <section style={{ margin: "20px 0" }}>
-        <h2>Summary</h2>
-        <p>Total Enrolled Students: {engagementData.totalEnrolledStudents}</p>
-        <p>Completed Students: {engagementData.completedStudents}</p>
-        <p>
-          Average Completion Percentage:{" "}
-          {engagementData.averageCompletionPercentage || 0}%
-        </p>
-        <p>Average Course Score: {engagementData.averageCourseScore || 0}</p>
-      </section>
 
-      <section style={{ margin: "20px 0" }}>
-        <h2>Performance Metrics</h2>
-        <table
-          style={{
-            width: "100%",
-            borderCollapse: "collapse",
-            marginBottom: "20px",
-          }}
-        >
-          <thead>
-            <tr>
-              <th style={{ border: "1px solid #ddd", padding: "8px" }}>
-                Category
-              </th>
-              <th style={{ border: "1px solid #ddd", padding: "8px" }}>
-                Count
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {engagementData.performanceMetrics && (
-              <>
-                <tr>
-                  <td style={{ border: "1px solid #ddd", padding: "8px" }}>
-                    Below Average
-                  </td>
-                  <td style={{ border: "1px solid #ddd", padding: "8px" }}>
-                    {engagementData.performanceMetrics.below_average || 0}
-                  </td>
-                </tr>
-                <tr>
-                  <td style={{ border: "1px solid #ddd", padding: "8px" }}>
-                    Average
-                  </td>
-                  <td style={{ border: "1px solid #ddd", padding: "8px" }}>
-                    {engagementData.performanceMetrics.average || 0}
-                  </td>
-                </tr>
-                <tr>
-                  <td style={{ border: "1px solid #ddd", padding: "8px" }}>
-                    Above Average
-                  </td>
-                  <td style={{ border: "1px solid #ddd", padding: "8px" }}>
-                    {engagementData.performanceMetrics.above_average || 0}
-                  </td>
-                </tr>
-                <tr>
-                  <td style={{ border: "1px solid #ddd", padding: "8px" }}>
-                    Excellent
-                  </td>
-                  <td style={{ border: "1px solid #ddd", padding: "8px" }}>
-                    {engagementData.performanceMetrics.excellent || 0}
-                  </td>
-                </tr>
-              </>
-            )}
-          </tbody>
-        </table>
-      </section>
+      <div
+        id="report"
+        style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}
+      >
+        <h1 className="reportTitle">Engagement Report</h1>
+        <section style={{ margin: "20px 0" }}>
+          <h2>Summary</h2>
+          <p>Total Enrolled Students: {engagementData.totalEnrolledStudents}</p>
+          <p>Completed Students: {engagementData.completedStudents}</p>
+          <p>
+            Average Completion Percentage:{" "}
+            {engagementData.averageCompletionPercentage || 0}%
+          </p>
+          <p>Average Course Score: {engagementData.averageCourseScore || 0}</p>
+        </section>
 
-      <div className="chartContainer">
-      <section style={{ display: "flex", justifyContent: "space-around" }}>
-      <div className="chart">
-          <h3>Engagement Metrics</h3>
-          <Bar data={barData} />
+        <section style={{ margin: "20px 0" }}>
+          <h2>Performance Metrics</h2>
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              marginBottom: "20px",
+            }}
+          >
+            <thead>
+              <tr>
+                <th style={{ border: "1px solid #ddd", padding: "8px" }}>
+                  Category
+                </th>
+                <th style={{ border: "1px solid #ddd", padding: "8px" }}>
+                  Count
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {engagementData.performanceMetrics && (
+                <>
+                  <tr>
+                    <td style={{ border: "1px solid #ddd", padding: "8px" }}>
+                      Below Average
+                    </td>
+                    <td style={{ border: "1px solid #ddd", padding: "8px" }}>
+                      {engagementData.performanceMetrics.below_average || 0}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ border: "1px solid #ddd", padding: "8px" }}>
+                      Average
+                    </td>
+                    <td style={{ border: "1px solid #ddd", padding: "8px" }}>
+                      {engagementData.performanceMetrics.average || 0}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ border: "1px solid #ddd", padding: "8px" }}>
+                      Above Average
+                    </td>
+                    <td style={{ border: "1px solid #ddd", padding: "8px" }}>
+                      {engagementData.performanceMetrics.above_average || 0}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ border: "1px solid #ddd", padding: "8px" }}>
+                      Excellent
+                    </td>
+                    <td style={{ border: "1px solid #ddd", padding: "8px" }}>
+                      {engagementData.performanceMetrics.excellent || 0}
+                    </td>
+                  </tr>
+                </>
+              )}
+            </tbody>
+          </table>
+        </section>
+
+        <div className="chartContainer">
+          <section style={{ display: "flex", justifyContent: "space-around" }}>
+            <div className="chart">
+              <h3>Engagement Metrics</h3>
+              <Bar data={barData} />
+            </div>
+
+            <div className="chart">
+              <h3>Performance Metrics</h3>
+              <Pie data={pieData} />
+            </div>
+          </section>
         </div>
-
-        <div className="chart">
-          <h3>Performance Metrics</h3>
-          <Pie data={pieData} />
-        </div>
-      </section>
       </div>
-    </div>
-    <style jsx>{`
+      <style jsx>{`
         .reportContainer {
           display: flex;
           flex-direction: column;
@@ -239,12 +254,6 @@ const EngagementReport = () => {
           font-weight: bold;
           color: #333;
           margin-bottom: 10px;
-        }
-
-        .reportDetails {
-          font-size: 1.2rem;
-          color: #555;
-          margin: 5px 0;
         }
 
         .chartContainer {

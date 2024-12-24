@@ -18,7 +18,13 @@ const UpdateModule = () => {
   useEffect(() => {
     const fetchModuleDetails = async () => {
       try {
-        const response = await axios.get(`http://localhost:3000/modules/${moduleId}`);
+        const token = localStorage.getItem('token'); // Retrieve the token from localStorage
+
+        const response = await axios.get(`http://localhost:3000/modules/${moduleId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+          },
+        });
         const moduleData = response.data.data;
         setModuleDetails({
           courseId: moduleData.course_id,
@@ -48,12 +54,14 @@ const UpdateModule = () => {
       setError('Title and Difficulty Level are required.');
       return;
     }
-  
+
     setUpdating(true);
     setError('');
     setMessage('');
-  
+
     try {
+      const token = localStorage.getItem('token'); // Retrieve the token from localStorage
+
       // Step 1: Update the module
       const updateResponse = await axios.patch(
         `http://localhost:3000/modules/${moduleId}/version-control`,
@@ -61,33 +69,37 @@ const UpdateModule = () => {
         {
           headers: {
             'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`, // Include the token in the Authorization header
           },
         }
       );
-  
+
       console.log('Update Response:', updateResponse);
-  
+
       // Ensure the update was successful
       if (!updateResponse || updateResponse.status !== 200) {
         throw new Error('Failed to update the module.');
       }
-  
+
       setMessage('Module updated successfully.');
-  
+
       // Step 2: Fetch all modules to find the latest version
       const newModuleResponse = await axios.get(`http://localhost:3000/modules`, {
         params: {
           courseId: moduleDetails.courseId,
           moduleOrder: moduleDetails.moduleOrder,
         },
+        headers: {
+          Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+        },
       });
-  
+
       console.log('Modules fetched:', newModuleResponse);
-  
+
       const modules = Array.isArray(newModuleResponse?.data)
         ? newModuleResponse.data
         : [];
-  
+
       if (modules.length > 0) {
         // Step 3: Filter and find the latest module version
         const filteredModules = modules.filter(
@@ -96,14 +108,14 @@ const UpdateModule = () => {
             mod.module_order === moduleDetails.moduleOrder &&
             mod.isModuleOutdated === false
         );
-  
+
         console.log('Filtered modules:', filteredModules);
-  
+
         const latestModule = filteredModules.reduce((latest, current) =>
           current.module_version > (latest?.module_version || 0) ? current : latest,
           null
         );
-  
+
         if (latestModule && latestModule._id) {
           router.push(`/modules/${latestModule._id}/update`); // Navigate to the new module ID
         } else {
@@ -119,11 +131,6 @@ const UpdateModule = () => {
       setUpdating(false);
     }
   };
-  
-  
-  
-  
-  
 
   return (
     <div>
@@ -157,11 +164,7 @@ const UpdateModule = () => {
           </select>
         </div>
 
-        <button
-          type="button"
-          onClick={handleUpdate}
-          disabled={updating}
-        >
+        <button type="button" onClick={handleUpdate} disabled={updating}>
           {updating ? 'Updating...' : 'Update Module'}
         </button>
       </form>

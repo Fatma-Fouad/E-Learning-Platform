@@ -20,8 +20,15 @@ const DeleteCoursePage = () => {
     setSuccessMessage("");
 
     try {
+      const token = localStorage.getItem("token"); // Retrieve the token from localStorage
+
       const response = await axios.delete(
-        `http://localhost:3000/courses/delete-course/${courseId}`
+        `http://localhost:3000/courses/delete-course/${courseId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+          },
+        }
       );
 
       if (response.status === 200) {

@@ -9,9 +9,9 @@ const Home = () => {
   const [user, setUser] = useState<{ name: string; role: string; email: string; userId: string; gpa: string } | null>(null);
   const [notifications, setNotifications] = useState<{ type: string; content: string }[]>([]);
   const [socket, setSocket] = useState<Socket | null>(null);
-  const [gpa, setGpa] = useState(null);
-  const token = localStorage.getItem("token");
-  const storedUserId = localStorage.getItem("userId");
+  // const [gpa, setGpa] = useState(null);
+  // const token = localStorage.getItem("token");
+  // const storedUserId = localStorage.getItem("userId");
 
   // Fetch user information from localStorage
   useEffect(() => {
@@ -32,38 +32,38 @@ const Home = () => {
   }, [router]);
 
   useEffect(() => {
-    if (user?.role === "student") {
-      const fetchStudentGPA = async () => {
-        if (!storedUserId) {
-          console.error("No student ID found in local storage.");
-          return;
-        }
+    // if (user?.role === "student") {
+    //   const fetchStudentGPA = async () => {
+    //     if (!storedUserId) {
+    //       console.error("No student ID found in local storage.");
+    //       return;
+    //     }
 
-        try {
-          const response = await axios.get(
-            `http://localhost:3000/user/${storedUserId}/profile`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-          console.log("Student data:", response.data); // Log the student data
+    //     try {
+    //       const response = await axios.get(
+    //         `http://localhost:3000/user/${storedUserId}/profile`,
+    //         {
+    //           headers: {
+    //             Authorization: `Bearer ${token}`,
+    //           },
+    //         }
+    //       );
+    //       console.log("Student data:", response.data); // Log the student data
 
-          const fetchedGpa = response.data?.gpa; // Assuming GPA is under data.gpa
-          if (fetchedGpa !== undefined) {
-            console.log("Fetched GPA:", fetchedGpa);
-            setGpa(fetchedGpa);
-          } else {
-            console.error("GPA not found for the student.");
-          }
-        } catch (err) {
-          console.error("Error fetching student data:", err);
-        }
-      };
+    //       const fetchedGpa = response.data?.gpa; // Assuming GPA is under data.gpa
+    //       if (fetchedGpa !== undefined) {
+    //         console.log("Fetched GPA:", fetchedGpa);
+    //         setGpa(fetchedGpa);
+    //       } else {
+    //         console.error("GPA not found for the student.");
+    //       }
+    //     } catch (err) {
+    //       console.error("Error fetching student data:", err);
+    //     }
+    //   };
 
-      fetchStudentGPA();
-    }
+    //   fetchStudentGPA();
+    // }
 
     if (user?.userId) {
       const socketConnection = io("http://localhost:3000", {
@@ -91,7 +91,7 @@ const Home = () => {
         socketConnection.disconnect();
       };
     }
-  }, [user?.userId, storedUserId, token]);
+  }, [user?.userId]);
   
 
   // Handle logout
@@ -177,9 +177,9 @@ const Home = () => {
             <p>
               <strong>Role:</strong> {user.role}
             </p>
-            {user?.role === "student" && (
+            {user.role === "student" && (
               <p>
-                <strong>GPA:</strong> {gpa !== null ? gpa : "Loading..."}
+                <strong>GPA:</strong> {user.gpa}
               </p>
             )}
           </div>

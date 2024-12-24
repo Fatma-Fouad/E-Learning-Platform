@@ -20,30 +20,23 @@ const UpdateCoursePage = () => {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    console.log("Router query:", router.query);
-
-    if (!router.isReady) {
-      console.log("Router not ready");
-      return;
-    }
-
-    if (!courseId || typeof courseId !== "string") {
-      console.log("Invalid or missing courseId:", courseId);
+    if (!router.isReady || !courseId || typeof courseId !== "string") {
       setError("Invalid course ID.");
       return;
     }
 
     const fetchCourseDetails = async () => {
-      console.log(`Fetching course details for ID: ${courseId}`);
       setLoading(true);
       setError("");
 
       try {
-        const response = await axios.get(
-          `http://localhost:3000/courses/${courseId}`
-        );
-        const { title, description, category, difficulty_level, keywords } =
-          response.data;
+        const token = localStorage.getItem("token"); // Retrieve token from localStorage
+        const response = await axios.get(`http://localhost:3000/courses/${courseId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`, // Add token to Authorization header
+          },
+        });
+        const { title, description, category, difficulty_level, keywords } = response.data;
         setFormData({
           title,
           description,
@@ -51,12 +44,9 @@ const UpdateCoursePage = () => {
           difficulty_level,
           keywords: keywords || [],
         });
-        console.log("Course details fetched successfully:", response.data);
       } catch (err: any) {
         console.error("Error fetching course details:", err.response || err.message);
-        setError(
-          err.response?.data?.message || "Failed to fetch course details."
-        );
+        setError(err.response?.data?.message || "Failed to fetch course details.");
       } finally {
         setLoading(false);
       }
@@ -101,10 +91,13 @@ const UpdateCoursePage = () => {
     setSuccessMessage("");
 
     try {
-      const response = await axios.patch(
-        `http://localhost:3000/courses/${courseId}`,
-        formData
-      );
+      const token = localStorage.getItem("token"); // Retrieve token from localStorage
+      const response = await axios.patch(`http://localhost:3000/courses/${courseId}`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`, // Add token to Authorization header
+        },
+      });
+
       if (response.status === 200) {
         setSuccessMessage("Course updated successfully.");
       } else {

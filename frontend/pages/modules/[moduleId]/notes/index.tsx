@@ -13,7 +13,14 @@ const NotesPage = () => {
   useEffect(() => {
     const fetchNotes = async () => {
       try {
-        const response = await axios.get(`http://localhost:3000/notes/module/${moduleId}`);
+        const token = localStorage.getItem('token'); // Retrieve the token from localStorage
+
+        const response = await axios.get(`http://localhost:3000/notes/module/${moduleId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+          },
+        });
+
         console.log('API Response:', response.data);
 
         if (Array.isArray(response.data.data)) {

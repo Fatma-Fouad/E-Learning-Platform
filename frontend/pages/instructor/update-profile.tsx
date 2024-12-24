@@ -20,7 +20,14 @@ const UpdateProfile = () => {
 
     const fetchProfile = async () => {
       try {
-        const response = await axios.get(`http://localhost:3000/user/${userId}/profile`);
+        const token = localStorage.getItem('token'); // Retrieve the token from localStorage
+
+        const response = await axios.get(`http://localhost:3000/user/${userId}/profile`, {
+          headers: {
+            Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+          },
+        });
+
         setProfile(response.data);
         setName(response.data.name);
         setProfilePicture(response.data.profile_picture);
@@ -46,9 +53,16 @@ const UpdateProfile = () => {
     };
 
     try {
+      const token = localStorage.getItem('token'); // Retrieve the token from localStorage
+
       const response = await axios.put(
         `http://localhost:3000/user/${userId}/profile`,
-        updateData
+        updateData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+          },
+        }
       );
       setSuccessMessage('Profile updated successfully!');
       setError('');
@@ -58,8 +72,6 @@ const UpdateProfile = () => {
       setSuccessMessage('');
     }
   };
-
-
 
   return (
     <div style={{ padding: '2rem', maxWidth: '900px', margin: 'auto' }}>

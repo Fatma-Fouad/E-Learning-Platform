@@ -19,7 +19,15 @@ const ModulesPage = () => {
       setError(null);
       setNoModulesFound(false); // Reset no modules found state
       try {
-        const response = await axios.get(`http://localhost:3000/modules/course/${courseId}/ordered-by-date`);
+        const token = localStorage.getItem('token'); // Retrieve the token from localStorage
+        const response = await axios.get(
+          `http://localhost:3000/modules/course/${courseId}/ordered-by-date`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`, // Add token to Authorization header
+            },
+          }
+        );
         console.log('API Response:', response.data); // Debug the response structure
         const modulesData = response.data?.data || [];
 
@@ -48,7 +56,7 @@ const ModulesPage = () => {
 
   if (loading) return <p>Loading modules...</p>;
   if (error) return <p style={{ color: 'red' }}>{error}</p>;
-  
+
   // Handle no modules found
   if (noModulesFound) return <p style={{ color: 'blue' }}>No modules found for this course.</p>;
 
