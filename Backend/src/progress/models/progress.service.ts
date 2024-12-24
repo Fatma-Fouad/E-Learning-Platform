@@ -16,219 +16,141 @@ export class ProgressService {
 
 // Reports on student engagement:
 async getStudentsEngagementReport(courseId: string) {
-    const progressRecords = await this.progressModel.find().exec();
-    if (!progressRecords || progressRecords.length === 0) {
-      throw new NotFoundException('No student progress data found.');
-    }
+  const progressRecords = await this.progressModel.find().exec();
   
-    // Filter progress records for the specific course
-    const courseProgressRecords = progressRecords.filter(
-      (record) => record.course_id.toString() === courseId
-    );
-  
-    if (!courseProgressRecords.length) {
-      throw new NotFoundException('No engagement data found for this course.');
-    }
-  
-    const totalStudents = courseProgressRecords.length;
-    const completedStudents = courseProgressRecords.filter(
-      (record) => record.completion_percentage === 100
-    ).length;
-  
-    // Calculate average course score, skipping null avg_score values
-    const validScores = courseProgressRecords
+  if (!progressRecords || progressRecords.length === 0) {
+    return { message: 'No students are enrolled in any courses.' };
+  }
+
+  // Filter progress records for the specific course
+  const courseProgressRecords = progressRecords.filter(
+    (record) => record.course_id.toString() === courseId
+  );
+
+  if (!courseProgressRecords.length) {
+    return { message: 'No students are enrolled in this course.' };
+  }
+
+  const totalStudents = courseProgressRecords.length;
+  const completedStudents = courseProgressRecords.filter(
+    (record) => record.completion_percentage === 100
+  ).length;
+
+  const validScores = courseProgressRecords
     .map((record) => record.avg_score)
     .filter((score) => score !== null);
-    const totalAvgScore = validScores.reduce((sum, score) => sum + score, 0);
-    const averageCourseScore = validScores.length > 0 ? totalAvgScore / validScores.length : 0;
+  const totalAvgScore = validScores.reduce((sum, score) => sum + score, 0);
+  const averageCourseScore = validScores.length > 0 ? totalAvgScore / validScores.length : 0;
 
-    // Define static boundaries for performance metrics
-    const belowAverageThreshold = 40; // Below Average threshold
-    const averageThreshold = 60; // Average threshold
-    const aboveAverageThreshold = 80; // Above Average threshold
-
-    // Count performance tiers based on the new thresholds
-    const performanceCounts = {
+  const performanceCounts = {
     below_average: courseProgressRecords.filter(
-      (record) => record.avg_score !== null && record.avg_score < belowAverageThreshold
+      (record) => record.avg_score !== null && record.avg_score < 40
     ).length,
     average: courseProgressRecords.filter(
-      (record) =>
-        record.avg_score !== null &&
-        record.avg_score >= belowAverageThreshold &&
-        record.avg_score < averageThreshold
+      (record) => record.avg_score !== null && record.avg_score >= 40 && record.avg_score < 60
     ).length,
     above_average: courseProgressRecords.filter(
-      (record) =>
-        record.avg_score !== null &&
-        record.avg_score >= averageThreshold &&
-        record.avg_score < aboveAverageThreshold
+      (record) => record.avg_score !== null && record.avg_score >= 60 && record.avg_score < 80
     ).length,
     excellent: courseProgressRecords.filter(
-      (record) => record.avg_score !== null && record.avg_score >= aboveAverageThreshold
+      (record) => record.avg_score !== null && record.avg_score >= 80
     ).length,
-    };
+  };
 
-  
-    // Calculate average completion percentage, skipping null values
-    const validCompletion = courseProgressRecords
-      .map((record) => record.completion_percentage)
-      .filter((percentage) => percentage !== null);
-    const totalCompletion = validCompletion.reduce((sum, percentage) => sum + percentage, 0);
-    const averageCompletionPercentage =
-      validCompletion.length > 0 ? totalCompletion / validCompletion.length : 0;
-  
-    return {
-      totalEnrolledStudents: totalStudents,
-      completedStudents,
-      performanceMetrics: performanceCounts,
-      averageCompletionPercentage: parseFloat(averageCompletionPercentage.toFixed(2)),
-      averageCourseScore: parseFloat(averageCourseScore.toFixed(2)),
-    };
+  const validCompletion = courseProgressRecords
+    .map((record) => record.completion_percentage)
+    .filter((percentage) => percentage !== null);
+  const totalCompletion = validCompletion.reduce((sum, percentage) => sum + percentage, 0);
+  const averageCompletionPercentage =
+    validCompletion.length > 0 ? totalCompletion / validCompletion.length : 0;
+
+  return {
+    totalEnrolledStudents: totalStudents,
+    completedStudents,
+    performanceMetrics: performanceCounts,
+    averageCompletionPercentage: parseFloat(averageCompletionPercentage.toFixed(2)),
+    averageCourseScore: parseFloat(averageCourseScore.toFixed(2)),
+  };
+}
+
+// Reports on content effectiveness:
+async getContentEffectivenessReport(courseId: string) {
+  const course = await this.courseModel.findById(courseId).exec();
+  if (!course) return { message: 'Course not found.' };
+
+  const modules = await this.moduleModel.find({ course_id: courseId }).sort({ module_order: 1 }).exec();
+
+  if (!modules.length) {
+    return { message: 'No modules available for this course.' };
   }
-  
 
+  const validModuleRatings = modules
+    .map((module) => module.module_rating)
+    .filter((rating) => typeof rating === 'number' && !isNaN(rating));
 
-  async getContentEffectivenessReport(courseId: string) {
-    // Fetch the course details
-    const course = await this.courseModel.findById(courseId).exec();
-    if (!course) throw new NotFoundException('Course not found.');
-  
-    // Fetch all modules associated with the course and sort them by `module_order`
-    const modules = await this.moduleModel.find({ course_id: courseId }).sort({ module_order: 1 }).exec();
-  
-    // Handle the case when no modules are found
-    let moduleDetails = [];
-    let averageCourseRating: string | number = 'No rating yet'; // Allow both string and number types
-    let validRatingCount = 0; // Count of modules with valid ratings
-    let modulesWithRatings: any[] = []; // Store modules with valid ratings
-  
-    if (modules.length > 0) {
-      // Calculate average course rating
-      const validModuleRatings = modules
-        .map((module) => module.module_rating)
-        .filter((rating) => typeof rating === 'number' && !isNaN(rating)); // Only consider valid numerical ratings
-  
-      // Ensure that we only consider modules with at least one valid rating
-      modulesWithRatings = modules.filter((module) => {
-        const validRatingsForModule = module.module_rating && typeof module.module_rating === 'number';
-        return validRatingsForModule;
-      });
-  
-      validRatingCount = modulesWithRatings.length;
-  
-      if (validRatingCount > 0) {
-        const totalRatings = validModuleRatings.reduce((sum, rating) => sum + rating, 0);
-        averageCourseRating = parseFloat((totalRatings / validRatingCount).toFixed(2)); // Compute the average and round to 2 decimal places
-      } else {
-        averageCourseRating = 'No rating yet'; // If no valid ratings, return 'No rating yet'
-      }
-  
-      // Prepare detailed module data with performance metrics
-      moduleDetails = modules.map((module) => {
-        const moduleRating = module.module_rating ?? 0; // Default to 0 if no rating
-        let performanceMetric: string;
-  
-        // Skip modules that don't have any ratings (valid rating count must be at least 1)
-        if (validRatingCount > 0 && typeof moduleRating === 'number' && moduleRating !== 0) {
-          // Determine performance category for the module
-          if (typeof averageCourseRating === 'number') {
-            const lowerBoundary = averageCourseRating * 0.5;
-            const upperBoundary = averageCourseRating * 1.2;
-  
-            if (moduleRating < lowerBoundary) {
-              performanceMetric = 'Below Average';
-            } else if (moduleRating >= lowerBoundary && moduleRating < averageCourseRating) {
-              performanceMetric = 'Average';
-            } else if (moduleRating >= averageCourseRating && moduleRating < upperBoundary) {
-              performanceMetric = 'Above Average';
-            } else {
-              performanceMetric = 'Excellent';
-            }
-          } else {
-            performanceMetric = 'No rating yet'; // When there's no average rating
-          }
-        } else {
-          performanceMetric = 'No rating yet'; // If no valid ratings, mark the module as 'No rating yet'
-        }
-  
-        return {
-          title: `Module ${module.module_order}`, // Title for each module based on its order
-          details: {
-            moduleName: module.title,
-            moduleOrder: module.module_order,
-            moduleVersion: module.module_version,
-            moduleRating: moduleRating || 'No rating yet',
-            performanceMetric,
-          },
-        };
-      });
-    } else {
-      // No modules present
-      moduleDetails.push({ title: 'No modules available for this course.' });
-    }
-  
-    // Retrieve course comments
-    const comments = course.comments && course.comments.length > 0
-      ? course.comments
-      : ['No comments on the course!'];
-  
-    // Compile the final report
-    return {
-      courseRating: averageCourseRating,
-      instructorRating: course.instructor_rating || 'No rating yet',
-      comments, // Include comments or a default message
-      modules: moduleDetails, // Each module with its title or default message
-      validModuleCount: validRatingCount, // Count of modules with ratings
-    };
-  }
-  
-  
-  
-  
+  const validRatingCount = validModuleRatings.length;
+  const averageCourseRating =
+    validRatingCount > 0
+      ? parseFloat((validModuleRatings.reduce((sum, rating) => sum + rating, 0) / validRatingCount).toFixed(2))
+      : 'No rating yet';
 
-  
+  const moduleDetails = modules.map((module) => ({
+    title: `Module ${module.module_order}`,
+    details: {
+      moduleName: module.title,
+      moduleOrder: module.module_order,
+      moduleVersion: module.module_version,
+      moduleRating: module.module_rating ?? 'No rating yet',
+    },
+  }));
 
+  const comments = course.comments && course.comments.length > 0 ? course.comments : ['No comments on the course!'];
 
-// Reports on Assessment Results
+  return {
+    courseRating: averageCourseRating,
+    instructorRating: course.instructor_rating || 'No rating yet',
+    comments,
+    modules: moduleDetails,
+    validModuleCount: validRatingCount,
+  };
+}
+
+// Reports on Assessment Results:
 async getQuizResultsReport(courseId: string) {
-  // Fetch progress records for the specific course
   const progress = await this.progressModel.find({ course_id: courseId }).exec();
+
   if (!progress || progress.length === 0) {
-    throw new NotFoundException('No quiz results found for this course.');
+    return { message: 'No quiz results found for this course.' };
   }
 
-  // Calculate overall metrics (average score, performance categories)
   const quizResults = progress.map((p) => ({
     userId: p.user_id,
     userName: p.user_name,
     quizzesTaken: p.quizzes_taken || 0,
     lastQuizScore: p.last_quiz_score || 0,
     avgScore: p.avg_score || 0,
-    quizGrades: p.quiz_grades || [], // Fetch quiz_grades array
+    quizGrades: p.quiz_grades || [],
   }));
 
-  // Detailed per-quiz results
   const maxQuizzes = Math.max(...quizResults.map((record) => record.quizGrades.length));
   const quizzesDetails = [];
 
   for (let i = 0; i < maxQuizzes; i++) {
     const quizDetails = quizResults
-      .filter((record) => record.quizGrades[i] !== undefined) // Include only students who took this quiz
+      .filter((record) => record.quizGrades[i] !== undefined)
       .map((record) => ({
         userId: record.userId,
         userName: record.userName,
-        grade: record.quizGrades[i], // Grade for the current quiz
+        grade: record.quizGrades[i],
       }));
 
     quizzesDetails.push({
-      quizNumber: i + 1, // Quiz numbers are 1-based
+      quizNumber: i + 1,
       participants: quizDetails.length,
-      details: quizDetails, // List of students and their grades
+      details: quizDetails,
     });
   }
 
-  // Prepare the final report
   return {
     quizzesDetails,
   };

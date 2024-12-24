@@ -143,91 +143,106 @@ const QuizResultsReport = () => {
       >
         Return to Course
       </button>
-
+  
       <div id="report" style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
         <h1>Quiz Results Report</h1>
-        <div style={{ marginBottom: "20px" }}>
-          <h2>Participants per Quiz</h2>
-          <div style={{ maxWidth: "600px", margin: "0 auto" }}>
-            <Bar data={barChartData} />
-          </div>
-        </div>
-
-        <div>
-          <h2>Details of Each Quiz</h2>
-          {quizResults.map((quiz) => (
-            <div key={quiz.quizNumber} style={{ marginBottom: "20px" }}>
-              <h3>Quiz {quiz.quizNumber}</h3>
-              <p>
-                Participants:{" "}
-                {
-                  quiz.details.filter(
-                    (student) =>
-                      student.grade !== null && student.grade !== "Not Attempted"
-                  ).length
-                }
-              </p>
-
-              <div style={{ width: "300px", margin: "0 auto" }}>
-                <Pie data={performanceData(quiz)} />
+  
+        {quizResults.length === 0 || 
+        quizResults.every((quiz) => 
+          quiz.details.filter(
+            (student) => student.grade !== null && student.grade !== "Not Attempted"
+          ).length === 0
+        ) ? (
+          <p style={{ fontSize: "16px", color: "red", textAlign: "center", marginTop: "20px" }}>
+            No students are enrolled in this course.
+          </p>
+        ) : (
+          <>
+            <div style={{ marginBottom: "20px" }}>
+              <h2>Participants per Quiz</h2>
+              <div style={{ maxWidth: "600px", margin: "0 auto" }}>
+                <Bar data={barChartData} />
               </div>
-
-              <table
-                style={{
-                  width: "100%",
-                  borderCollapse: "collapse",
-                  margin: "10px 0",
-                }}
-              >
-                <thead>
-                  <tr>
-                    <th style={{ border: "1px solid #ddd", padding: "8px" }}>
-                      Student Name
-                    </th>
-                    <th style={{ border: "1px solid #ddd", padding: "8px" }}>
-                      Grade
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {quiz.details
-                    .filter(
-                      (student) =>
-                        student.grade !== null &&
-                        student.grade !== "Not Attempted"
-                    )
-                    .map((student, index) => (
-                      <tr key={index}>
-                        <td
-                          style={{
-                            border: "1px solid #ddd",
-                            padding: "8px",
-                            textAlign: "center",
-                          }}
-                        >
-                          {student.userName}
-                        </td>
-                        <td
-                          style={{
-                            border: "1px solid #ddd",
-                            padding: "8px",
-                            textAlign: "center",
-                          }}
-                        >
-                          {student.grade !== null
-                            ? student.grade
-                            : "Not Attempted"}
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
             </div>
-          ))}
-        </div>
+  
+            <div>
+              <h2>Details of Each Quiz</h2>
+              {quizResults.map((quiz) => (
+                <div key={quiz.quizNumber} style={{ marginBottom: "20px" }}>
+                  <h3>Quiz {quiz.quizNumber}</h3>
+                  <p>
+                    Participants:{" "}
+                    {
+                      quiz.details.filter(
+                        (student) =>
+                          student.grade !== null && student.grade !== "Not Attempted"
+                      ).length
+                    }
+                  </p>
+  
+                  <div style={{ width: "300px", margin: "0 auto" }}>
+                    <Pie data={performanceData(quiz)} />
+                  </div>
+  
+                  <table
+                    style={{
+                      width: "100%",
+                      borderCollapse: "collapse",
+                      margin: "10px 0",
+                    }}
+                  >
+                    <thead>
+                      <tr>
+                        <th style={{ border: "1px solid #ddd", padding: "8px" }}>
+                          Student Name
+                        </th>
+                        <th style={{ border: "1px solid #ddd", padding: "8px" }}>
+                          Grade
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {quiz.details
+                        .filter(
+                          (student) =>
+                            student.grade !== null &&
+                            student.grade !== "Not Attempted"
+                        )
+                        .map((student, index) => (
+                          <tr key={index}>
+                            <td
+                              style={{
+                                border: "1px solid #ddd",
+                                padding: "8px",
+                                textAlign: "center",
+                              }}
+                            >
+                              {student.userName}
+                            </td>
+                            <td
+                              style={{
+                                border: "1px solid #ddd",
+                                padding: "8px",
+                                textAlign: "center",
+                              }}
+                            >
+                              {student.grade !== null
+                                ? student.grade
+                                : "Not Attempted"}
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
+  
 };
 
 export default QuizResultsReport;

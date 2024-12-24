@@ -142,7 +142,6 @@ const AllCoursesPage = () => {
   };
 
   if (loading) return <p>Loading courses...</p>;
-  if (error && courses.length === 0) return <p style={{ color: "red" }}>{error}</p>;
 
   return (
     <div>
@@ -161,7 +160,16 @@ const AllCoursesPage = () => {
 
       <h1>All Courses</h1>
 
-      {courses.length > 0 ? (
+      {/* Highlighted: Error Message */}
+      {error && <p style={{ color: "red" }}>{error}</p>} {/* Added */}
+
+      {/* Highlighted: Warning for No Courses */}
+      {courses.length === 0 && !error && ( /* Added */
+        <p style={{ color: "orange" }}>Warning: This instructor currently has no courses listed.</p> /* Added */
+      )}
+
+      {/* Highlighted: Conditionally Render Courses */}
+      {courses.length > 0 && ( /* Updated */
         <ul>
           {courses.map((course) => (
             <li key={course._id}>
@@ -177,8 +185,6 @@ const AllCoursesPage = () => {
             </li>
           ))}
         </ul>
-      ) : (
-        <p style={{ color: "orange" }}>Warning: This instructor currently has no courses listed.</p>
       )}
 
       <h2>Create a New Course</h2>

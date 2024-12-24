@@ -18,7 +18,7 @@ import { BackupController } from './backup/backup.controller';
 import { ResponseModule } from './responses/response.module';
 import { BackupModule } from './backup/backup.module';
 import { JwtModule } from '@nestjs/jwt';
-//import { NoteModule } from './notes/note.module';
+import { NoteModule } from './notes/note.module';
 
 @Module({
   imports:
@@ -39,6 +39,7 @@ import { JwtModule } from '@nestjs/jwt';
     NotificationModule,
     ResponseModule,
     BackupModule,
+    NoteModule,
     MongooseModule.forRoot('mongodb+srv://softwareproject:sp123@clustersp.wvdbq.mongodb.net/EduLink') ],
     controllers: [AppController],
   providers: [AppService],

@@ -55,8 +55,6 @@ export class UserController {
 //admin 
 @Get(':id/profile')
 @UseGuards(AuthGuard)
-@UseGuards(AuthGuard, RolesGuard) // Require authentication and specific roles
-@Roles('admin' as Role)
  // Require authentication and specific roles
 async getUserProfile(@Param('id') userId: string) {
   try {

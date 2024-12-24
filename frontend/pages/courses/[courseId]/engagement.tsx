@@ -45,12 +45,12 @@ const EngagementReport = () => {
       setError(null);
 
       try {
-        const token = localStorage.getItem("token"); // Retrieve token from localStorage
+        const token = localStorage.getItem("token");
         const response = await axios.get(
           `http://localhost:3000/progress/engagement/${courseId}`,
           {
             headers: {
-              Authorization: `Bearer ${token}`, // Include token in Authorization header
+              Authorization: `Bearer ${token}`,
             },
           }
         );
@@ -68,7 +68,7 @@ const EngagementReport = () => {
   }, [courseId]);
 
   const generatePDF = () => {
-    const reportElement = document.getElementById("report"); // ID of the report container
+    const reportElement = document.getElementById("report");
     if (!reportElement) return;
 
     html2canvas(reportElement, { scale: 2 }).then((canvas) => {
@@ -122,7 +122,7 @@ const EngagementReport = () => {
           display: "block",
           margin: "10px auto 20px auto",
           padding: "10px 20px",
-          backgroundColor: "#9fcdff", // Light pastel blue
+          backgroundColor: "#9fcdff",
           color: "black",
           border: "none",
           borderRadius: "5px",
@@ -137,7 +137,7 @@ const EngagementReport = () => {
           display: "block",
           margin: "10px auto 20px auto",
           padding: "10px 20px",
-          backgroundColor: "#9fcdff", // Light pastel blue
+          backgroundColor: "#9fcdff",
           color: "black",
           border: "none",
           borderRadius: "5px",
@@ -155,10 +155,10 @@ const EngagementReport = () => {
         <h1 className="reportTitle">Engagement Report</h1>
         <section style={{ margin: "20px 0" }}>
           <h2>Summary</h2>
-          <p>Total Enrolled Students: {engagementData.totalEnrolledStudents}</p>
-          <p>Completed Students: {engagementData.completedStudents}</p>
+          <p>Total Enrolled Students: {engagementData.totalEnrolledStudents|| 0}</p>
+          <p>Completed Students: {engagementData.completedStudents|| 0}</p>
           <p>
-            Average Completion Percentage:{" "}
+            Average Completion Percentage: {" "}
             {engagementData.averageCompletionPercentage || 0}%
           </p>
           <p>Average Course Score: {engagementData.averageCourseScore || 0}</p>

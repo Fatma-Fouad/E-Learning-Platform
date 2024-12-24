@@ -21,25 +21,30 @@ const ContentEffectivenessReport = () => {
   const { courseId } = router.query;
   const [contentData, setContentData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     if (!courseId) return;
 
     const fetchContentData = async () => {
       try {
-        const token = localStorage.getItem("token"); // Retrieve token from localStorage
+        const token = localStorage.getItem("token");
         const response = await axios.get(
           `http://localhost:3000/progress/effectiveness/${courseId}`,
           {
             headers: {
-              Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+              Authorization: `Bearer ${token}`,
             },
           }
         );
-        setContentData(response.data || {});
+        const data = response.data || {};
+        setContentData(data);
+
+        if (data.modules?.length === 0) {
+          setMessage("No students are enrolled in this course.");
+        }
       } catch (err) {
-        setError("Failed to fetch content effectiveness report.");
+        setMessage("Failed to fetch content effectiveness report.");
       } finally {
         setLoading(false);
       }
@@ -64,12 +69,6 @@ const ContentEffectivenessReport = () => {
   };
 
   if (loading) return <p>Loading...</p>;
-  if (error) return <p style={{ color: "red" }}>{error}</p>;
-
-  const hasValidModules =
-    contentData.modules &&
-    contentData.modules.length > 0 &&
-    !contentData.modules.some((mod) => mod.title === "No modules available for this course.");
 
   return (
     <div className="reportContainer">
@@ -104,11 +103,13 @@ const ContentEffectivenessReport = () => {
 
       <div id="report">
         <h1 className="reportTitle">Content Effectiveness Report</h1>
-        <p className="reportDetails">Course Rating: {contentData.courseRating} / 5</p>
-        <p className="reportDetails">Instructor Rating: {contentData.instructorRating}</p>
-
-        {hasValidModules ? (
+        {message ? (
+          <p style={{ color: "red", textAlign: "center", marginTop: "20px" }}>{message}</p>
+        ) : (
           <>
+            <p className="reportDetails">Course Rating: {contentData.courseRating || "no ratings yet"}  / 5</p>
+            <p className="reportDetails">Instructor Rating: {contentData.instructorRating || "no ratings yet"}</p>
+
             <h2 className="reportTitle">Module Ratings</h2>
             <table border={1} style={{ width: "100%", marginBottom: "20px" }}>
               <thead>
@@ -117,34 +118,35 @@ const ContentEffectivenessReport = () => {
                   <th>Order</th>
                   <th>Version</th>
                   <th>Rating</th>
-                  <th>Performance</th>
                 </tr>
               </thead>
               <tbody>
-                {contentData.modules.map((mod, index) => (
-                  <tr key={index}>
-                    <td>{mod.details?.moduleName || "Unknown"}</td>
-                    <td>{mod.details?.moduleOrder || "Unknown"}</td>
-                    <td>{mod.details?.moduleVersion || "Unknown"}</td>
-                    <td>{mod.details?.moduleRating || "No rating yet"}</td>
-                    <td>{mod.details?.performanceMetric || "Unknown"}</td>
-                  </tr>
-                ))}
-              </tbody>
+            {(contentData?.modules || []).map((mod, index) => (
+              <tr key={index}>
+                <td>{mod.details?.moduleName || "Unknown"}</td>
+                <td>{mod.details?.moduleOrder || "Unknown"}</td>
+                <td>{mod.details?.moduleVersion || "Unknown"}</td>
+                <td>{mod.details?.moduleRating || "No rating yet"}</td>
+              </tr>
+            ))}
+          </tbody>
+
             </table>
+
+           
 
             <div className="chartContainer">
               <div className="chart">
                 <h3 className="reportTitle">Module Ratings</h3>
                 <Bar
                   data={{
-                    labels: contentData.modules.map(
+                    labels: (contentData?.modules || []).map(
                       (mod) => mod.details?.moduleName || "Unknown"
                     ),
                     datasets: [
                       {
                         label: "Module Ratings",
-                        data: contentData.modules.map(
+                        data: (contentData?.modules || []).map(
                           (mod) => mod.details?.moduleRating || 0
                         ),
                         backgroundColor: "rgba(75, 192, 192, 0.6)",
@@ -154,26 +156,17 @@ const ContentEffectivenessReport = () => {
                 />
               </div>
               <div className="chart">
-                <h3 className="reportTitle">Performance Metrics Distribution</h3>
+                <h3 className="reportTitle">Valid Modules Distribution</h3>
                 <Pie
                   data={{
-                    labels: Object.keys(
-                      contentData.modules.reduce((acc, mod) => {
-                        const metric = mod.details?.performanceMetric || "Unknown";
-                        acc[metric] = (acc[metric] || 0) + 1;
-                        return acc;
-                      }, {})
-                    ),
+                    labels: ["Valid Modules", "Invalid Modules"],
                     datasets: [
                       {
-                        data: Object.values(
-                          contentData.modules.reduce((acc, mod) => {
-                            const metric = mod.details?.performanceMetric || "Unknown";
-                            acc[metric] = (acc[metric] || 0) + 1;
-                            return acc;
-                          }, {})
-                        ),
-                        backgroundColor: ["#FFD700", "#FF8C00", "#DA70D6", "#9370DB"],
+                        data: [
+                          contentData.validModuleCount,
+                          contentData.modules ? contentData.modules.length - contentData.validModuleCount : 0,
+                        ],                        
+                        backgroundColor: ["#4caf50", "#f44336"],
                       },
                     ],
                   }}
@@ -181,10 +174,6 @@ const ContentEffectivenessReport = () => {
               </div>
             </div>
           </>
-        ) : (
-          <p style={{ color: "red", textAlign: "center", marginTop: "20px" }}>
-            No modules available for this course.
-          </p>
         )}
       </div>
 
